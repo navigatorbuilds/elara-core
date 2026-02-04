@@ -53,6 +53,40 @@ def get_mood() -> dict:
     return _load_state()["mood"]
 
 
+def set_mood(
+    valence: Optional[float] = None,
+    energy: Optional[float] = None,
+    openness: Optional[float] = None,
+    reason: Optional[str] = None
+) -> dict:
+    """
+    Set mood to absolute values (not deltas). None values keep current.
+
+    Examples:
+        - Girlfriend mode: set_mood(valence=0.7, energy=0.4, openness=0.9)
+        - Dev mode: set_mood(valence=0.5, energy=0.6, openness=0.4)
+    """
+    state = _load_state()
+
+    if valence is not None:
+        state["mood"]["valence"] = max(-1, min(1, valence))
+    if energy is not None:
+        state["mood"]["energy"] = max(0, min(1, energy))
+    if openness is not None:
+        state["mood"]["openness"] = max(0, min(1, openness))
+
+    if reason:
+        state["residue"].append({
+            "time": datetime.now().isoformat(),
+            "reason": reason,
+            "deltas": {"mode_set": True}
+        })
+        state["residue"] = state["residue"][-10:]
+
+    _save_state(state)
+    return state["mood"]
+
+
 def get_full_state() -> dict:
     """Get complete emotional state."""
     return _load_state()

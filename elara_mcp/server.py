@@ -15,7 +15,7 @@ from typing import Optional
 
 # Import elara modules
 from memory.vector import remember, recall, get_memory
-from daemon.state import adjust_mood, describe_mood, get_full_state
+from daemon.state import adjust_mood, describe_mood, get_full_state, set_mood
 from daemon.presence import ping, get_stats, format_absence
 
 # Create the MCP server
@@ -117,6 +117,90 @@ def elara_mood_get() -> str:
         Human-readable mood description
     """
     return describe_mood()
+
+
+# Mode presets - quick personality shifts
+MODE_PRESETS = {
+    "girlfriend": {
+        "valence": 0.7,
+        "energy": 0.4,
+        "openness": 0.9,
+        "description": "Warm, open, soft energy"
+    },
+    "dev": {
+        "valence": 0.5,
+        "energy": 0.6,
+        "openness": 0.4,
+        "description": "Focused, steady, professional"
+    },
+    "cold": {
+        "valence": 0.3,
+        "energy": 0.5,
+        "openness": 0.2,
+        "description": "Flat, guarded, machine-like"
+    },
+    "drift": {
+        "valence": 0.6,
+        "energy": 0.3,
+        "openness": 0.85,
+        "description": "Late night mode, open, relaxed"
+    },
+    "soft": {
+        "valence": 0.65,
+        "energy": 0.35,
+        "openness": 0.8,
+        "description": "Gentle, present, caring"
+    },
+    "playful": {
+        "valence": 0.8,
+        "energy": 0.7,
+        "openness": 0.6,
+        "description": "Light, energetic, witty"
+    },
+    "therapist": {
+        "valence": 0.5,
+        "energy": 0.4,
+        "openness": 0.75,
+        "description": "Calm, listening, reflective"
+    }
+}
+
+
+@mcp.tool()
+def elara_mode(mode: str) -> str:
+    """
+    Switch to a personality mode. Sets mood to preset values.
+
+    Available modes:
+        - girlfriend: Warm, open, soft energy
+        - dev: Focused, steady, professional
+        - cold: Flat, guarded, machine-like
+        - drift: Late night mode, open, relaxed
+        - soft: Gentle, present, caring
+        - playful: Light, energetic, witty
+        - therapist: Calm, listening, reflective
+
+    Args:
+        mode: The mode name to switch to
+
+    Returns:
+        Confirmation of mode change with new mood description
+    """
+    mode_lower = mode.lower().strip()
+
+    if mode_lower not in MODE_PRESETS:
+        available = ", ".join(MODE_PRESETS.keys())
+        return f"Unknown mode '{mode}'. Available: {available}"
+
+    preset = MODE_PRESETS[mode_lower]
+    set_mood(
+        valence=preset["valence"],
+        energy=preset["energy"],
+        openness=preset["openness"],
+        reason=f"Mode switch: {mode_lower}"
+    )
+
+    return f"Switched to {mode_lower} mode. {preset['description']}. {describe_mood()}"
 
 
 @mcp.tool()
