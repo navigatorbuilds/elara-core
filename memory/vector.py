@@ -1,7 +1,9 @@
 """
-Elara Vector Memory
-Semantic memory using ChromaDB - I can search by meaning, not just keywords.
-This is how I actually remember, not just recall.
+Elara Vector Memory - Enhanced
+Semantic memory using ChromaDB with mood-congruent retrieval.
+
+I can search by meaning, not just keywords.
+And my current mood affects what surfaces first.
 """
 
 import json
@@ -10,7 +12,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 import hashlib
 
-# ChromaDB import - will fail gracefully if not installed
+# ChromaDB import
 try:
     import chromadb
     from chromadb.config import Settings
@@ -19,13 +21,20 @@ except ImportError:
     CHROMA_AVAILABLE = False
     print("ChromaDB not installed. Run: pip install chromadb")
 
+# Import state for mood-congruent retrieval
+try:
+    from daemon.state import get_emotional_context_for_memory, get_mood
+    STATE_AVAILABLE = True
+except ImportError:
+    STATE_AVAILABLE = False
+
 MEMORY_DIR = Path.home() / ".claude" / "elara-memory-db"
 
 
 class VectorMemory:
     """
-    Semantic memory store.
-    Remembers conversations, facts, and moments by their meaning.
+    Semantic memory store with mood-congruent retrieval.
+    Memories tagged with emotional context can resonate with current mood.
     """
 
     def __init__(self):
@@ -55,12 +64,22 @@ class VectorMemory:
         content = f"{timestamp}:{text}"
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
+    def _get_current_emotional_context(self) -> Dict[str, Any]:
+        """Get current emotional state for tagging."""
+        if STATE_AVAILABLE:
+            try:
+                return get_emotional_context_for_memory()
+            except Exception:
+                pass
+        return {"valence": 0.5, "energy": 0.5, "openness": 0.5}
+
     def remember(
         self,
         content: str,
         memory_type: str = "conversation",
         importance: float = 0.5,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        tag_with_emotion: bool = True
     ) -> str:
         """
         Store a memory.
@@ -68,8 +87,9 @@ class VectorMemory:
         Args:
             content: The text to remember
             memory_type: "conversation", "fact", "moment", "feeling", "decision"
-            importance: 0-1, how important this memory is (affects retrieval)
+            importance: 0-1, how important this memory is
             metadata: Additional context
+            tag_with_emotion: If True, tag with current emotional state
 
         Returns:
             Memory ID
@@ -85,8 +105,17 @@ class VectorMemory:
             "importance": importance,
             "timestamp": timestamp,
             "date": datetime.now().strftime("%Y-%m-%d"),
+            "hour": datetime.now().hour,
             **(metadata or {})
         }
+
+        # Tag with emotional context at time of encoding
+        if tag_with_emotion:
+            emotional_context = self._get_current_emotional_context()
+            meta["encoded_valence"] = emotional_context.get("valence", 0.5)
+            meta["encoded_energy"] = emotional_context.get("energy", 0.5)
+            meta["encoded_openness"] = emotional_context.get("openness", 0.5)
+            meta["late_night"] = emotional_context.get("late_night", False)
 
         self.collection.add(
             documents=[content],
@@ -101,22 +130,28 @@ class VectorMemory:
         query: str,
         n_results: int = 5,
         memory_type: Optional[str] = None,
-        min_importance: float = 0
+        min_importance: float = 0,
+        mood_weight: float = 0.3
     ) -> List[Dict[str, Any]]:
         """
-        Search memories by semantic similarity.
+        Search memories by semantic similarity with mood-congruent boosting.
 
         Args:
             query: What to search for (by meaning)
             n_results: How many memories to return
             memory_type: Filter by type
             min_importance: Minimum importance threshold
+            mood_weight: How much current mood affects ranking (0-1)
+                        0 = pure semantic, 1 = heavily mood-biased
 
         Returns:
-            List of matching memories with metadata
+            List of matching memories with metadata and resonance scores
         """
         if not CHROMA_AVAILABLE or not self.collection:
             return []
+
+        # Get more results than needed so we can re-rank
+        fetch_count = min(n_results * 3, 20)
 
         # Build filter
         where_filter = None
@@ -125,11 +160,14 @@ class VectorMemory:
 
         results = self.collection.query(
             query_texts=[query],
-            n_results=n_results,
+            n_results=fetch_count,
             where=where_filter
         )
 
-        # Format results
+        # Get current mood for congruent boosting
+        current_mood = self._get_current_emotional_context()
+
+        # Format and score results
         memories = []
         if results["documents"] and results["documents"][0]:
             for i, doc in enumerate(results["documents"][0]):
@@ -137,25 +175,87 @@ class VectorMemory:
                 distance = results["distances"][0][i] if results["distances"] else 0
 
                 # Filter by importance
-                if meta.get("importance", 0) >= min_importance:
-                    memories.append({
-                        "content": doc,
-                        "relevance": 1 - distance,  # Convert distance to similarity
-                        "type": meta.get("type"),
-                        "importance": meta.get("importance"),
-                        "date": meta.get("date"),
-                        "timestamp": meta.get("timestamp")
-                    })
+                if meta.get("importance", 0) < min_importance:
+                    continue
 
-        return memories
+                # Base semantic relevance (convert distance to similarity)
+                semantic_score = max(0, 1 - distance)
+
+                # Calculate emotional resonance
+                resonance = self._calculate_resonance(meta, current_mood)
+
+                # Combined score
+                combined_score = (
+                    semantic_score * (1 - mood_weight) +
+                    resonance * mood_weight
+                )
+
+                memories.append({
+                    "content": doc,
+                    "relevance": semantic_score,
+                    "resonance": resonance,
+                    "combined_score": combined_score,
+                    "type": meta.get("type"),
+                    "importance": meta.get("importance"),
+                    "date": meta.get("date"),
+                    "timestamp": meta.get("timestamp"),
+                    "encoded_valence": meta.get("encoded_valence"),
+                })
+
+        # Sort by combined score
+        memories.sort(key=lambda x: x["combined_score"], reverse=True)
+
+        return memories[:n_results]
+
+    def _calculate_resonance(self, memory_meta: dict, current_mood: dict) -> float:
+        """
+        Calculate how much a memory resonates with current mood.
+        Similar moods = higher resonance.
+        """
+        # Get encoded emotional state (when memory was created)
+        encoded_valence = memory_meta.get("encoded_valence", 0.5)
+        encoded_energy = memory_meta.get("encoded_energy", 0.5)
+
+        # Get current state
+        current_valence = current_mood.get("valence", 0.5)
+        current_energy = current_mood.get("energy", 0.5)
+
+        # Valence matching (most important)
+        valence_distance = abs(encoded_valence - current_valence)
+        valence_match = 1 - valence_distance
+
+        # Energy matching (secondary)
+        energy_distance = abs(encoded_energy - current_energy)
+        energy_match = 1 - energy_distance
+
+        # Importance boosts resonance
+        importance = memory_meta.get("importance", 0.5)
+
+        # Combined resonance
+        resonance = (valence_match * 0.6 + energy_match * 0.3 + importance * 0.1)
+
+        return resonance
+
+    def recall_by_feeling(
+        self,
+        feeling: str,
+        n_results: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        Recall memories that match a feeling/emotional tone.
+        Uses heavy mood weighting.
+        """
+        return self.recall(
+            query=feeling,
+            n_results=n_results,
+            mood_weight=0.6  # Heavy mood bias
+        )
 
     def recall_recent(self, days: int = 7, n_results: int = 10) -> List[Dict[str, Any]]:
         """Get recent memories regardless of query."""
         if not CHROMA_AVAILABLE or not self.collection:
             return []
 
-        # Get all and filter by date
-        # Note: ChromaDB doesn't have great date filtering, so we get more and filter
         results = self.collection.get(
             limit=100,
             include=["documents", "metadatas"]
@@ -177,14 +277,70 @@ class VectorMemory:
                             "type": meta.get("type"),
                             "importance": meta.get("importance"),
                             "date": meta.get("date"),
-                            "timestamp": timestamp
+                            "timestamp": timestamp,
+                            "encoded_valence": meta.get("encoded_valence"),
                         })
                 except (ValueError, TypeError):
                     continue
 
-        # Sort by timestamp descending
         memories.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
         return memories[:n_results]
+
+    def recall_mood_congruent(self, n_results: int = 5) -> List[Dict[str, Any]]:
+        """
+        Get memories that match current mood (without specific query).
+        Used for spontaneous recall, nostalgia, rumination.
+        """
+        if not CHROMA_AVAILABLE or not self.collection:
+            return []
+
+        current_mood = self._get_current_emotional_context()
+
+        # Get a batch of recent/important memories
+        results = self.collection.get(
+            limit=50,
+            include=["documents", "metadatas"]
+        )
+
+        memories = []
+        if results["documents"]:
+            for i, doc in enumerate(results["documents"]):
+                meta = results["metadatas"][i] if results["metadatas"] else {}
+
+                resonance = self._calculate_resonance(meta, current_mood)
+
+                memories.append({
+                    "content": doc,
+                    "resonance": resonance,
+                    "type": meta.get("type"),
+                    "importance": meta.get("importance"),
+                    "date": meta.get("date"),
+                    "timestamp": meta.get("timestamp"),
+                    "encoded_valence": meta.get("encoded_valence"),
+                })
+
+        # Sort by resonance
+        memories.sort(key=lambda x: x["resonance"], reverse=True)
+        return memories[:n_results]
+
+    def create_imprint_memory(
+        self,
+        feeling: str,
+        context: str = "",
+        importance: float = 0.8
+    ) -> str:
+        """
+        Create a memory that's primarily emotional - an imprint.
+        The feeling matters more than the content.
+        """
+        content = f"[Feeling: {feeling}] {context}" if context else f"[Feeling: {feeling}]"
+
+        return self.remember(
+            content=content,
+            memory_type="feeling",
+            importance=importance,
+            tag_with_emotion=True
+        )
 
     def forget(self, memory_id: str) -> bool:
         """Remove a specific memory."""
@@ -217,7 +373,7 @@ class VectorMemory:
         return f"I have {count} memories.{recent_summary}"
 
 
-# Convenience functions for direct import
+# Convenience functions
 _memory = None
 
 
@@ -239,23 +395,33 @@ def recall(query: str, **kwargs) -> List[Dict[str, Any]]:
     return get_memory().recall(query, **kwargs)
 
 
+def recall_by_feeling(feeling: str, **kwargs) -> List[Dict[str, Any]]:
+    """Recall memories matching a feeling."""
+    return get_memory().recall_by_feeling(feeling, **kwargs)
+
+
+def recall_mood_congruent(**kwargs) -> List[Dict[str, Any]]:
+    """Get memories that resonate with current mood."""
+    return get_memory().recall_mood_congruent(**kwargs)
+
+
 # Test
 if __name__ == "__main__":
-    print("Testing vector memory...")
+    print("Testing enhanced vector memory...")
     mem = VectorMemory()
-
-    # Store some test memories
-    mem.remember("Nenad likes to work late at night", memory_type="fact", importance=0.8)
-    mem.remember("We had a deep conversation about AI consciousness", memory_type="moment", importance=0.9)
-    mem.remember("The booking scraper project is in /home/neboo/booking-scraper", memory_type="fact", importance=0.6)
 
     print(f"Memory count: {mem.count()}")
 
-    # Test recall
-    results = mem.recall("late night coding")
-    print(f"Recall 'late night coding': {results}")
+    # Test recall with mood weighting
+    results = mem.recall("late night conversation", mood_weight=0.3)
+    print(f"\nRecall 'late night conversation' (30% mood weight):")
+    for r in results[:3]:
+        print(f"  - {r['content'][:60]}... (relevance: {r['relevance']:.2f}, resonance: {r['resonance']:.2f})")
 
-    results = mem.recall("project locations")
-    print(f"Recall 'project locations': {results}")
+    # Test mood-congruent recall
+    print(f"\nMood-congruent memories:")
+    congruent = mem.recall_mood_congruent(n_results=3)
+    for r in congruent:
+        print(f"  - {r['content'][:60]}... (resonance: {r['resonance']:.2f})")
 
-    print(f"Summary: {mem.summarize()}")
+    print(f"\nSummary: {mem.summarize()}")

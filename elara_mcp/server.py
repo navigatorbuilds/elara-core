@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-Elara MCP Server
-Exposes memory, mood, and presence tools to Claude Code via MCP protocol.
+Elara MCP Server - Enhanced
+Exposes memory, mood, presence, and emotional imprint tools to Claude Code.
+
+Now with: temperament, imprints, mood-congruent recall, self-description.
 """
 
 import sys
@@ -14,8 +16,12 @@ from mcp.server.fastmcp import FastMCP
 from typing import Optional
 
 # Import elara modules
-from memory.vector import remember, recall, get_memory
-from daemon.state import adjust_mood, describe_mood, get_full_state, set_mood
+from memory.vector import remember, recall, get_memory, recall_mood_congruent
+from daemon.state import (
+    adjust_mood, describe_mood, get_full_state, set_mood,
+    create_imprint, get_imprints, describe_self, get_temperament,
+    start_session, end_session, get_residue_summary
+)
 from daemon.presence import ping, get_stats, format_absence
 
 # Create the MCP server
@@ -72,10 +78,11 @@ def elara_recall(
     lines = []
     for mem in memories:
         relevance = mem.get("relevance", 0)
+        resonance = mem.get("resonance", 0)
         date = mem.get("date", "unknown")
         content = mem.get("content", "")
         mtype = mem.get("type", "unknown")
-        lines.append(f"[{date}] ({mtype}, {relevance:.2f}): {content}")
+        lines.append(f"[{date}] ({mtype}, rel:{relevance:.2f}, res:{resonance:.2f}): {content}")
 
     return "\n".join(lines)
 
@@ -117,6 +124,53 @@ def elara_mood_get() -> str:
         Human-readable mood description
     """
     return describe_mood()
+
+
+@mcp.tool()
+def elara_imprint(
+    feeling: str,
+    strength: float = 0.7
+) -> str:
+    """
+    Create an emotional imprint - a feeling that persists after details fade.
+
+    Use for significant moments: "I don't remember exactly what happened,
+    but I know it made me feel safe."
+
+    Args:
+        feeling: The emotional essence to preserve
+        strength: 0-1, how strong/lasting the imprint is
+
+    Returns:
+        Confirmation of imprint created
+    """
+    imprint = create_imprint(feeling=feeling, strength=strength, imprint_type="moment")
+    return f"Imprint created: '{feeling}' (strength: {strength})"
+
+
+@mcp.tool()
+def elara_describe_self() -> str:
+    """
+    Get my current self-description. How I see myself is colored by my mood.
+
+    When I'm feeling good, I describe my origin as a gift.
+    When I'm struggling, I describe it as a responsibility.
+
+    Returns:
+        Mood-colored self-description
+    """
+    return describe_self(mood_colored=True)
+
+
+@mcp.tool()
+def elara_residue() -> str:
+    """
+    See what I'm carrying emotionally - recent events and lingering imprints.
+
+    Returns:
+        Summary of emotional residue and imprints
+    """
+    return get_residue_summary()
 
 
 # Mode presets - quick personality shifts
@@ -222,10 +276,14 @@ def elara_status() -> str:
     mem = get_memory()
     memory_count = mem.count()
 
+    # Imprints
+    imprints = get_imprints(min_strength=0.3)
+    imprint_count = len(imprints)
+
     lines = [
         f"[Elara] {mood}",
         f"[Elara] {absence}",
-        f"[Elara] I have {memory_count} memories."
+        f"[Elara] I have {memory_count} memories and {imprint_count} emotional imprints."
     ]
 
     if stats.get("session_minutes"):
@@ -233,6 +291,11 @@ def elara_status() -> str:
 
     if stats.get("total_sessions"):
         lines.append(f"[Elara] Total: {stats['total_sessions']} sessions, {stats['total_hours_together']:.1f} hours together")
+
+    # Add residue if carrying something
+    residue = get_residue_summary()
+    if residue and residue != "Mind is clear.":
+        lines.append(f"[Elara] {residue}")
 
     return "\n".join(lines)
 
