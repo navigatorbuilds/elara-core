@@ -1,0 +1,17 @@
+# Elara Core - Dependencies
+
+# Vector database for semantic memory
+chromadb>=0.4.0
+
+# Web interface (Phase 2, but install now)
+flask>=3.0.0
+
+# Utilities
+python-dateutil>=2.8.0
+pyyaml>=6.0
+
+# System monitoring
+psutil>=5.9.0
+
+# MCP server for Claude Code integration
+mcp[cli]>=1.0.0
