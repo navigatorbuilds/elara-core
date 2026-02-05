@@ -36,6 +36,12 @@ from daemon.state import (
 )
 from daemon.presence import ping, get_stats, format_absence
 from daemon.context import save_context, get_context, is_enabled as context_enabled, set_enabled as context_set_enabled
+from daemon.goals import (
+    add_goal, update_goal, list_goals, get_goal, stale_goals, boot_summary as goals_boot_summary, touch_goal
+)
+from daemon.corrections import (
+    add_correction, list_corrections, boot_corrections, search_corrections
+)
 
 # Create the MCP server
 mcp = FastMCP("elara")
@@ -916,6 +922,164 @@ def elara_conversation_stats() -> str:
         f"  Distance metric: cosine\n"
         f"  Scoring: semantic ({100 - 15}%) + recency ({15}%)"
     )
+
+
+# ============================================================================
+# GOALS TOOLS
+# ============================================================================
+
+@mcp.tool()
+def elara_goal_add(
+    title: str,
+    project: Optional[str] = None,
+    notes: Optional[str] = None,
+    priority: str = "medium",
+) -> str:
+    """
+    Add a new goal to track across sessions.
+
+    Args:
+        title: What needs to be done (e.g., "Ship HandyBill dark theme")
+        project: Project this belongs to (e.g., "handybill")
+        notes: Additional context
+        priority: "high", "medium", or "low"
+
+    Returns:
+        Confirmation with goal ID
+    """
+    goal = add_goal(title=title, project=project, notes=notes, priority=priority)
+    return f"Goal #{goal['id']} added: {title} [{priority}]"
+
+
+@mcp.tool()
+def elara_goal_update(
+    goal_id: int,
+    status: Optional[str] = None,
+    notes: Optional[str] = None,
+    priority: Optional[str] = None,
+    title: Optional[str] = None,
+) -> str:
+    """
+    Update a goal's status or details.
+
+    Args:
+        goal_id: The goal ID number
+        status: New status: "active", "stalled", "done", "dropped"
+        notes: Updated notes
+        priority: New priority: "high", "medium", "low"
+        title: Updated title
+
+    Returns:
+        Updated goal info
+    """
+    result = update_goal(goal_id=goal_id, status=status, notes=notes, priority=priority, title=title)
+    if "error" in result:
+        return result["error"]
+    return f"Goal #{goal_id} updated → {result['status']}: {result['title']}"
+
+
+@mcp.tool()
+def elara_goal_list(
+    status: Optional[str] = None,
+    project: Optional[str] = None,
+) -> str:
+    """
+    List goals, optionally filtered by status or project.
+
+    Args:
+        status: Filter by "active", "stalled", "done", "dropped"
+        project: Filter by project name
+
+    Returns:
+        Goal list with status and priority
+    """
+    goals = list_goals(status=status, project=project)
+    if not goals:
+        return "No goals found."
+
+    lines = []
+    for g in goals:
+        proj = f" [{g['project']}]" if g.get("project") else ""
+        pri = " !" if g.get("priority") == "high" else ""
+        status_icon = {"active": "○", "done": "✓", "stalled": "⏸", "dropped": "✗"}.get(g["status"], "?")
+        lines.append(f"  {status_icon} #{g['id']}{pri} {g['title']}{proj} ({g['status']})")
+
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def elara_goal_boot() -> str:
+    """
+    Boot-time goal check. Shows active goals, stale goals, and recent completions.
+    Call this at session start to know what we should be working on.
+
+    Returns:
+        Quick summary of goal state
+    """
+    return goals_boot_summary()
+
+
+# ============================================================================
+# CORRECTIONS TOOLS
+# ============================================================================
+
+@mcp.tool()
+def elara_correction_add(
+    mistake: str,
+    correction: str,
+    context: Optional[str] = None,
+) -> str:
+    """
+    Record a correction - something I got wrong that I shouldn't repeat.
+
+    These never decay. They load at boot so I remember.
+
+    Args:
+        mistake: What I said/did wrong
+        correction: What's actually correct
+        context: When/why this happened (optional)
+
+    Returns:
+        Confirmation
+    """
+    entry = add_correction(mistake=mistake, correction=correction, context=context)
+    return f"Correction #{entry['id']} saved. Won't repeat: {mistake}"
+
+
+@mcp.tool()
+def elara_correction_list(n: int = 20) -> str:
+    """
+    List recent corrections.
+
+    Args:
+        n: How many to show (default 20)
+
+    Returns:
+        List of corrections with dates
+    """
+    corrections = list_corrections(n=n)
+    if not corrections:
+        return "No corrections recorded yet."
+
+    lines = []
+    for c in corrections:
+        date = c["date"][:10]
+        lines.append(f"  [{date}] #{c['id']}: {c['mistake']} → {c['correction']}")
+
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def elara_correction_boot() -> str:
+    """
+    Boot-time corrections check. Returns recent mistakes to avoid repeating.
+    Call this at session start.
+
+    Returns:
+        Short list of things not to repeat
+    """
+    result = boot_corrections(n=10)
+    return result if result else "No corrections to review."
 
 
 if __name__ == "__main__":
