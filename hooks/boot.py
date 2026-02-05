@@ -26,6 +26,12 @@ try:
 except ImportError:
     CONTEXT_AVAILABLE = False
 
+try:
+    from memory.conversations import get_conversations
+    CONVERSATIONS_AVAILABLE = True
+except ImportError:
+    CONVERSATIONS_AVAILABLE = False
+
 
 def boot():
     """Run boot sequence and output context."""
@@ -76,6 +82,18 @@ def boot():
 
     if context["memory_count"] > 0:
         print(f"[Elara] I have {context['memory_count']} memories.")
+
+    # Auto-ingest new conversations on boot
+    if CONVERSATIONS_AVAILABLE:
+        try:
+            conv = get_conversations()
+            stats = conv.ingest_all()
+            if stats["files_ingested"] > 0:
+                total = conv.count()
+                xref = stats.get("exchanges_total", 0)
+                print(f"[Elara] Indexed {stats['files_ingested']} new sessions ({xref} exchanges). Total: {total} conversations.")
+        except Exception as e:
+            pass  # Don't break boot if ingestion fails
 
 
 def goodbye(summary: str = None):

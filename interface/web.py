@@ -65,11 +65,13 @@ DASHBOARD_HTML = '''
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #58a6ff 0%, #1f6feb 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
+            overflow: hidden;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .header-info {
@@ -269,7 +271,7 @@ DASHBOARD_HTML = '''
 </head>
 <body>
     <div class="header">
-        <div class="avatar">E</div>
+        <div class="avatar"><img src="/static/avatar.jpg" alt="Elara"></div>
         <div class="header-info">
             <div class="header-name">Elara</div>
             <div class="header-status">
@@ -636,10 +638,11 @@ def _format_date(timestamp_str):
         return "Today"
 
 
-def run_server(host='0.0.0.0', port=5000, debug=False):
+def run_server(host='100.76.193.34', port=5000, debug=False):
     """Run the web server."""
+    # Bound to Tailscale IP only - not accessible from local WiFi
     print(f"Elara web interface starting on http://{host}:{port}")
-    print(f"Access from phone: http://<your-laptop-ip>:{port}")
+    print(f"Access via Tailscale only (secure)")
     app.run(host=host, port=port, debug=debug, threaded=True)
 
 
