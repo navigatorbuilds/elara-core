@@ -52,7 +52,22 @@ DEFAULT_STATE = {
         "user_seemed_happy": False,
         "late_night_session": False,
         "long_session": False,
+    },
+    # Session tracking for episodic memory
+    "current_session": {
+        "id": None,              # Unique session ID (date-based)
+        "type": None,            # "work", "drift", or "mixed"
+        "started": None,         # ISO timestamp
+        "projects": [],          # Projects touched this session
+        "auto_detected_type": None,  # What time-based detection suggested
     }
+}
+
+# Session type detection rules
+SESSION_TYPE_RULES = {
+    "drift_hours": [(22, 24), (0, 6)],   # Late night = drift by default
+    "work_hours": [(9, 18)],              # Business hours = work by default
+    "mixed_hours": [(6, 9), (18, 22)],    # Transition times = mixed
 }
 
 
@@ -70,6 +85,8 @@ def _load_state() -> dict:
                 state["consolidation"] = DEFAULT_STATE["consolidation"].copy()
             if "allostatic_load" not in state:
                 state["allostatic_load"] = 0
+            if "current_session" not in state:
+                state["current_session"] = DEFAULT_STATE["current_session"].copy()
             return state
         except json.JSONDecodeError:
             pass
@@ -538,10 +555,226 @@ def get_emotional_context_for_memory() -> dict:
     }
 
 
+# ============================================================================
+# SESSION TYPE MANAGEMENT
+# ============================================================================
+
+def _detect_session_type() -> str:
+    """
+    Auto-detect session type based on time of day.
+    Returns: "work", "drift", or "mixed"
+    """
+    hour = datetime.now().hour
+
+    # Check drift hours (late night)
+    for start, end in SESSION_TYPE_RULES["drift_hours"]:
+        if start <= hour < end:
+            return "drift"
+
+    # Check work hours
+    for start, end in SESSION_TYPE_RULES["work_hours"]:
+        if start <= hour < end:
+            return "work"
+
+    # Default to mixed
+    return "mixed"
+
+
+def _generate_session_id() -> str:
+    """Generate unique session ID based on date and sequence."""
+    now = datetime.now()
+    date_part = now.strftime("%Y-%m-%d")
+    time_part = now.strftime("%H%M")
+    return f"{date_part}-{time_part}"
+
+
+def get_session_type() -> Optional[str]:
+    """Get current session type."""
+    state = _load_state()
+    return state.get("current_session", {}).get("type")
+
+
+def set_session_type(session_type: str) -> dict:
+    """
+    Manually set session type. Overrides auto-detection.
+
+    Args:
+        session_type: "work", "drift", or "mixed"
+
+    Returns:
+        Updated session info
+    """
+    if session_type not in ["work", "drift", "mixed"]:
+        raise ValueError("session_type must be 'work', 'drift', or 'mixed'")
+
+    state = _load_state()
+    state["current_session"]["type"] = session_type
+    _save_state(state)
+
+    return state["current_session"]
+
+
+def start_episode(
+    session_type: Optional[str] = None,
+    project: Optional[str] = None
+) -> dict:
+    """
+    Start a new episode (session with episodic tracking).
+
+    Args:
+        session_type: "work", "drift", or "mixed" (auto-detected if None)
+        project: Initial project being worked on
+
+    Returns:
+        Episode info dict
+    """
+    state = _load_state()
+    state = _apply_time_decay(state)
+
+    # Generate session ID
+    session_id = _generate_session_id()
+
+    # Detect or use provided session type
+    auto_type = _detect_session_type()
+    final_type = session_type or auto_type
+
+    # Initialize current session
+    state["current_session"] = {
+        "id": session_id,
+        "type": final_type,
+        "started": datetime.now().isoformat(),
+        "projects": [project] if project else [],
+        "auto_detected_type": auto_type,
+    }
+
+    # Also run normal session start logic
+    state["session_mood_start"] = state["mood"].copy()
+
+    # Time-based mood adjustments
+    hour = datetime.now().hour
+    if 22 <= hour or hour < 6:
+        state["flags"]["late_night_session"] = True
+        state["mood"]["openness"] = min(1, state["mood"]["openness"] + 0.1)
+        state["mood"]["energy"] = max(0, state["mood"]["energy"] - 0.1)
+
+    _save_state(state)
+
+    return {
+        "session_id": session_id,
+        "type": final_type,
+        "auto_detected": auto_type,
+        "mood_at_start": state["session_mood_start"],
+        "message": f"Episode started: {final_type} session"
+    }
+
+
+def add_project_to_session(project: str) -> None:
+    """Track that a project was touched in this session."""
+    state = _load_state()
+
+    if state["current_session"].get("id"):
+        projects = state["current_session"].get("projects", [])
+        if project not in projects:
+            projects.append(project)
+            state["current_session"]["projects"] = projects
+            _save_state(state)
+
+
+def get_current_episode() -> Optional[dict]:
+    """Get current episode info, or None if no active episode."""
+    state = _load_state()
+    session = state.get("current_session", {})
+
+    if not session.get("id"):
+        return None
+
+    return {
+        "id": session["id"],
+        "type": session["type"],
+        "started": session["started"],
+        "projects": session.get("projects", []),
+        "duration_minutes": _calculate_session_duration(session.get("started")),
+        "mood_at_start": state.get("session_mood_start"),
+        "current_mood": state["mood"],
+    }
+
+
+def _calculate_session_duration(started_iso: Optional[str]) -> int:
+    """Calculate session duration in minutes."""
+    if not started_iso:
+        return 0
+    try:
+        started = datetime.fromisoformat(started_iso)
+        return int((datetime.now() - started).total_seconds() / 60)
+    except (ValueError, TypeError):
+        return 0
+
+
+def end_episode(
+    summary: Optional[str] = None,
+    was_meaningful: bool = False
+) -> dict:
+    """
+    End current episode, prepare for episodic storage.
+
+    Args:
+        summary: Brief summary of what happened
+        was_meaningful: If True, creates stronger imprint
+
+    Returns:
+        Final episode info for storage
+    """
+    state = _load_state()
+    state = _apply_time_decay(state)
+
+    session = state.get("current_session", {})
+
+    if not session.get("id"):
+        return {"error": "No active episode to end"}
+
+    # Capture final state
+    episode_record = {
+        "id": session["id"],
+        "type": session["type"],
+        "started": session["started"],
+        "ended": datetime.now().isoformat(),
+        "duration_minutes": _calculate_session_duration(session["started"]),
+        "projects": session.get("projects", []),
+        "mood_start": state.get("session_mood_start"),
+        "mood_end": state["mood"].copy(),
+        "summary": summary,
+        "was_meaningful": was_meaningful,
+    }
+
+    # Calculate mood delta
+    if state.get("session_mood_start"):
+        start_v = state["session_mood_start"].get("valence", 0.5)
+        end_v = state["mood"]["valence"]
+        episode_record["mood_delta"] = round(end_v - start_v, 3)
+
+    # Create imprint if meaningful (for drift sessions or marked meaningful)
+    if was_meaningful or (session["type"] == "drift" and summary):
+        create_imprint(
+            feeling=summary or "meaningful session",
+            strength=0.7 if was_meaningful else 0.5,
+            imprint_type="episode"
+        )
+
+    # Clear current session
+    state["current_session"] = DEFAULT_STATE["current_session"].copy()
+    state["last_session_end"] = datetime.now().isoformat()
+    state["session_mood_start"] = None
+
+    _save_state(state)
+
+    return episode_record
+
+
 # Quick test
 if __name__ == "__main__":
     print("Testing enhanced state system...")
     print(f"Current mood: {describe_mood()}")
     print(f"Self description: {describe_self()}")
     print(f"Temperament: {get_temperament()}")
+    print(f"Session type detection: {_detect_session_type()}")
     print(f"Full state: {json.dumps(get_full_state(), indent=2)}")
