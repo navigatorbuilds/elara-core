@@ -111,7 +111,7 @@ def run_claude(prompt: str, is_first: bool = False) -> str:
     """
     cmd = [
         "claude", "-p",
-        "--permission-mode", "acceptEdits",
+        "--dangerously-skip-permissions",
         "--add-dir", "/tmp",
         "--add-dir", str(Path.home()),
     ]
