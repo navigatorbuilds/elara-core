@@ -1,12 +1,11 @@
 // Elara Service Worker
-const CACHE_NAME = 'elara-v1';
+const CACHE_NAME = 'elara-v3';
 
-// Install - cache basic assets
+// Install - only cache static assets, not the main page
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
-        '/',
         '/static/manifest.json'
       ]);
     })
@@ -27,18 +26,20 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch - network first, fallback to cache
+// Fetch - network first, don't cache HTML
 self.addEventListener('fetch', (event) => {
-  // Skip API calls - always go to network
-  if (event.request.url.includes('/api/')) {
+  // Skip API calls and main page - always go to network
+  if (event.request.url.includes('/api/') ||
+      event.request.mode === 'navigate' ||
+      event.request.url.endsWith('/')) {
     return;
   }
 
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful responses
-        if (response.status === 200) {
+        // Only cache static assets
+        if (response.status === 200 && event.request.url.includes('/static/')) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, clone);
@@ -47,7 +48,6 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Fallback to cache if offline
         return caches.match(event.request);
       })
   );

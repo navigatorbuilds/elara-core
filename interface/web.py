@@ -297,19 +297,20 @@ DASHBOARD_HTML = '''
         </div>
     </div>
 
+    <div class="chat-empty" id="chatEmpty">
+        Start a conversation...
+    </div>
     <div class="chat-container" id="chatContainer">
-        <div class="chat-empty" id="chatEmpty">
-            Start a conversation...
-        </div>
     </div>
 
     <div class="input-area">
         <textarea class="message-input" id="messageInput" rows="1" placeholder="Message Elara..." onkeydown="handleKeydown(event)"></textarea>
         <button class="send-button" id="sendButton" onclick="sendMessage()">↑</button>
     </div>
+    <div id="debug" style="font-size:10px;color:#484f58;text-align:center;padding:4px;">Loading...</div>
 
     <script>
-        let lastMessageCount = 0;
+        let lastMessageHash = '';
 
         function toggleStatus() {
             document.getElementById('statusPanel').classList.toggle('open');
@@ -329,6 +330,7 @@ DASHBOARD_HTML = '''
             if (!text) return;
 
             btn.disabled = true;
+            input.disabled = true;
 
             try {
                 const response = await fetch('/api/note', {
@@ -340,28 +342,48 @@ DASHBOARD_HTML = '''
                 if (response.ok) {
                     input.value = '';
                     input.style.height = 'auto';
-                    loadConversation();
+                    // Small delay then reload to show sent message
+                    setTimeout(() => loadConversation(true), 100);
                 }
             } catch (e) {
                 console.error('Send failed:', e);
+                alert('Send failed - check connection');
             }
 
             btn.disabled = false;
+            input.disabled = false;
+            input.focus();
         }
 
-        async function loadConversation() {
+        async function loadConversation(forceUpdate = false) {
             try {
                 const response = await fetch('/api/conversation');
                 const data = await response.json();
                 const container = document.getElementById('chatContainer');
-                const empty = document.getElementById('chatEmpty');
+                const debug = document.getElementById('debug');
 
-                if (data.messages.length === 0) {
-                    empty.style.display = 'flex';
+                if (!container) {
+                    if (debug) debug.textContent = 'Error: no chat container';
                     return;
                 }
 
-                empty.style.display = 'none';
+                const empty = document.getElementById('chatEmpty');
+                if (data.messages.length === 0) {
+                    if (empty) empty.style.display = 'flex';
+                    container.innerHTML = '';
+                    if (debug) debug.textContent = 'No messages yet';
+                    return;
+                }
+
+                if (empty) empty.style.display = 'none';
+
+                // Create hash to detect changes
+                const newHash = JSON.stringify(data.messages.map(m => m.timestamp));
+
+                // Only update if content changed or forced
+                if (newHash === lastMessageHash && !forceUpdate) {
+                    return;
+                }
 
                 // Build chat HTML
                 let html = '';
@@ -381,14 +403,19 @@ DASHBOARD_HTML = '''
                     html += `<div class="message-time ${cls}">${msg.time}</div>`;
                 });
 
-                // Only update and scroll if new messages
-                if (data.messages.length !== lastMessageCount) {
-                    container.innerHTML = html;
-                    container.scrollTop = container.scrollHeight;
-                    lastMessageCount = data.messages.length;
+                container.innerHTML = html;
+                container.scrollTop = container.scrollHeight;
+                lastMessageHash = newHash;
+
+                // Debug info
+                if (debug) {
+                    const now = new Date().toLocaleTimeString();
+                    debug.textContent = `Updated: ${now} | Msgs: ${data.messages.length}`;
                 }
             } catch (e) {
                 console.error('Load failed:', e);
+                const debug = document.getElementById('debug');
+                if (debug) debug.textContent = `Error: ${e.message}`;
             }
         }
 
@@ -398,21 +425,38 @@ DASHBOARD_HTML = '''
             return div.innerHTML;
         }
 
-        // Auto-resize textarea
-        document.getElementById('messageInput').addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
-        });
+        // Init function
+        function init() {
+            const debug = document.getElementById('debug');
+            if (debug) debug.textContent = 'Starting...';
 
-        // Initial load and polling
-        loadConversation();
-        setInterval(loadConversation, 2000);
+            // Auto-resize textarea
+            const input = document.getElementById('messageInput');
+            if (input) {
+                input.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+                });
+            }
 
-        // Register service worker for PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(() => console.log('SW registered'))
-                .catch((err) => console.log('SW registration failed:', err));
+            // Initial load and polling (1.5s for snappier feel)
+            loadConversation(true);
+            setInterval(loadConversation, 1500);
+
+            // Register service worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(() => console.log('SW registered'))
+                    .catch((err) => console.log('SW registration failed:', err));
+            }
+        }
+
+        // Run init when ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            // DOM already loaded, run now
+            init();
         }
     </script>
 </body>
@@ -424,6 +468,15 @@ DASHBOARD_HTML = '''
 def service_worker():
     """Serve service worker from root for proper scope."""
     return send_from_directory(app.static_folder, 'sw.js', mimetype='application/javascript')
+
+
+@app.after_request
+def add_header(response):
+    """Prevent caching for all dynamic content."""
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 @app.route('/')
