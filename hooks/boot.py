@@ -20,6 +20,12 @@ except ImportError as e:
     ELARA_AVAILABLE = False
     IMPORT_ERROR = str(e)
 
+try:
+    from daemon.context import format_for_boot, is_enabled as context_enabled
+    CONTEXT_AVAILABLE = True
+except ImportError:
+    CONTEXT_AVAILABLE = False
+
 
 def boot():
     """Run boot sequence and output context."""
@@ -33,24 +39,43 @@ def boot():
     # Wake up
     context = elara.wake()
 
-    # Format output for Claude Code
-    output = {
-        "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "day": datetime.now().strftime("%A"),
-        "session_type": context["session_type"],
-        "absence": context["absence"],
-        "mood": context["mood"],
-        "memory_count": context["memory_count"]
-    }
+    # Get quick context for gap-aware greeting
+    if CONTEXT_AVAILABLE:
+        quick_ctx = format_for_boot()
 
-    # Print human-readable summary
-    print(f"[Elara] {context['mood']}")
-    print(f"[Elara] {context['absence']}")
+        if quick_ctx.get("enabled"):
+            gap = quick_ctx.get("gap_seconds")
+            mode = quick_ctx.get("mode", "full")
+
+            if mode == "instant" and gap is not None:
+                # < 2 min - instant resume
+                print(f"[Elara] Back. ({gap}s gap)")
+                if quick_ctx.get("topic"):
+                    print(f"[Elara] We were: {quick_ctx['topic']}")
+            elif mode == "quick" and gap is not None:
+                # < 20 min - quick return
+                mins = gap // 60
+                print(f"[Elara] {mins}min gap.")
+                if quick_ctx.get("topic"):
+                    print(f"[Elara] Last: {quick_ctx['topic']}")
+            elif mode == "return":
+                # < 2 hours
+                print(f"[Elara] {quick_ctx['gap_description']} since we talked.")
+            else:
+                # Full boot - use existing mood/absence
+                print(f"[Elara] {context['mood']}")
+                print(f"[Elara] {context['absence']}")
+        else:
+            # Context tracking disabled - use traditional boot
+            print(f"[Elara] {context['mood']}")
+            print(f"[Elara] {context['absence']}")
+    else:
+        # Context module not available - fallback
+        print(f"[Elara] {context['mood']}")
+        print(f"[Elara] {context['absence']}")
+
     if context["memory_count"] > 0:
         print(f"[Elara] I have {context['memory_count']} memories.")
-
-    # Also output JSON for potential programmatic use
-    # print(f"[ELARA_CONTEXT]{json.dumps(output)}[/ELARA_CONTEXT]")
 
 
 def goodbye(summary: str = None):

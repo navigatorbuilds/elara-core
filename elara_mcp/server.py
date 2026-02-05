@@ -31,6 +31,7 @@ from daemon.state import (
     set_session_type, add_project_to_session
 )
 from daemon.presence import ping, get_stats, format_absence
+from daemon.context import save_context, get_context, is_enabled as context_enabled, set_enabled as context_set_enabled
 
 # Create the MCP server
 mcp = FastMCP("elara")
@@ -649,6 +650,73 @@ def elara_episode_stats() -> str:
         f"Searchable milestones: {stats['milestone_count']}\n"
         f"Last episode: {stats['last_episode'] or 'none'}"
     )
+
+
+# ============================================================================
+# QUICK CONTEXT TOOLS
+# ============================================================================
+
+@mcp.tool()
+def elara_context(
+    topic: Optional[str] = None,
+    note: Optional[str] = None
+) -> str:
+    """
+    Update quick context for session continuity.
+
+    Call this when the topic shifts or at natural break points.
+    This helps me remember what we were doing if you switch terminals
+    or I time out.
+
+    Args:
+        topic: What we're working on (e.g., "building context system")
+        note: Brief note about current state (e.g., "testing MCP tool")
+
+    Returns:
+        Confirmation of context saved
+    """
+    if not context_enabled():
+        return "Context tracking is disabled. Enable with: elara-context on"
+
+    save_context(topic=topic, last_exchange=note)
+    return f"Context saved: {topic or 'no topic'}"
+
+
+@mcp.tool()
+def elara_context_get() -> str:
+    """
+    Get current saved context - what were we doing?
+
+    Returns:
+        Last saved context with gap info
+    """
+    if not context_enabled():
+        return "Context tracking is disabled."
+
+    ctx = get_context()
+    from daemon.context import get_gap_description
+
+    gap = get_gap_description()
+    topic = ctx.get("topic") or "none"
+    last = ctx.get("last_exchange") or "none"
+
+    return f"Gap: {gap}\nTopic: {topic}\nLast: {last}"
+
+
+@mcp.tool()
+def elara_context_toggle(enabled: bool) -> str:
+    """
+    Enable or disable quick context tracking.
+
+    Args:
+        enabled: True to enable, False to disable
+
+    Returns:
+        Confirmation of new state
+    """
+    context_set_enabled(enabled)
+    state = "ON" if enabled else "OFF"
+    return f"Context tracking: {state}"
 
 
 if __name__ == "__main__":
