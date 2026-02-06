@@ -38,6 +38,12 @@ try:
 except ImportError:
     CORRECTIONS_INDEX_AVAILABLE = False
 
+try:
+    from daemon.priority import boot_priority
+    PRIORITY_AVAILABLE = True
+except ImportError:
+    PRIORITY_AVAILABLE = False
+
 
 def boot():
     """Run boot sequence and output context."""
@@ -107,6 +113,15 @@ def boot():
                 print(f"[Elara] Indexed {stats['files_ingested']} new sessions ({xref} exchanges). Total: {total} conversations.")
         except Exception:
             pass  # Don't break boot if ingestion fails
+
+    # Priority brief — what matters right now
+    if PRIORITY_AVAILABLE:
+        try:
+            brief = boot_priority()
+            if brief:
+                print(brief)
+        except Exception:
+            pass  # Don't break boot if priority engine fails
 
     # Start Overwatch daemon if not already running
     _start_overwatch()
