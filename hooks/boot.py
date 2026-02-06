@@ -140,19 +140,31 @@ def _surface_handoff():
 
     has_content = False
 
+    def _format_item(item):
+        """Format a handoff item — supports both string and dict with carry count."""
+        if isinstance(item, dict):
+            text = item.get("text", "")
+            carried = item.get("carried", 0)
+            if carried >= 3:
+                return f"{text} [OVERDUE — {carried} sessions!]"
+            elif carried > 0:
+                return f"{text} (carried {carried}x)"
+            return text
+        return str(item)
+
     plans = data.get("next_plans", [])
     if plans:
         has_content = True
         print("[Elara] His plans:")
         for p in plans:
-            print(f"[Elara]   > {p}")
+            print(f"[Elara]   > {_format_item(p)}")
 
     reminders = data.get("reminders", [])
     if reminders:
         has_content = True
         print("[Elara] Reminders:")
         for r in reminders:
-            print(f"[Elara]   > {r}")
+            print(f"[Elara]   > {_format_item(r)}")
 
     mood = data.get("mood_and_mode", "")
     if mood:
@@ -164,14 +176,14 @@ def _surface_handoff():
         has_content = True
         print("[Elara] Promises:")
         for p in promises:
-            print(f"[Elara]   > {p}")
+            print(f"[Elara]   > {_format_item(p)}")
 
     unfinished = data.get("unfinished", [])
     if unfinished:
         has_content = True
         print("[Elara] Unfinished:")
         for u in unfinished:
-            print(f"[Elara]   > {u}")
+            print(f"[Elara]   > {_format_item(u)}")
 
     return has_content
 
