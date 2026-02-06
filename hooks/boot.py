@@ -105,8 +105,86 @@ def boot():
                 total = conv.count()
                 xref = stats.get("exchanges_total", 0)
                 print(f"[Elara] Indexed {stats['files_ingested']} new sessions ({xref} exchanges). Total: {total} conversations.")
-        except Exception as e:
+        except Exception:
             pass  # Don't break boot if ingestion fails
+
+        # Recall user's plans and intentions from recent conversations
+        try:
+            _surface_intentions(conv)
+        except Exception:
+            pass  # Don't break boot if recall fails
+
+
+def _surface_intentions(conv):
+    """Surface user's recent words so Elara remembers context.
+
+    Two approaches:
+    1. Last words: Read the last user messages from the previous session
+       (plans are almost always stated at the end, before "bye")
+    2. Semantic: Query for plan/intention-like statements from recent days
+    """
+    lines = []
+
+    # --- Approach 1: Last user messages from previous session ---
+    try:
+        lines.extend(_last_session_messages())
+    except Exception:
+        pass
+
+    if lines:
+        print("[Elara] Last things he said (previous session):")
+        for line in lines:
+            print(f"[Elara]   > \"{line}\"")
+
+
+def _last_session_messages():
+    """Read last 5 user messages from the most recent completed session."""
+    session_dir = Path.home() / ".claude" / "projects" / "-home-neboo"
+    if not session_dir.exists():
+        return []
+
+    # Find the 2nd most recent .jsonl (current session is the newest, skip it)
+    jsonl_files = sorted(session_dir.glob("*.jsonl"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if len(jsonl_files) < 2:
+        return []
+
+    prev_session = jsonl_files[1]  # Previous session (not current)
+
+    # Check it's recent (< 24h)
+    age_hours = (datetime.now().timestamp() - prev_session.stat().st_mtime) / 3600
+    if age_hours > 24:
+        return []
+
+    # Read last user messages
+    user_messages = []
+    with open(prev_session) as f:
+        for line in f:
+            try:
+                obj = json.loads(line)
+                if obj.get("type") == "user":
+                    msg = obj.get("message", {})
+                    content = msg.get("content", "") if isinstance(msg, dict) else ""
+                    if isinstance(content, str) and len(content.strip()) > 5:
+                        text = content.strip()
+                        # Skip system/task messages
+                        if text.startswith("<") or text.startswith("{"):
+                            continue
+                        if len(text) > 150:
+                            text = text[:147] + "..."
+                        user_messages.append(text)
+                    elif isinstance(content, list):
+                        for item in content:
+                            if isinstance(item, dict) and item.get("type") == "text":
+                                t = item.get("text", "").strip()
+                                if len(t) > 5:
+                                    if len(t) > 150:
+                                        t = t[:147] + "..."
+                                    user_messages.append(t)
+            except (json.JSONDecodeError, KeyError):
+                continue
+
+    # Return last 5 user messages (that's where plans live)
+    return user_messages[-5:] if user_messages else []
 
 
 def goodbye(summary: str = None):
