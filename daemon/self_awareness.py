@@ -584,6 +584,42 @@ def boot_check() -> Optional[str]:
     if intention and not intention.get("checked"):
         observations.append(f"Active intention: \"{intention['what']}\"")
 
+    # Check dream mode staleness
+    try:
+        from daemon.dream import dream_boot_check
+        dream_notice = dream_boot_check()
+        if dream_notice:
+            observations.append(dream_notice)
+    except Exception:
+        pass
+
+    # Check emotional dream tone hints
+    try:
+        from daemon.dream import EMOTIONAL_DIR
+        emo_latest = EMOTIONAL_DIR / "latest.json"
+        if emo_latest.exists():
+            emo_data = json.loads(emo_latest.read_text())
+            emo_ts = datetime.fromisoformat(emo_data["generated"])
+            emo_age_hours = (datetime.now() - emo_ts).total_seconds() / 3600
+
+            if emo_age_hours < 168:  # Within a week
+                tone_hints = emo_data.get("tone_hints", [])
+                if tone_hints:
+                    observations.append(f"Emotional tone: {tone_hints[0]}")
+
+                trajectory = emo_data.get("relationship", {}).get("trajectory")
+                if trajectory and trajectory not in ("stable",):
+                    observations.append(f"Relationship: {trajectory}")
+
+                drift = emo_data.get("temperament_growth", {}).get("drift_from_factory", {})
+                if drift:
+                    big = [(k, v) for k, v in drift.items() if abs(v) > 0.05]
+                    if big:
+                        shifts = [f"{k} {v:+.03f}" for k, v in big]
+                        observations.append(f"Temperament shifted: {', '.join(shifts)}")
+    except Exception:
+        pass
+
     if not observations:
         return None
 
