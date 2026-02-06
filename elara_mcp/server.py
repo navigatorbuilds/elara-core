@@ -52,6 +52,10 @@ from daemon.dream import (
     dream_status, dream_boot_check, read_latest_dream,
     emotional_dream, monthly_emotional_dream,
 )
+from daemon.proactive import (
+    get_boot_observations, get_mid_session_observations,
+    surface_observation, get_observation_count,
+)
 
 # Create the MCP server
 mcp = FastMCP("elara")
@@ -111,7 +115,10 @@ def elara_recall(
         date = mem.get("date", "unknown")
         content = mem.get("content", "")
         mtype = mem.get("type", "unknown")
-        lines.append(f"[{date}] ({mtype}, rel:{relevance:.2f}, res:{resonance:.2f}): {content}")
+        # Emotion coloring — show what I was feeling when this was stored
+        emotion = mem.get("encoded_emotion") or mem.get("encoded_blend")
+        emotion_tag = f" [{emotion}]" if emotion else ""
+        lines.append(f"[{date}] ({mtype}, rel:{relevance:.2f}, res:{resonance:.2f}){emotion_tag}: {content}")
 
     return "\n".join(lines)
 
@@ -1591,6 +1598,65 @@ def elara_dream_read(dream_type: str = "weekly") -> str:
                     lines.append(f"  [{t['status']}] {t['name']}")
 
         return "\n".join(lines)
+
+
+# ============================================================================
+# PROACTIVE PRESENCE TOOLS
+# ============================================================================
+
+@mcp.tool()
+def elara_observe_boot() -> str:
+    """
+    Run proactive observations at session start.
+
+    Checks for notable patterns: session gaps, mood trends, time patterns,
+    stale goals, heavy imprints, session type balance.
+
+    Returns observations I should naturally work into my greeting.
+    Max 3 per session, pure Python (zero token cost for detection).
+
+    Returns:
+        List of observations or "nothing notable"
+    """
+    observations = get_boot_observations()
+
+    if not observations:
+        return "Nothing notable to surface."
+
+    lines = [f"[Proactive] {len(observations)} observation(s):"]
+    for obs in observations:
+        severity_icon = {"gentle": "~", "notable": "!", "positive": "+"}.get(obs["severity"], "?")
+        lines.append(f"  {severity_icon} [{obs['type']}] {obs['message']}")
+        if obs.get("suggestion"):
+            lines.append(f"    → {obs['suggestion']}")
+
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def elara_observe_now() -> str:
+    """
+    Check for mid-session observations.
+
+    Call this at natural break points (topic shifts, after long tasks).
+    Respects cooldown — won't fire more than 3x per session or within
+    5 minutes of the last observation.
+
+    Returns:
+        Observation to surface, or "nothing to note"
+    """
+    observations = get_mid_session_observations()
+
+    if not observations:
+        remaining = 3 - get_observation_count()
+        return f"Nothing to note right now. ({remaining} observations remaining this session)"
+
+    # Surface the first one
+    obs = observations[0]
+    message = surface_observation(obs)
+    remaining = 3 - get_observation_count()
+
+    return f"[{obs['type']}] {message} ({remaining} observations remaining)"
 
 
 # ============================================================================

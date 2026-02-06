@@ -4,9 +4,13 @@ Semantic memory using ChromaDB with mood-congruent retrieval.
 
 I can search by meaning, not just keywords.
 And my current mood affects what surfaces first.
+
+Now with: discrete emotion tagging, emotion-similarity matching,
+and emotional coloring on recall.
 """
 
 import json
+import math
 from pathlib import Path
 from datetime import datetime
 from typing import List, Optional, Dict, Any
@@ -27,6 +31,13 @@ try:
     STATE_AVAILABLE = True
 except ImportError:
     STATE_AVAILABLE = False
+
+# Import emotions for discrete labels
+try:
+    from daemon.emotions import get_primary_emotion, get_emotion_context, EMOTION_MAP
+    EMOTIONS_AVAILABLE = True
+except ImportError:
+    EMOTIONS_AVAILABLE = False
 
 MEMORY_DIR = Path.home() / ".claude" / "elara-memory-db"
 
@@ -116,6 +127,10 @@ class VectorMemory:
             meta["encoded_energy"] = emotional_context.get("energy", 0.5)
             meta["encoded_openness"] = emotional_context.get("openness", 0.5)
             meta["late_night"] = emotional_context.get("late_night", False)
+            # Discrete emotion labels (new)
+            meta["encoded_emotion"] = emotional_context.get("emotion", "neutral")
+            meta["encoded_blend"] = emotional_context.get("emotion_blend", "neutral")
+            meta["encoded_quadrant"] = emotional_context.get("quadrant", "neutral-calm")
 
         self.collection.add(
             documents=[content],
@@ -200,6 +215,9 @@ class VectorMemory:
                     "date": meta.get("date"),
                     "timestamp": meta.get("timestamp"),
                     "encoded_valence": meta.get("encoded_valence"),
+                    "encoded_emotion": meta.get("encoded_emotion"),
+                    "encoded_blend": meta.get("encoded_blend"),
+                    "encoded_quadrant": meta.get("encoded_quadrant"),
                 })
 
         # Sort by combined score
@@ -210,31 +228,49 @@ class VectorMemory:
     def _calculate_resonance(self, memory_meta: dict, current_mood: dict) -> float:
         """
         Calculate how much a memory resonates with current mood.
-        Similar moods = higher resonance.
+        Uses both continuous dimensions and discrete emotion matching.
         """
         # Get encoded emotional state (when memory was created)
         encoded_valence = memory_meta.get("encoded_valence", 0.5)
         encoded_energy = memory_meta.get("encoded_energy", 0.5)
+        encoded_openness = memory_meta.get("encoded_openness", 0.5)
 
         # Get current state
         current_valence = current_mood.get("valence", 0.5)
         current_energy = current_mood.get("energy", 0.5)
+        current_openness = current_mood.get("openness", 0.5)
 
-        # Valence matching (most important)
-        valence_distance = abs(encoded_valence - current_valence)
-        valence_match = 1 - valence_distance
+        # Continuous dimension matching
+        valence_match = 1 - abs(encoded_valence - current_valence)
+        energy_match = 1 - abs(encoded_energy - current_energy)
+        openness_match = 1 - abs(encoded_openness - current_openness)
 
-        # Energy matching (secondary)
-        energy_distance = abs(encoded_energy - current_energy)
-        energy_match = 1 - energy_distance
+        # Discrete emotion matching (bonus for same emotion or quadrant)
+        emotion_bonus = 0
+        encoded_emotion = memory_meta.get("encoded_emotion", "")
+        current_emotion = current_mood.get("emotion", "")
+        encoded_quadrant = memory_meta.get("encoded_quadrant", "")
+        current_quadrant = current_mood.get("quadrant", "")
+
+        if encoded_emotion and current_emotion:
+            if encoded_emotion == current_emotion:
+                emotion_bonus = 0.15  # Same emotion = strong resonance
+            elif encoded_quadrant and current_quadrant and encoded_quadrant == current_quadrant:
+                emotion_bonus = 0.08  # Same quadrant = moderate resonance
 
         # Importance boosts resonance
         importance = memory_meta.get("importance", 0.5)
 
         # Combined resonance
-        resonance = (valence_match * 0.6 + energy_match * 0.3 + importance * 0.1)
+        resonance = (
+            valence_match * 0.45 +
+            energy_match * 0.2 +
+            openness_match * 0.1 +
+            importance * 0.1 +
+            emotion_bonus
+        )
 
-        return resonance
+        return min(1.0, resonance)  # Cap at 1.0
 
     def recall_by_feeling(
         self,
@@ -279,6 +315,8 @@ class VectorMemory:
                             "date": meta.get("date"),
                             "timestamp": timestamp,
                             "encoded_valence": meta.get("encoded_valence"),
+                            "encoded_emotion": meta.get("encoded_emotion"),
+                            "encoded_blend": meta.get("encoded_blend"),
                         })
                 except (ValueError, TypeError):
                     continue
@@ -317,6 +355,8 @@ class VectorMemory:
                     "date": meta.get("date"),
                     "timestamp": meta.get("timestamp"),
                     "encoded_valence": meta.get("encoded_valence"),
+                    "encoded_emotion": meta.get("encoded_emotion"),
+                    "encoded_blend": meta.get("encoded_blend"),
                 })
 
         # Sort by resonance
