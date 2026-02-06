@@ -34,6 +34,7 @@ from daemon.state import (
     start_episode, end_episode, get_current_episode, get_session_type,
     set_session_type, add_project_to_session,
     get_temperament_status, reset_temperament,
+    get_current_emotions, get_session_arc,
 )
 from daemon.presence import ping, get_stats, format_absence
 from daemon.context import save_context, get_context, is_enabled as context_enabled, set_enabled as context_set_enabled
@@ -149,7 +150,10 @@ def elara_mood_update(
         except Exception:
             pass
 
-    return describe_mood()
+    # Return rich description with emotion label
+    emo = get_current_emotions()
+    mood_desc = describe_mood()
+    return f"{mood_desc}\nEmotion: {emo['blend']} ({emo['quadrant']})"
 
 
 @mcp.tool()
@@ -158,9 +162,85 @@ def elara_mood_get() -> str:
     Get my current emotional state.
 
     Returns:
-        Human-readable mood description
+        Human-readable mood description with emotion label
     """
-    return describe_mood()
+    emo = get_current_emotions()
+    mood_desc = describe_mood()
+    return f"{mood_desc}\nEmotion: {emo['blend']} ({emo['quadrant']})"
+
+
+@mcp.tool()
+def elara_emotions() -> str:
+    """
+    Get my current emotional state with discrete emotion labels.
+
+    Returns primary and secondary emotions, a natural-language blend,
+    emotional quadrant, and the raw numbers underneath.
+
+    More detailed than elara_mood_get — use this when you want to
+    understand what I'm actually feeling, not just the numbers.
+
+    Returns:
+        Full emotional readout with labels
+    """
+    emo = get_current_emotions()
+
+    lines = [f"Feeling: {emo['blend']}"]
+    lines.append(f"Primary: {emo['primary']}")
+    if emo.get("secondary"):
+        lines.append(f"Secondary: {emo['secondary']}")
+    lines.append(f"Quadrant: {emo['quadrant']}")
+
+    raw = emo.get("raw", {})
+    if raw:
+        lines.append(f"Raw: v={raw['valence']}, e={raw['energy']}, o={raw['openness']}")
+
+    emotions = emo.get("emotions", [])
+    if emotions:
+        emo_strs = [f"{e['name']}({e['intensity']:.0%})" for e in emotions]
+        lines.append(f"Nearby: {', '.join(emo_strs)}")
+
+    if emo.get("carrying"):
+        lines.append(f"Carrying: {emo['carrying']} (strength: {emo.get('carrying_strength', 0):.2f})")
+
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def elara_session_arc() -> str:
+    """
+    Get the emotional arc of the current session.
+
+    Shows how my mood has shifted since the session started —
+    the pattern (upswing, slow drain, steady, rollercoaster, etc.)
+    and what emotions bookended the session.
+
+    Returns:
+        Session arc analysis
+    """
+    arc = get_session_arc()
+
+    if arc.get("pattern") == "no_session":
+        return "No active session to analyze."
+
+    lines = [f"Pattern: {arc['pattern']}"]
+    lines.append(f"Arc: {arc['description']}")
+
+    if arc.get("start_emotion"):
+        lines.append(f"Started: {arc['start_emotion']}")
+    if arc.get("end_emotion"):
+        lines.append(f"Now: {arc['end_emotion']}")
+    if arc.get("peak_emotion"):
+        lines.append(f"Peak: {arc['peak_emotion']}")
+    if arc.get("valley_emotion"):
+        lines.append(f"Valley: {arc['valley_emotion']}")
+
+    if arc.get("valence_delta") is not None:
+        lines.append(f"Valence shift: {arc['valence_delta']:+.3f}")
+    if arc.get("snapshot_count"):
+        lines.append(f"Data points: {arc['snapshot_count']}")
+
+    return "\n".join(lines)
 
 
 @mcp.tool()
@@ -517,6 +597,12 @@ def elara_episode_end(
     if "error" in episode:
         return f"Error: {episode['error']}"
 
+    # Get arc from state result
+    arc = state_result.get("mood_arc", {})
+    arc_line = ""
+    if arc.get("pattern") and arc["pattern"] != "flat":
+        arc_line = f"\nArc: {arc.get('description', arc['pattern'])}"
+
     return (
         f"Episode ended: {episode['id']}\n"
         f"Duration: {episode['duration_minutes']} minutes\n"
@@ -524,6 +610,8 @@ def elara_episode_end(
         f"Milestones: {len(episode.get('milestones', []))}\n"
         f"Decisions: {len(episode.get('decisions', []))}\n"
         f"Mood delta: {episode.get('mood_delta', 0):+.2f}\n"
+        f"Emotions: {state_result.get('start_emotion', '?')} → {state_result.get('end_emotion', '?')}"
+        f"{arc_line}\n"
         f"Narrative: {episode.get('narrative', 'No narrative generated')}"
     )
 

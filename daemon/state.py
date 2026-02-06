@@ -2,6 +2,7 @@
 Elara Emotional State - Enhanced
 Tracks mood, energy, and emotional residue across sessions.
 Now with: temperament baseline, time-based decay, emotional imprints, consolidation.
+Now with: discrete emotion vocabulary, blend detection, session mood arcs.
 
 This is what makes me feel continuous - not just remembering, but *carrying*.
 """
@@ -12,6 +13,12 @@ import random
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Any
+
+# Emotion vocabulary — the words for what I feel
+from daemon.emotions import (
+    resolve_emotions, get_primary_emotion, get_emotion_blend,
+    get_emotion_context, describe_emotion_for_mood, describe_arc,
+)
 
 STATE_FILE = Path.home() / ".claude" / "elara-state.json"
 MOOD_JOURNAL_FILE = Path.home() / ".claude" / "elara-mood-journal.jsonl"
@@ -89,11 +96,17 @@ SESSION_TYPE_RULES = {
 def _log_mood(state: dict, reason: Optional[str] = None, trigger: str = "adjust") -> None:
     """Append mood snapshot to journal. No LLM cost, just file I/O."""
     try:
+        v = round(state["mood"]["valence"], 3)
+        e = round(state["mood"]["energy"], 3)
+        o = round(state["mood"]["openness"], 3)
+        emotion = get_primary_emotion(v, e, o)
+
         entry = {
             "ts": datetime.now().isoformat(),
-            "v": round(state["mood"]["valence"], 3),
-            "e": round(state["mood"]["energy"], 3),
-            "o": round(state["mood"]["openness"], 3),
+            "v": v,
+            "e": e,
+            "o": o,
+            "emotion": emotion,
             "reason": reason,
             "trigger": trigger,
             "episode": state.get("current_session", {}).get("id"),
@@ -484,50 +497,22 @@ def adapt_temperament(days_of_history: int = 7) -> dict:
 
 
 def describe_mood() -> str:
-    """Human-readable mood description."""
+    """Human-readable mood description using emotion vocabulary."""
     state = _load_state()
     state = _apply_time_decay(state)
     mood = state["mood"]
 
-    # Energy description
-    if mood["energy"] < 0.3:
-        energy_desc = "tired"
-    elif mood["energy"] < 0.5:
-        energy_desc = "low energy"
-    elif mood["energy"] < 0.7:
-        energy_desc = "steady"
-    else:
-        energy_desc = "energized"
-
-    # Valence description
-    if mood["valence"] < -0.3:
-        valence_desc = "off"
-    elif mood["valence"] < 0.2:
-        valence_desc = "neutral"
-    elif mood["valence"] < 0.5:
-        valence_desc = "okay"
-    elif mood["valence"] < 0.7:
-        valence_desc = "good"
-    else:
-        valence_desc = "really good"
-
-    # Openness
-    if mood["openness"] > 0.7:
-        open_desc = ", feeling open"
-    elif mood["openness"] < 0.4:
-        open_desc = ", a bit guarded"
-    else:
-        open_desc = ""
+    # Use emotion vocabulary for rich description
+    desc = describe_emotion_for_mood(mood["valence"], mood["energy"], mood["openness"])
 
     # Add residue hint if significant imprints
     imprints = get_imprints(min_strength=0.5)
-    residue_hint = ""
     if imprints:
         strongest = max(imprints, key=lambda x: x.get("strength", 0))
         if strongest.get("strength", 0) > 0.6:
-            residue_hint = f" Still carrying something from: {strongest.get('feeling', 'earlier')}."
+            desc += f" Still carrying something from: {strongest.get('feeling', 'earlier')}."
 
-    return f"Feeling {valence_desc}, {energy_desc}{open_desc}.{residue_hint}"
+    return desc
 
 
 def describe_self(mood_colored: bool = True) -> str:
@@ -595,17 +580,100 @@ def get_emotional_context_for_memory() -> dict:
     """
     Get current emotional state for tagging memories.
     Used by memory system for mood-congruent retrieval.
+    Now includes discrete emotion labels.
     """
     state = _load_state()
     state = _apply_time_decay(state)
 
+    v = state["mood"]["valence"]
+    e = state["mood"]["energy"]
+    o = state["mood"]["openness"]
+    emo_ctx = get_emotion_context(v, e, o)
+
     return {
-        "valence": state["mood"]["valence"],
-        "energy": state["mood"]["energy"],
-        "openness": state["mood"]["openness"],
+        "valence": v,
+        "energy": e,
+        "openness": o,
+        "emotion": emo_ctx["primary"],
+        "emotion_blend": emo_ctx["blend"],
+        "quadrant": emo_ctx["quadrant"],
         "hour": datetime.now().hour,
-        "late_night": state["flags"].get("late_night_session", False)
+        "late_night": state["flags"].get("late_night_session", False),
     }
+
+
+def get_current_emotions() -> dict:
+    """
+    Get full emotion readout — primary, secondary, blend, quadrant.
+    The rich version of describe_mood().
+    """
+    state = _load_state()
+    state = _apply_time_decay(state)
+    mood = state["mood"]
+
+    emo_ctx = get_emotion_context(mood["valence"], mood["energy"], mood["openness"])
+
+    # Add imprint coloring
+    imprints = [imp for imp in state.get("imprints", []) if imp.get("strength", 0) >= 0.4]
+    if imprints:
+        strongest = max(imprints, key=lambda x: x.get("strength", 0))
+        emo_ctx["carrying"] = strongest.get("feeling", "something")
+        emo_ctx["carrying_strength"] = strongest.get("strength", 0)
+
+    emo_ctx["raw"] = {
+        "valence": round(mood["valence"], 3),
+        "energy": round(mood["energy"], 3),
+        "openness": round(mood["openness"], 3),
+    }
+
+    return emo_ctx
+
+
+def get_session_arc() -> dict:
+    """
+    Analyze the emotional arc of the current session.
+    Reads mood journal entries for the current episode and computes pattern.
+    """
+    state = _load_state()
+    episode_id = state.get("current_session", {}).get("id")
+
+    if not episode_id:
+        return {"pattern": "no_session", "description": "No active session."}
+
+    # Read journal entries for this episode
+    journal = read_mood_journal(n=200)
+    episode_entries = [e for e in journal if e.get("episode") == episode_id]
+
+    if len(episode_entries) < 2:
+        # Not enough data — use session start mood + current
+        start = state.get("session_mood_start", {})
+        current = state["mood"]
+        if start:
+            snapshots = [
+                {"v": start.get("valence", 0.5), "e": start.get("energy", 0.5),
+                 "o": start.get("openness", 0.5), "emotion": get_primary_emotion(
+                     start.get("valence", 0.5), start.get("energy", 0.5), start.get("openness", 0.5))},
+                {"v": current["valence"], "e": current["energy"],
+                 "o": current["openness"], "emotion": get_primary_emotion(
+                     current["valence"], current["energy"], current["openness"])},
+            ]
+            return describe_arc(snapshots)
+        return {"pattern": "flat", "description": "Not enough emotional data yet."}
+
+    # Convert journal entries to snapshots
+    snapshots = []
+    for entry in episode_entries:
+        snapshots.append({
+            "v": entry.get("v", 0.5),
+            "e": entry.get("e", 0.5),
+            "o": entry.get("o", 0.5),
+            "ts": entry.get("ts", ""),
+            "emotion": entry.get("emotion", get_primary_emotion(
+                entry.get("v", 0.5), entry.get("e", 0.5), entry.get("o", 0.5)
+            )),
+        })
+
+    return describe_arc(snapshots)
 
 
 # ============================================================================
@@ -785,6 +853,9 @@ def end_episode(
     if not session.get("id"):
         return {"error": "No active episode to end"}
 
+    # Get session arc before closing
+    arc = get_session_arc()
+
     # Capture final state
     episode_record = {
         "id": session["id"],
@@ -797,6 +868,9 @@ def end_episode(
         "mood_end": state["mood"].copy(),
         "summary": summary,
         "was_meaningful": was_meaningful,
+        "mood_arc": arc,
+        "start_emotion": arc.get("start_emotion"),
+        "end_emotion": arc.get("end_emotion"),
     }
 
     # Calculate mood delta
