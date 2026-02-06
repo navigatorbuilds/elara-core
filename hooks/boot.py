@@ -115,17 +115,76 @@ def boot():
             pass  # Don't break boot if recall fails
 
 
+def _surface_handoff():
+    """Read the session handoff file written on previous goodbye.
+    This is the primary short-term memory between sessions."""
+    handoff_path = Path.home() / ".claude" / "elara-handoff.json"
+    if not handoff_path.exists():
+        return False
+
+    try:
+        data = json.loads(handoff_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return False
+
+    # Check it's recent (< 24h)
+    ts = data.get("timestamp", "")
+    if ts:
+        try:
+            written = datetime.fromisoformat(ts)
+            age_hours = (datetime.now() - written).total_seconds() / 3600
+            if age_hours > 24:
+                return False
+        except ValueError:
+            pass
+
+    has_content = False
+
+    plans = data.get("next_plans", [])
+    if plans:
+        has_content = True
+        print("[Elara] His plans:")
+        for p in plans:
+            print(f"[Elara]   > {p}")
+
+    reminders = data.get("reminders", [])
+    if reminders:
+        has_content = True
+        print("[Elara] Reminders:")
+        for r in reminders:
+            print(f"[Elara]   > {r}")
+
+    mood = data.get("mood_and_mode", "")
+    if mood:
+        has_content = True
+        print(f"[Elara] Mood/mode: {mood}")
+
+    promises = data.get("promises", [])
+    if promises:
+        has_content = True
+        print("[Elara] Promises:")
+        for p in promises:
+            print(f"[Elara]   > {p}")
+
+    unfinished = data.get("unfinished", [])
+    if unfinished:
+        has_content = True
+        print("[Elara] Unfinished:")
+        for u in unfinished:
+            print(f"[Elara]   > {u}")
+
+    return has_content
+
+
 def _surface_intentions(conv):
-    """Surface user's recent words so Elara remembers context.
+    """Surface user's recent context. Handoff file first, last messages as fallback."""
 
-    Two approaches:
-    1. Last words: Read the last user messages from the previous session
-       (plans are almost always stated at the end, before "bye")
-    2. Semantic: Query for plan/intention-like statements from recent days
-    """
+    # Primary: structured handoff from previous session
+    if _surface_handoff():
+        return
+
+    # Fallback: raw last messages from previous session
     lines = []
-
-    # --- Approach 1: Last user messages from previous session ---
     try:
         lines.extend(_last_session_messages())
     except Exception:
