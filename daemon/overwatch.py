@@ -5,6 +5,9 @@ Tails the active Claude Code session JSONL in real-time,
 searches ALL conversation history in ChromaDB for cross-references,
 and injects relevant context via a hook file.
 
+v2: Priority integration, micro-ingestion, feedback loop prevention,
+    heartbeat, atomic writes.
+
 This is the real solution. Not a patch.
 """
 
@@ -27,8 +30,10 @@ from daemon.injector import format_injection, format_event_injection
 # Paths
 PROJECTS_DIR = Path.home() / ".claude" / "projects"
 INJECT_PATH = Path("/tmp/elara-overwatch-inject.md")
+INJECT_TMP_PATH = INJECT_PATH.with_suffix(".tmp")
 PID_PATH = Path("/tmp/elara-overwatch.pid")
 LOG_PATH = Path.home() / ".claude" / "elara-overwatch.log"
+SESSION_STATE_PATH = Path.home() / ".claude" / "elara-session-state.json"
 
 # Tuning
 POLL_INTERVAL = 2.0          # seconds between file checks
@@ -36,6 +41,14 @@ RELEVANCE_THRESHOLD = 0.65   # minimum combined score to inject (0-1, higher = s
 COOLDOWN_SECONDS = 600       # 10 min cooldown per topic cluster
 MAX_INJECTIONS_PER_CHECK = 3 # max results per injection
 EVENT_THRESHOLD = 0.55       # lower threshold for event-triggered searches
+HEARTBEAT_TIMEOUT = 300      # 5 min — exit if JSONL stale (session likely dead)
+TWENTY_FOUR_HOURS = 86400    # seconds — downweight recent results to prevent feedback loops
+RECENT_DOWNWEIGHT = 0.5      # multiply score by this for results < 24h old
+OVERDUE_BOOST = 0.15         # score boost for results matching overdue items
+
+# Micro-ingestion
+MICRO_INGEST_EXCHANGES = 5   # ingest every N exchanges
+MICRO_INGEST_SECONDS = 600   # or every N seconds, whichever first
 
 # Event detection keywords
 TASK_COMPLETE_WORDS = {"done", "built", "fixed", "shipped", "committed", "deployed", "pushed", "created", "finished"}
@@ -69,6 +82,15 @@ class Overwatch:
         self.running: bool = True
         self.injection_count: int = 0
 
+        # Priority integration — loaded from session state written by boot priority engine
+        self.session_state: Dict[str, Any] = self._load_session_state()
+
+        # Micro-ingestion tracking
+        self.exchanges_since_ingest: int = 0
+        self.last_ingest_time: float = time.time()
+        self.pending_exchanges: List[Dict[str, str]] = []
+        self.exchange_counter: int = 0  # monotonic counter for exchange_index
+
     def find_active_session(self) -> Optional[Path]:
         """Find the most recently modified JSONL file — that's the active session."""
         if not PROJECTS_DIR.exists():
@@ -87,6 +109,44 @@ class Overwatch:
                     newest_mtime = mtime
 
         return newest
+
+    def _load_session_state(self) -> Dict[str, Any]:
+        """Load session state written by boot priority engine."""
+        if SESSION_STATE_PATH.exists():
+            try:
+                return json.loads(SESSION_STATE_PATH.read_text())
+            except (json.JSONDecodeError, OSError):
+                return {}
+        return {}
+
+    def _micro_ingest(self):
+        """Ingest pending exchanges into ChromaDB for same-session searchability."""
+        if not self.pending_exchanges:
+            return
+        try:
+            ingested = 0
+            for ex in self.pending_exchanges:
+                ok = self.conv.ingest_exchange(
+                    user_text=ex["user_text"],
+                    assistant_text=ex["assistant_text"],
+                    timestamp=ex.get("timestamp", ""),
+                    session_id=self.current_session_id,
+                    exchange_index=ex.get("exchange_index", -1),
+                )
+                if ok:
+                    ingested += 1
+            log.info(f"Micro-ingested {ingested}/{len(self.pending_exchanges)} exchanges into ChromaDB")
+        except Exception as e:
+            log.error(f"Micro-ingest error: {e}")
+        self.pending_exchanges = []
+        self.exchanges_since_ingest = 0
+        self.last_ingest_time = time.time()
+
+    def _check_micro_ingest(self):
+        """Check if it's time to micro-ingest."""
+        if (self.exchanges_since_ingest >= MICRO_INGEST_EXCHANGES or
+                (self.pending_exchanges and time.time() - self.last_ingest_time > MICRO_INGEST_SECONDS)):
+            self._micro_ingest()
 
     def _clean_text(self, text: str) -> str:
         """Strip system-reminder blocks."""
@@ -216,23 +276,47 @@ class Overwatch:
         return events
 
     def _search_history(self, text: str, threshold: float, n_results: int = 10) -> List[Dict[str, Any]]:
-        """Search all conversation history, excluding current session."""
+        """Search all conversation history, excluding current session.
+        Applies 24h downweight (feedback loop prevention) and overdue boost."""
         try:
             results = self.conv.recall(text, n_results=n_results)
         except Exception as e:
             log.error(f"Search error: {e}")
             return []
 
+        now = time.time()
+        overdue_items = self.session_state.get("overdue_items", [])
+
         # Filter: above threshold, not current session, not on cooldown
         relevant = []
         for r in results:
-            if r["score"] < threshold:
+            score = r["score"]
+
+            # 24h downweight — prevent feedback loops from recent injections
+            epoch = r.get("epoch", 0)
+            if epoch > 0 and (now - epoch) < TWENTY_FOUR_HOURS:
+                score *= RECENT_DOWNWEIGHT
+
+            # Overdue boost — if result content matches an overdue item, boost it
+            if overdue_items:
+                content_lower = r.get("content", "").lower()
+                for overdue_text in overdue_items:
+                    # Check if 2+ significant words from overdue item appear in result
+                    words = [w for w in overdue_text.lower().split() if len(w) > 3][:5]
+                    matches = sum(1 for w in words if w in content_lower)
+                    if matches >= 2:
+                        score = min(1.0, score + OVERDUE_BOOST)
+                        break
+
+            if score < threshold:
                 continue
             if r["session_id"] == self.current_session_id:
                 continue
             topic = self._topic_hash(r["content"])
             if self._is_on_cooldown(topic):
                 continue
+
+            r["score"] = score  # update with adjusted score
             relevant.append(r)
 
         return relevant[:MAX_INJECTIONS_PER_CHECK]
@@ -253,15 +337,19 @@ class Overwatch:
                 all_results.extend(results)
 
             elif event["type"] == "winding_down":
-                # Search for unfulfilled intentions
-                intention_queries = [
-                    "plans for next session tomorrow",
-                    "promises I made to him",
-                    "things we should do want to try",
-                    "drift companion therapist mode",
-                    "remind me about",
-                ]
-                for q in intention_queries:
+                # Pull queries from session state (overdue items, reminders)
+                # instead of hardcoded generic queries
+                overdue = self.session_state.get("overdue_items", [])
+                reminders = self.session_state.get("reminders", [])
+                intention_queries = overdue + reminders
+                if not intention_queries:
+                    # Fallback if no session state
+                    intention_queries = [
+                        "plans for next session tomorrow",
+                        "promises I made to him",
+                        "things we should do want to try",
+                    ]
+                for q in intention_queries[:5]:
                     results = self._search_history(
                         q,
                         threshold=EVENT_THRESHOLD,
@@ -296,15 +384,41 @@ class Overwatch:
 
         if content:
             try:
-                INJECT_PATH.write_text(content)
+                # Atomic write: .tmp → rename (prevents partial reads by hook)
+                INJECT_TMP_PATH.write_text(content)
+                os.rename(str(INJECT_TMP_PATH), str(INJECT_PATH))
                 self.injection_count += 1
                 log.info(f"Injection #{self.injection_count}: {len(results or [])} cross-refs, {len(event_results or [])} event matches")
 
                 # Set cooldowns for injected topics
                 for r in (results or []) + (event_results or []):
                     self._set_cooldown(self._topic_hash(r["content"]))
+
+                # Track injected topics in session state
+                self._track_injected_topics(results, event_results)
             except OSError as e:
                 log.error(f"Write error: {e}")
+
+    def _track_injected_topics(self, results: List[Dict], event_results: List[Dict]):
+        """Track injected topics in session state to prevent cross-session duplicates."""
+        try:
+            if SESSION_STATE_PATH.exists():
+                state = json.loads(SESSION_STATE_PATH.read_text())
+            else:
+                state = self.session_state
+
+            topics = state.get("injected_topics", [])
+            for r in (results or []) + (event_results or []):
+                preview = r.get("user_text_preview", r.get("content", "")[:80])
+                if preview and preview not in topics:
+                    topics.append(preview)
+            state["injected_topics"] = topics[-50:]  # cap at 50
+
+            tmp = SESSION_STATE_PATH.with_suffix('.tmp')
+            tmp.write_text(json.dumps(state, indent=2))
+            os.rename(str(tmp), str(SESSION_STATE_PATH))
+        except (json.JSONDecodeError, OSError) as e:
+            log.error(f"Session state update error: {e}")
 
     def _process_exchange(self, exchange: Dict[str, str]):
         """Core logic: process one new exchange."""
@@ -321,12 +435,22 @@ class Overwatch:
         if results or event_results:
             self._write_inject(results, event_results)
 
+        # 4. Queue for micro-ingestion
+        self.exchange_counter += 1
+        exchange["exchange_index"] = self.exchange_counter
+        self.pending_exchanges.append(exchange)
+        self.exchanges_since_ingest += 1
+        self._check_micro_ingest()
+
         self.prev_user_text = exchange["user_text"]
 
     def watch(self):
         """Main loop — find active session, tail it, react."""
         log.info("Overwatch starting...")
         log.info(f"Conversations in DB: {self.conv.count()}")
+        overdue = self.session_state.get("overdue_items", [])
+        if overdue:
+            log.info(f"Session state loaded: {len(overdue)} overdue items")
 
         while self.running:
             try:
@@ -336,17 +460,43 @@ class Overwatch:
                     time.sleep(POLL_INTERVAL * 5)
                     continue
 
+                # Heartbeat: if JSONL hasn't been modified in 5 min, session is dead
+                try:
+                    mtime = active.stat().st_mtime
+                    if time.time() - mtime > HEARTBEAT_TIMEOUT:
+                        # Flush any pending micro-ingestion before exiting
+                        if self.pending_exchanges:
+                            self._micro_ingest()
+                        log.info(f"Session JSONL stale for {HEARTBEAT_TIMEOUT}s, exiting (orphan prevention)")
+                        break
+                except OSError:
+                    pass
+
                 # New session detected
                 if active != self.current_jsonl:
+                    # Flush pending micro-ingestion from previous session
+                    if self.pending_exchanges:
+                        self._micro_ingest()
+
                     self.current_jsonl = active
                     self.current_session_id = active.stem
                     self.last_position = active.stat().st_size  # start from end, don't process history
                     self.cooldowns.clear()
+                    self.exchange_counter = 0
+                    self.pending_exchanges = []
+                    self.exchanges_since_ingest = 0
+                    self.last_ingest_time = time.time()
+
+                    # Reload session state (may have been updated by new boot)
+                    self.session_state = self._load_session_state()
+
                     log.info(f"Watching: {active.name} (session {self.current_session_id[:8]}...)")
 
                 # Read new lines
                 new_entries = self._read_new_lines(active)
                 if not new_entries:
+                    # Still check time-based micro-ingest even when idle
+                    self._check_micro_ingest()
                     time.sleep(POLL_INTERVAL)
                     continue
 
@@ -366,6 +516,9 @@ class Overwatch:
                 log.error(f"Watch loop error: {e}")
                 time.sleep(POLL_INTERVAL * 2)
 
+        # Final flush
+        if self.pending_exchanges:
+            self._micro_ingest()
         log.info("Overwatch stopped.")
 
     def stop(self):

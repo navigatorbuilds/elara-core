@@ -6,21 +6,26 @@ No LLM calls. No API calls. Pure Python judgment.
 
 Rules:
 - carried 3+ sessions = OVERDUE (surface loudly)
-- promises = ALWAYS surface (no exceptions)
+- promises = ALWAYS surface, ESCALATE with age (100 + carry*5, cap 150)
 - reminders = ALWAYS surface
+- carry velocity: effective_carry = raw_carry * (1 - days_since_first_seen/90)
 - time-of-day filtering (late night = deprioritize work tasks)
 - mood_and_mode = set tone for greeting
+- writes session state for Overwatch integration
 """
 
 import json
+import os
 from pathlib import Path
 from datetime import datetime
 
 HANDOFF_PATH = Path.home() / ".claude" / "elara-handoff.json"
+SESSION_STATE_PATH = Path.home() / ".claude" / "elara-session-state.json"
 
 # Priority thresholds
 OVERDUE_THRESHOLD = 3      # carried N+ sessions = overdue
 STALE_THRESHOLD = 2        # carried N+ = stale but not urgent
+CARRY_VELOCITY_HORIZON = 90  # days before carry count fully decays
 LATE_NIGHT_START = 22      # 10 PM
 LATE_NIGHT_END = 6         # 6 AM
 MORNING_END = 12           # noon
@@ -71,21 +76,43 @@ def is_personal_item(text: str) -> bool:
     return any(signal in lower for signal in personal_signals)
 
 
+def _effective_carry(item: dict) -> float:
+    """
+    Apply carry velocity decay: items that have been around for months
+    gradually lose urgency. effective_carry = raw * (1 - days/90).
+    Without first_seen, falls back to raw carry count.
+    """
+    carried = item.get("carried", 0)
+    first_seen = item.get("first_seen", "")
+
+    if not first_seen or carried <= 0:
+        return float(carried)
+
+    try:
+        first_dt = datetime.fromisoformat(first_seen)
+        days_old = (datetime.now() - first_dt).days
+        velocity_decay = max(0.0, 1.0 - days_old / CARRY_VELOCITY_HORIZON)
+        return carried * velocity_decay
+    except (ValueError, TypeError):
+        return float(carried)
+
+
 def compute_priority(item: dict, time_class: str) -> dict:
     """Score a single item. Returns enriched item with priority info."""
     text = item.get("text", "")
     carried = item.get("carried", 0)
+    eff_carry = _effective_carry(item)
 
-    # Base priority from carry count
-    if carried >= OVERDUE_THRESHOLD:
+    # Base priority from effective carry count (velocity-adjusted)
+    if eff_carry >= OVERDUE_THRESHOLD:
         urgency = "OVERDUE"
-        score = 90 + carried  # higher the longer it's carried
-    elif carried >= STALE_THRESHOLD:
+        score = 90 + eff_carry
+    elif eff_carry >= STALE_THRESHOLD:
         urgency = "stale"
-        score = 60 + carried * 5
-    elif carried > 0:
+        score = 60 + eff_carry * 5
+    elif eff_carry > 0:
         urgency = "pending"
-        score = 40 + carried * 5
+        score = 40 + eff_carry * 5
     else:
         urgency = "fresh"
         score = 30
@@ -155,11 +182,17 @@ def generate_brief(handoff: dict, now: datetime = None) -> dict:
         scored["source"] = "unfinished"
         all_items.append(scored)
 
-    # Promises and reminders get max priority always
+    # Promises ESCALATE with age — social contracts get louder, not quieter
     promises = []
     for item in handoff.get("promises", []):
-        text = item if isinstance(item, str) else item.get("text", str(item))
-        promises.append({"text": text, "urgency": "PROMISE", "score": 100})
+        if isinstance(item, str):
+            text = item
+            carried = 0
+        else:
+            text = item.get("text", str(item))
+            carried = item.get("carried", 0)
+        score = min(150, 100 + carried * 5)
+        promises.append({"text": text, "carried": carried, "urgency": "PROMISE", "score": score})
 
     reminders = []
     for item in handoff.get("reminders", []):
@@ -275,16 +308,41 @@ def _format_brief(
     return "\n".join(lines)
 
 
+def _write_session_state(brief: dict):
+    """
+    Write session state for Overwatch integration.
+    Priority engine is the source of truth for 'what matters right now'.
+    Overwatch reads this to boost relevant search results and replace
+    hardcoded winding-down queries with actual overdue items.
+    """
+    state = {
+        "overdue_items": [i["text"] for i in brief["overdue"]],
+        "promises": [i["text"] for i in brief["promises"]],
+        "reminders": [i["text"] for i in brief["reminders"]],
+        "session_start": datetime.now().isoformat(),
+        "session_number": brief["session_number"],
+        "injected_topics": [],
+    }
+    try:
+        tmp = SESSION_STATE_PATH.with_suffix('.tmp')
+        tmp.write_text(json.dumps(state, indent=2))
+        os.rename(str(tmp), str(SESSION_STATE_PATH))
+    except OSError:
+        pass
+
+
 def boot_priority() -> str | None:
     """
     Main entry point. Called from boot.py.
     Returns formatted brief text, or None if no handoff exists.
+    Also writes session state for Overwatch.
     """
     handoff = load_handoff()
     if handoff is None:
         return None
 
     brief = generate_brief(handoff)
+    _write_session_state(brief)
     return brief["brief_text"]
 
 

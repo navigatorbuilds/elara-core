@@ -439,6 +439,64 @@ class ConversationMemory:
         return stats
 
     # =========================================================================
+    # MICRO-INGESTION — single exchange, used by Overwatch during live sessions
+    # =========================================================================
+
+    def ingest_exchange(
+        self,
+        user_text: str,
+        assistant_text: str,
+        timestamp: str,
+        session_id: str,
+        exchange_index: int = -1,
+    ) -> bool:
+        """
+        Ingest a single exchange into ChromaDB.
+        Used by Overwatch for mid-session micro-ingestion so that
+        earlier parts of the current session become searchable.
+        """
+        if not self.collection:
+            return False
+
+        doc = f"User: {user_text}\n\nElara: {assistant_text}"
+        if len(doc) > 2000:
+            doc = doc[:2000]
+
+        ex_id = self._generate_id(session_id, exchange_index, timestamp)
+
+        date_str = ""
+        hour = -1
+        epoch = 0.0
+        if timestamp:
+            try:
+                dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                date_str = dt.strftime("%Y-%m-%d")
+                hour = dt.hour
+                epoch = dt.timestamp()
+            except (ValueError, TypeError):
+                pass
+
+        meta = {
+            "session_id": session_id,
+            "project_dir": "",
+            "project_cwd": "",
+            "timestamp": timestamp,
+            "date": date_str,
+            "hour": hour,
+            "epoch": epoch,
+            "exchange_index": exchange_index,
+            "total_exchanges": -1,
+            "user_text_preview": user_text[:100],
+            "episode_id": "",
+        }
+
+        try:
+            self.collection.add(ids=[ex_id], documents=[doc], metadatas=[meta])
+            return True
+        except Exception:
+            return False
+
+    # =========================================================================
     # RECALL — with cosine scoring, recency weighting
     # =========================================================================
 
