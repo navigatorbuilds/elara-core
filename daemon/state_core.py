@@ -7,6 +7,7 @@ Everything here is internal — external code imports from daemon.state (the re-
 
 import json
 import math
+import os
 import random
 from pathlib import Path
 from datetime import datetime
@@ -116,7 +117,16 @@ def _archive_imprint(imprint: dict) -> None:
 
 
 def _load_state() -> dict:
-    """Load current emotional state."""
+    """Load current emotional state with crash recovery."""
+    tmp_file = STATE_FILE.with_suffix(".json.tmp")
+
+    # Crash recovery: if .tmp exists but .json doesn't, the rename was interrupted
+    if tmp_file.exists() and not STATE_FILE.exists():
+        os.rename(str(tmp_file), str(STATE_FILE))
+    elif tmp_file.exists():
+        # Both exist — .tmp is stale from a failed write, discard it
+        tmp_file.unlink()
+
     if STATE_FILE.exists():
         try:
             state = json.loads(STATE_FILE.read_text())
@@ -137,10 +147,12 @@ def _load_state() -> dict:
 
 
 def _save_state(data: dict) -> None:
-    """Save emotional state."""
+    """Save emotional state via atomic rename (write .tmp then rename)."""
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     data["last_update"] = datetime.now().isoformat()
-    STATE_FILE.write_text(json.dumps(data, indent=2))
+    tmp_file = STATE_FILE.with_suffix(".json.tmp")
+    tmp_file.write_text(json.dumps(data, indent=2))
+    os.rename(str(tmp_file), str(STATE_FILE))
 
 
 def _apply_time_decay(state: dict) -> dict:
