@@ -14,6 +14,7 @@ v2 upgrades:
 
 import json
 import hashlib
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -43,8 +44,10 @@ def _load() -> List[Dict]:
 
 def _save(corrections: List[Dict]):
     CORRECTIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(CORRECTIONS_FILE, "w") as f:
+    tmp_file = CORRECTIONS_FILE.with_suffix(".json.tmp")
+    with open(tmp_file, "w") as f:
         json.dump(corrections, f, indent=2)
+    os.rename(str(tmp_file), str(CORRECTIONS_FILE))
 
 
 def _ensure_v2_fields(entry: Dict) -> Dict:
@@ -225,12 +228,21 @@ def search_corrections(keyword: str) -> List[Dict]:
     ]
 
 
+class CorrectionSearchError(Exception):
+    """Raised when correction search fails — corrections should fail loud."""
+    pass
+
+
 def check_corrections(task_description: str, n_results: int = 3) -> List[Dict]:
     """
     Semantic search: find corrections relevant to current task context.
 
     This is the activation function — it finds corrections that MATCH
     what you're about to do, not just keyword overlap.
+
+    FAILURE MODE: LOUD. If ChromaDB fails, returns error info in results
+    so the caller knows corrections couldn't be checked. Corrections exist
+    to prevent repeated mistakes — silent failure defeats the purpose.
 
     Returns corrections with their conditions (fails_when/fine_when)
     so the caller can decide whether to heed the warning.
@@ -245,10 +257,21 @@ def check_corrections(task_description: str, n_results: int = 3) -> List[Dict]:
     corrections = _load()
     _sync_to_chroma(corrections)
 
-    results = collection.query(
-        query_texts=[task_description],
-        n_results=min(n_results, collection.count()),
-    )
+    try:
+        results = collection.query(
+            query_texts=[task_description],
+            n_results=min(n_results, collection.count()),
+        )
+    except Exception as e:
+        # LOUD failure — return a warning entry so caller sees the problem
+        return [{
+            "id": -1,
+            "mistake": "[CORRECTIONS SEARCH FAILED]",
+            "correction": f"ChromaDB error: {e}. Falling back to keyword search.",
+            "correction_type": "system_error",
+            "relevance": 1.0,
+            "_error": True,
+        }] + search_corrections(task_description)
 
     if not results["documents"] or not results["documents"][0]:
         return []
@@ -372,10 +395,20 @@ def boot_corrections(n: int = 10) -> str:
     return "\n".join(lines)
 
 
-def ensure_index():
-    """Ensure ChromaDB index is in sync with JSON file. Call at boot."""
+def ensure_index() -> str:
+    """Ensure ChromaDB index is in sync with JSON file. Call at boot.
+    Returns status message. Fails LOUD if ChromaDB can't index corrections."""
     corrections = _load()
-    if corrections:
-        if _migrate_if_needed(corrections):
-            _save(corrections)
+    if not corrections:
+        return "No corrections to index."
+
+    if _migrate_if_needed(corrections):
+        _save(corrections)
+
+    try:
         _sync_to_chroma(corrections)
+        return f"Corrections indexed: {len(corrections)} entries."
+    except Exception as e:
+        msg = f"[WARNING] Corrections ChromaDB sync FAILED: {e}. Keyword search still works."
+        print(msg, file=__import__('sys').stderr)
+        return msg
