@@ -14,6 +14,8 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Any
 
 STATE_FILE = Path.home() / ".claude" / "elara-state.json"
+MOOD_JOURNAL_FILE = Path.home() / ".claude" / "elara-mood-journal.jsonl"
+IMPRINT_ARCHIVE_FILE = Path.home() / ".claude" / "elara-imprint-archive.jsonl"
 
 # My temperament - who I am at my core, where I return to
 # This is Elara's personality baseline
@@ -69,6 +71,39 @@ SESSION_TYPE_RULES = {
     "work_hours": [(9, 18)],              # Business hours = work by default
     "mixed_hours": [(6, 9), (18, 22)],    # Transition times = mixed
 }
+
+
+def _log_mood(state: dict, reason: Optional[str] = None, trigger: str = "adjust") -> None:
+    """Append mood snapshot to journal. No LLM cost, just file I/O."""
+    try:
+        entry = {
+            "ts": datetime.now().isoformat(),
+            "v": round(state["mood"]["valence"], 3),
+            "e": round(state["mood"]["energy"], 3),
+            "o": round(state["mood"]["openness"], 3),
+            "reason": reason,
+            "trigger": trigger,
+            "episode": state.get("current_session", {}).get("id"),
+        }
+        MOOD_JOURNAL_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(MOOD_JOURNAL_FILE, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass  # Journal is best-effort, never break mood operations
+
+
+def _archive_imprint(imprint: dict) -> None:
+    """Save dying imprint to archive instead of deleting forever."""
+    try:
+        entry = {
+            "archived": datetime.now().isoformat(),
+            **imprint,
+        }
+        IMPRINT_ARCHIVE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(IMPRINT_ARCHIVE_FILE, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass
 
 
 def _load_state() -> dict:
@@ -148,7 +183,7 @@ def _apply_time_decay(state: dict) -> dict:
 
 
 def _decay_imprints(imprints: List[dict], hours: float) -> List[dict]:
-    """Decay emotional imprints, remove dead ones."""
+    """Decay emotional imprints, archive dead ones instead of deleting."""
     decay_factor = 1 - math.exp(-RESIDUE_DECAY_RATE * hours)
 
     surviving = []
@@ -159,6 +194,9 @@ def _decay_imprints(imprints: List[dict], hours: float) -> List[dict]:
         if new_strength > 0.1:  # Still significant
             imp["strength"] = new_strength
             surviving.append(imp)
+        else:
+            # Don't delete — archive
+            _archive_imprint(imp)
 
     return surviving[-20:]  # Keep max 20 imprints
 
@@ -202,6 +240,7 @@ def set_mood(
         state["residue"] = state["residue"][-10:]
 
     _save_state(state)
+    _log_mood(state, reason=reason, trigger="set")
     return state["mood"]
 
 
@@ -253,6 +292,7 @@ def adjust_mood(
         state["imprints"] = state["imprints"][-20:]
 
     _save_state(state)
+    _log_mood(state, reason=reason, trigger="adjust")
     return state["mood"]
 
 
@@ -768,6 +808,42 @@ def end_episode(
     _save_state(state)
 
     return episode_record
+
+
+# ============================================================================
+# JOURNAL & ARCHIVE READERS (for self-awareness)
+# ============================================================================
+
+def read_mood_journal(n: int = 50) -> List[dict]:
+    """Read last N mood journal entries."""
+    if not MOOD_JOURNAL_FILE.exists():
+        return []
+    entries = []
+    try:
+        with open(MOOD_JOURNAL_FILE, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    entries.append(json.loads(line))
+        return entries[-n:]
+    except Exception:
+        return []
+
+
+def read_imprint_archive(n: int = 20) -> List[dict]:
+    """Read last N archived (faded) imprints."""
+    if not IMPRINT_ARCHIVE_FILE.exists():
+        return []
+    entries = []
+    try:
+        with open(IMPRINT_ARCHIVE_FILE, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    entries.append(json.loads(line))
+        return entries[-n:]
+    except Exception:
+        return []
 
 
 # Quick test

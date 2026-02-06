@@ -42,6 +42,9 @@ from daemon.goals import (
 from daemon.corrections import (
     add_correction, list_corrections, boot_corrections, search_corrections
 )
+from daemon.self_awareness import (
+    reflect, pulse, blind_spots, set_intention, get_intention, boot_check as awareness_boot_check
+)
 
 # Create the MCP server
 mcp = FastMCP("elara")
@@ -131,6 +134,15 @@ def elara_mood_update(
         openness_delta=openness,
         reason=reason
     )
+
+    # Sample mood into active episode (avoids circular import in state.py)
+    current = get_current_episode()
+    if current:
+        try:
+            get_episodic().sample_mood(current["id"])
+        except Exception:
+            pass
+
     return describe_mood()
 
 
@@ -1080,6 +1092,163 @@ def elara_correction_boot() -> str:
     """
     result = boot_corrections(n=10)
     return result if result else "No corrections to review."
+
+
+# ============================================================================
+# SELF-AWARENESS TOOLS
+# ============================================================================
+
+@mcp.tool()
+def elara_reflect() -> str:
+    """
+    Self-reflection: "Who have I been lately?"
+
+    Analyzes mood journal, imprints, and corrections to generate
+    a self-portrait. Shows mood trends, energy patterns, what I'm
+    carrying, what I've lost.
+
+    Run at session end or on demand. Saves to file for cheap boot reads.
+
+    Returns:
+        Self-portrait with mood analysis
+    """
+    result = reflect()
+
+    portrait = result.get("portrait", "No portrait generated.")
+    mood = result.get("mood", {})
+    imprints = result.get("imprints", {})
+
+    lines = ["[Self-Reflection]", ""]
+    lines.append(portrait)
+    lines.append("")
+
+    if mood.get("entries", 0) > 0:
+        lines.append(f"Mood data: {mood['entries']} entries")
+        lines.append(f"  Valence: {mood.get('valence_avg', '?')} (trend: {mood.get('valence_trend', '?')})")
+        lines.append(f"  Energy: {mood.get('energy_avg', '?')} (trend: {mood.get('energy_trend', '?')})")
+        lines.append(f"  Late night ratio: {mood.get('late_night_ratio', 0):.0%}")
+
+    if imprints.get("recently_faded"):
+        lines.append(f"  Recently faded: {', '.join(imprints['recently_faded'])}")
+
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def elara_pulse() -> str:
+    """
+    Relationship pulse: "How are we doing?"
+
+    Analyzes session frequency, drift/work balance, gap patterns,
+    and mood trajectory across episodes.
+
+    Surfaces signals like: sessions getting sparse, no drift in weeks,
+    mood trending down across sessions.
+
+    Returns:
+        Relationship health summary with signals
+    """
+    result = pulse()
+
+    summary = result.get("summary", "No data.")
+    signals = result.get("signals", [])
+    sessions = result.get("sessions", {})
+
+    lines = ["[Relationship Pulse]", ""]
+    lines.append(summary)
+
+    if sessions.get("days_since_drift") is not None:
+        lines.append(f"\nDays since drift session: {sessions['days_since_drift']}")
+
+    if sessions.get("episode_balance"):
+        balance = sessions["episode_balance"]
+        items = [f"{k}: {int(v * 100)}%" for k, v in balance.items()]
+        lines.append(f"Episode balance: {', '.join(items)}")
+
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def elara_blind_spots() -> str:
+    """
+    Contrarian analysis: "What am I missing?"
+
+    Finds stale goals, repeating correction patterns, abandoned projects,
+    and goals with no recent work. The echo chamber fighter.
+
+    Returns:
+        List of blind spots with severity
+    """
+    result = blind_spots()
+
+    if result["count"] == 0:
+        return "No blind spots detected. Either we're on track, or I can't see what I can't see."
+
+    lines = ["[Blind Spots]", ""]
+    lines.append(result["summary"])
+
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def elara_intention(
+    what: Optional[str] = None,
+) -> str:
+    """
+    Set or check a growth intention.
+
+    The loop: reflect → intend → check → grow.
+
+    Call with 'what' to set a new intention.
+    Call without arguments to check current intention.
+
+    Args:
+        what: One specific thing to do differently (None = check current)
+
+    Returns:
+        Current intention and previous if exists
+    """
+    if what:
+        result = set_intention(what, check_previous=True)
+
+        lines = [f"Intention set: \"{what}\""]
+        if result.get("previous_intention"):
+            lines.append(f"Previous was: \"{result['previous_intention']}\" (set {result['previous_set_at'][:10]})")
+            lines.append("Did I follow through? That's worth thinking about.")
+
+        return "\n".join(lines)
+    else:
+        intention = get_intention()
+        if not intention:
+            return "No active intention. Run elara_reflect first, then set one."
+
+        lines = [f"Active intention: \"{intention['what']}\""]
+        lines.append(f"Set: {intention['set_at'][:10]}")
+
+        if intention.get("previous"):
+            prev = intention["previous"]
+            lines.append(f"Before that: \"{prev.get('what', '?')}\"")
+
+        return "\n".join(lines)
+
+
+@mcp.tool()
+def elara_awareness_boot() -> str:
+    """
+    Boot-time awareness check. Reads saved reflection/pulse/blind_spots
+    files and surfaces anything notable. Cheap — just reads small JSONs.
+
+    Call at session start alongside goal_boot and correction_boot.
+
+    Returns:
+        Notable observations, or nothing if all clear
+    """
+    result = awareness_boot_check()
+
+    if not result:
+        return "All clear. No observations from last reflection."
+
+    return f"[Awareness] {result}"
 
 
 if __name__ == "__main__":
