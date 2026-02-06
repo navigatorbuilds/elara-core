@@ -62,12 +62,6 @@ class ConversationMemory:
             settings=Settings(anonymized_telemetry=False)
         )
 
-        # Check if we need to migrate from v1 (L2) to v2 (cosine)
-        needs_migration = self._check_migration()
-
-        if needs_migration:
-            self._migrate_to_v2()
-
         self.collection = self.client.get_or_create_collection(
             name="elara_conversations_v2",
             metadata={
@@ -75,42 +69,6 @@ class ConversationMemory:
                 "hnsw:space": "cosine",
             }
         )
-
-    def _check_migration(self) -> bool:
-        """Check if we need to migrate from v1 to v2."""
-        manifest = self._load_manifest()
-
-        # If manifest has our version, no migration needed
-        if manifest.get("_schema_version") == SCHEMA_VERSION:
-            return False
-
-        # If v2 collection already exists and has data, just update manifest
-        try:
-            existing = self.client.get_collection("elara_conversations_v2")
-            if existing.count() > 0:
-                return False
-        except Exception:
-            pass
-
-        return True
-
-    def _migrate_to_v2(self):
-        """Migrate from v1 (L2 distance) to v2 (cosine distance)."""
-        # Delete old v1 collection if it exists
-        try:
-            self.client.delete_collection("elara_conversations")
-        except Exception:
-            pass
-
-        # Delete old v2 collection if it exists but is empty/corrupt
-        try:
-            self.client.delete_collection("elara_conversations_v2")
-        except Exception:
-            pass
-
-        # Clear manifest to force full re-ingestion
-        manifest = {"_schema_version": SCHEMA_VERSION}
-        self._save_manifest(manifest)
 
     def _load_manifest(self) -> Dict[str, Any]:
         if MANIFEST_PATH.exists():
