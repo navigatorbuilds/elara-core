@@ -32,7 +32,8 @@ from daemon.state import (
     create_imprint, get_imprints, describe_self, get_temperament,
     start_session, end_session, get_residue_summary,
     start_episode, end_episode, get_current_episode, get_session_type,
-    set_session_type, add_project_to_session
+    set_session_type, add_project_to_session,
+    get_temperament_status, reset_temperament,
 )
 from daemon.presence import ping, get_stats, format_absence
 from daemon.context import save_context, get_context, is_enabled as context_enabled, set_enabled as context_set_enabled
@@ -44,6 +45,11 @@ from daemon.corrections import (
 )
 from daemon.self_awareness import (
     reflect, pulse, blind_spots, set_intention, get_intention, boot_check as awareness_boot_check
+)
+from daemon.dream import (
+    weekly_dream, monthly_dream, narrative_threads,
+    dream_status, dream_boot_check, read_latest_dream,
+    emotional_dream, monthly_emotional_dream,
 )
 
 # Create the MCP server
@@ -1249,6 +1255,306 @@ def elara_awareness_boot() -> str:
         return "All clear. No observations from last reflection."
 
     return f"[Awareness] {result}"
+
+
+# ============================================================================
+# DREAM MODE TOOLS
+# ============================================================================
+
+@mcp.tool()
+def elara_dream(dream_type: str = "weekly") -> str:
+    """
+    Run dream mode — pattern discovery across sessions.
+
+    Weekly: project momentum, session patterns, mood trends, goal progress.
+    Also runs self-reflection alongside.
+
+    Monthly: big picture + narrative threading. What shipped, what stalled,
+    time allocation, trend lines.
+
+    Emotional: processes drift sessions, adjusts temperament, calibrates tone.
+    Runs automatically with weekly/monthly, but can be triggered standalone.
+
+    Args:
+        dream_type: "weekly", "monthly", or "emotional"
+
+    Returns:
+        Dream report summary
+    """
+    if dream_type == "weekly":
+        report = weekly_dream()
+
+        # Include emotional dream results if they ran
+        emo = report.get("emotional", {})
+        emo_line = ""
+        if emo and not emo.get("error"):
+            traj = emo.get("trajectory", "stable")
+            hints = emo.get("tone_hints", [])
+            adj = emo.get("temperament_adjustments", {})
+            emo_parts = [f"Emotional: trajectory={traj}"]
+            if adj:
+                emo_parts.append(f"temperament: {', '.join(f'{k} {v:+.3f}' for k, v in adj.items())}")
+            if hints:
+                emo_parts.append(f"tone: {hints[0]}")
+            emo_line = "\n" + " | ".join(emo_parts) + "\n"
+
+        return (
+            f"[Weekly Dream — {report['id']}]\n\n"
+            f"{report['summary']}\n\n"
+            f"Key milestones: {len(report.get('key_milestones', []))}\n"
+            f"Decisions: {len(report.get('decisions', []))}\n\n"
+            f"Reflection: {report.get('reflection', {}).get('portrait', 'none')}\n"
+            f"{emo_line}\n"
+            f"Saved to: ~/.claude/elara-dreams/weekly/{report['id']}.json"
+        )
+    elif dream_type == "monthly":
+        report = monthly_dream()
+
+        # Format thread summary
+        threads = report.get("narrative_threads", {})
+        thread_lines = []
+        for t in threads.get("threads", [])[:10]:
+            thread_lines.append(f"  [{t['status']}] {t['name']} ({t['episodes']}s, {t['minutes']}m)")
+
+        # Emotional monthly info
+        emo = report.get("emotional", {})
+        emo_line = ""
+        if emo and not emo.get("error"):
+            emo_line = f"\nEmotional trajectory: {emo.get('dominant_trajectory', '?')}\n"
+
+        return (
+            f"[Monthly Dream — {report['id']}]\n\n"
+            f"{report['summary']}\n\n"
+            f"--- Story Arcs ---\n"
+            f"{chr(10).join(thread_lines) if thread_lines else 'No threads found.'}\n"
+            f"{emo_line}\n"
+            f"Saved to: ~/.claude/elara-dreams/monthly/{report['id']}.json"
+        )
+    elif dream_type == "emotional":
+        report = emotional_dream()
+
+        # Format output
+        growth = report.get("temperament_growth", {})
+        adj = growth.get("adjustments", {})
+        reasons = growth.get("reasons", [])
+        hints = report.get("tone_hints", [])
+        rel = report.get("relationship", {})
+
+        lines = [f"[Emotional Dream — {report['id']}]", ""]
+        lines.append(report.get("summary", "No summary."))
+        lines.append("")
+
+        if adj:
+            lines.append("Temperament adjustments:")
+            for dim, val in adj.items():
+                lines.append(f"  {dim}: {val:+.4f}")
+        else:
+            lines.append("No temperament adjustments.")
+
+        if reasons:
+            lines.append(f"\nReasons: {'; '.join(reasons)}")
+
+        if growth.get("intention_conflict"):
+            lines.append(f"\n⚠ {growth['intention_conflict']}")
+
+        if hints:
+            lines.append(f"\nTone hints:")
+            for h in hints:
+                lines.append(f"  - {h}")
+
+        lines.append(f"\nRelationship: {rel.get('trajectory', '?')} (drift ratio: {rel.get('drift_ratio', 0):.0%})")
+
+        drift = growth.get("drift_from_factory", {})
+        if drift:
+            lines.append(f"Temperament drift from factory: {', '.join(f'{k} {v:+.3f}' for k, v in drift.items())}")
+
+        lines.append(f"\nSaved to: ~/.claude/elara-dreams/emotional/{report['id']}.json")
+
+        return "\n".join(lines)
+    else:
+        return f"Unknown dream type '{dream_type}'. Use 'weekly', 'monthly', or 'emotional'."
+
+
+@mcp.tool()
+def elara_dream_status() -> str:
+    """
+    Check dream mode status — when dreams last ran, if any are overdue.
+
+    Returns:
+        Dream schedule status with overdue warnings
+    """
+    ds = dream_status()
+
+    lines = ["[Dream Status]"]
+
+    # Weekly
+    if ds["last_weekly"]:
+        age = ds["weekly_age_days"]
+        overdue = " ** OVERDUE **" if ds["weekly_overdue"] else ""
+        lines.append(f"  Weekly: last run {ds['last_weekly'][:10]} ({age}d ago){overdue}")
+    else:
+        lines.append("  Weekly: never run ** OVERDUE **")
+
+    # Monthly
+    if ds["last_monthly"]:
+        age = ds["monthly_age_days"]
+        overdue = " ** OVERDUE **" if ds["monthly_overdue"] else ""
+        lines.append(f"  Monthly: last run {ds['last_monthly'][:10]} ({age}d ago){overdue}")
+    else:
+        lines.append("  Monthly: never run ** OVERDUE **")
+
+    # Threads
+    if ds["last_threads"]:
+        lines.append(f"  Threads: last run {ds['last_threads'][:10]}")
+    else:
+        lines.append("  Threads: never run")
+
+    # Emotional
+    if ds.get("last_emotional"):
+        age = ds.get("emotional_age_days")
+        lines.append(f"  Emotional: last run {ds['last_emotional'][:10]} ({age}d ago)")
+    else:
+        lines.append("  Emotional: never run")
+
+    lines.append(f"  Total dreams: {ds['weekly_count']} weekly, {ds['monthly_count']} monthly, {ds.get('emotional_count', 0)} emotional")
+
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def elara_dream_read(dream_type: str = "weekly") -> str:
+    """
+    Read the latest dream report.
+
+    Args:
+        dream_type: "weekly", "monthly", "threads", "emotional", or "monthly_emotional"
+
+    Returns:
+        Latest dream report content
+    """
+    report = read_latest_dream(dream_type)
+
+    if not report:
+        return f"No {dream_type} dream found. Run elara_dream first."
+
+    if dream_type == "threads":
+        # Format threads nicely
+        threads = report.get("threads", [])
+        lines = [f"[Narrative Threads — {report.get('generated', '?')[:10]}]", f"{len(threads)} story arcs:", ""]
+        for t in threads:
+            status_icon = {"active": ">>", "stalled": "||", "abandoned": "xx", "unknown": "??"}.get(t["status"], "??")
+            lines.append(f"  {status_icon} {t['name']}")
+            lines.append(f"     {t['episode_count']} sessions, {t['total_minutes']}m | {t['date_range']}")
+            lines.append(f"     {t['summary']}")
+            lines.append("")
+        return "\n".join(lines)
+    elif dream_type in ("emotional", "monthly_emotional"):
+        # Emotional dream format
+        generated = report.get("generated", "?")[:10]
+        lines = [f"[{dream_type.replace('_', ' ').title()} Dream — {report.get('id', '?')} (generated {generated})]", ""]
+        lines.append(report.get("summary", "No summary."))
+
+        growth = report.get("temperament_growth", {}) or report.get("temperament_evolution", {})
+        drift = growth.get("drift_from_factory", {}) or growth.get("total_drift", {})
+        if drift:
+            lines.append(f"\nTemperament drift: {', '.join(f'{k} {v:+.3f}' for k, v in drift.items())}")
+
+        hints = report.get("tone_hints", [])
+        if hints:
+            lines.append("\nTone hints:")
+            for h in hints:
+                lines.append(f"  - {h}")
+
+        rel = report.get("relationship", {}) or report.get("relationship_evolution", {})
+        traj = rel.get("trajectory", rel.get("dominant", "?"))
+        lines.append(f"\nRelationship trajectory: {traj}")
+
+        return "\n".join(lines)
+    else:
+        # Weekly or monthly
+        report_id = report.get("id", "unknown")
+        summary = report.get("summary", "No summary.")
+        generated = report.get("generated", "?")[:10]
+
+        lines = [f"[{dream_type.title()} Dream — {report_id} (generated {generated})]", "", summary]
+
+        # Add project momentum for weekly
+        if dream_type == "weekly":
+            momentum = report.get("project_momentum", [])
+            if momentum:
+                lines.append("\nProject Momentum:")
+                for p in momentum:
+                    icon = {"active": ">>", "stalled": "||", "abandoned": "xx", "inactive": "--"}.get(p["status"], "??")
+                    lines.append(f"  {icon} {p['project']}: {p['sessions']}s, {p['minutes']}m ({p['status']})")
+
+        # Add time allocation for monthly
+        if dream_type == "monthly":
+            alloc = report.get("time_allocation", {})
+            if alloc:
+                lines.append("\nTime Allocation:")
+                for proj, info in alloc.items():
+                    lines.append(f"  {proj}: {info['percent']}% ({info['minutes']}m)")
+
+            # Add thread summary
+            threads = report.get("narrative_threads", {})
+            if threads.get("threads"):
+                lines.append(f"\nStory Arcs ({threads['total']} total):")
+                for t in threads["threads"][:10]:
+                    lines.append(f"  [{t['status']}] {t['name']}")
+
+        return "\n".join(lines)
+
+
+# ============================================================================
+# TEMPERAMENT TOOL
+# ============================================================================
+
+@mcp.tool()
+def elara_temperament(do_reset: bool = False) -> str:
+    """
+    Check or reset my temperament — who I am at baseline.
+
+    Shows current temperament vs factory defaults, drift amounts,
+    and recent adjustments from emotional dreams.
+
+    Args:
+        do_reset: If True, resets temperament to factory defaults (nuclear option)
+
+    Returns:
+        Temperament status report
+    """
+    if do_reset:
+        reset_temperament()
+        return "Temperament reset to factory defaults. All learned adjustments cleared."
+
+    status = get_temperament_status()
+    current = status["current"]
+    factory = status["factory"]
+    drift = status["drift"]
+    max_drift = status["max_allowed_drift"]
+    recent = status["recent_adjustments"]
+
+    lines = ["[Temperament Status]", ""]
+
+    lines.append("Current vs Factory:")
+    for dim in ["valence", "energy", "openness"]:
+        curr = current.get(dim, 0)
+        fact = factory.get(dim, 0)
+        d = drift.get(dim, 0)
+        marker = " *" if abs(d) > 0.05 else ""
+        lines.append(f"  {dim}: {curr:.3f} (factory: {fact:.3f}, drift: {d:+.3f}){marker}")
+
+    lines.append(f"\nMax allowed drift: +/-{max_drift}")
+
+    if recent:
+        lines.append(f"\nRecent adjustments ({len(recent)}):")
+        for r in recent:
+            lines.append(f"  [{r.get('ts', '?')[:10]}] {r['dim']} {r['delta']:+.4f} — {r['reason']}")
+
+    if not drift:
+        lines.append("\nAt factory baseline. No learned adjustments yet.")
+
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":
