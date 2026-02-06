@@ -356,10 +356,11 @@ def blind_spots() -> dict:
     """
     Contrarian analysis. What are we avoiding?
 
-    Checks: stale goals, repeating corrections, abandoned projects.
+    Checks: stale goals, repeating corrections, abandoned projects,
+    dormant corrections (never activated).
     """
     from daemon.goals import list_goals, stale_goals
-    from daemon.corrections import list_corrections
+    from daemon.corrections import list_corrections, get_dormant_corrections
     from memory.episodic import get_episodic
 
     spots = []
@@ -413,6 +414,18 @@ def blind_spots() -> dict:
                     })
             except (ValueError, TypeError):
                 pass
+
+    # --- Dormant corrections (never activated) ---
+    dormant = get_dormant_corrections(days=14)
+    for d in dormant:
+        if d.get("times_surfaced", 0) == 0:
+            dormant_days = (datetime.now() - datetime.fromisoformat(d["date"])).days
+            if dormant_days >= 3:
+                spots.append({
+                    "type": "dormant_correction",
+                    "detail": f"Correction #{d['id']} '{d['mistake'][:50]}' has never been activated ({dormant_days}d old). Still relevant?",
+                    "severity": "medium" if dormant_days < 14 else "high",
+                })
 
     # --- Active goals without recent episodes ---
     active_goals = list_goals(status="active")

@@ -32,6 +32,12 @@ try:
 except ImportError:
     CONVERSATIONS_AVAILABLE = False
 
+try:
+    from daemon.corrections import ensure_index as corrections_ensure_index
+    CORRECTIONS_INDEX_AVAILABLE = True
+except ImportError:
+    CORRECTIONS_INDEX_AVAILABLE = False
+
 
 def boot():
     """Run boot sequence and output context."""
@@ -82,6 +88,13 @@ def boot():
 
     if context["memory_count"] > 0:
         print(f"[Elara] I have {context['memory_count']} memories.")
+
+    # Sync corrections index on boot
+    if CORRECTIONS_INDEX_AVAILABLE:
+        try:
+            corrections_ensure_index()
+        except Exception:
+            pass
 
     # Auto-ingest new conversations on boot
     if CONVERSATIONS_AVAILABLE:
