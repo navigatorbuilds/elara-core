@@ -285,36 +285,6 @@ def generate_narrative(
     return query(prompt, model=model, temperature=0.4, max_tokens=80)
 
 
-def detect_conflicts(
-    goal_a: str,
-    goal_b: str,
-    model: str = DEFAULT_MODEL,
-) -> Optional[Dict[str, Any]]:
-    """
-    Check if two goals conflict.
-
-    Returns dict with:
-        - conflicts: bool
-        - reason: str
-    Or None if unavailable.
-    """
-    prompt = (
-        "Do these goals conflict? Reply JSON only:\n"
-        '{"conflicts": true/false, "reason": "short explanation"}\n\n'
-        f"Goal 1: {goal_a}\nGoal 2: {goal_b}"
-    )
-    result = query(prompt, model=model, temperature=0.1, max_tokens=40)
-    if result:
-        try:
-            cleaned = result.strip().strip("`").strip()
-            if cleaned.startswith("json"):
-                cleaned = cleaned[4:].strip()
-            return json.loads(cleaned)
-        except json.JSONDecodeError:
-            pass
-    return None
-
-
 def judge_relevance(
     current_text: str,
     historical_text: str,
@@ -352,31 +322,6 @@ def judge_relevance(
                         return json.loads(line)
                     except json.JSONDecodeError:
                         continue
-    return None
-
-
-def extract_recurring_themes(
-    exchanges_text: str,
-    model: str = DEFAULT_MODEL,
-) -> Optional[List[str]]:
-    """
-    Extract recurring themes/ideas from a batch of conversation exchanges.
-
-    Used by synthesis auto-detection. Returns list of concept phrases,
-    or None if unavailable.
-    """
-    prompt = (
-        "Extract recurring themes from these exchanges. "
-        "Return 1-5 short phrases, one per line. If none, say 'none'.\n\n"
-        f"{exchanges_text[:800]}"
-    )
-    result = query(prompt, model=model, temperature=0.3, max_tokens=96, timeout=45)
-    if result:
-        lower = result.lower().strip()
-        if lower == "none" or lower.startswith("none"):
-            return []
-        lines = [l.strip().lstrip("0123456789.-) ") for l in result.split("\n") if l.strip()]
-        return [l for l in lines if 3 < len(l) < 80][:5]
     return None
 
 
