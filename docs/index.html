@@ -203,6 +203,16 @@
             position: relative;
         }
 
+        .hero-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 72px;
+            color: var(--red);
+            text-shadow: 0 0 30px rgba(255, 0, 64, 0.6), 0 0 80px rgba(255, 0, 64, 0.2);
+            margin-bottom: 16px;
+            letter-spacing: 12px;
+            animation: glitch 4s infinite;
+        }
+
         .hero-prefix {
             font-family: 'Share Tech Mono', monospace;
             font-size: 14px;
@@ -712,6 +722,7 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            .hero-title { font-size: 42px; letter-spacing: 8px; }
             .hero h1 { font-size: 22px; }
             .features-grid { grid-template-columns: 1fr; }
             .tools-grid { grid-template-columns: 1fr; }
@@ -722,6 +733,7 @@
         }
 
         @media (max-width: 480px) {
+            .hero-title { font-size: 32px; letter-spacing: 6px; }
             .hero h1 { font-size: 16px; }
             .stat-value { font-size: 36px; }
         }
@@ -751,6 +763,7 @@
     <!-- Hero -->
     <section class="hero">
         <div class="container">
+            <div class="hero-title">ELARA</div>
             <div class="hero-prefix">// open source mcp server</div>
             <h1>PERSISTENT MEMORY<br>FOR AI ASSISTANTS</h1>
             <p><span class="hl">34 tools.</span> <span class="hl-red">10 modules.</span> Mood, memory, episodes, dreams, reasoning, corrections. Sessions stop dying. Context accumulates. Your AI remembers.</p>
