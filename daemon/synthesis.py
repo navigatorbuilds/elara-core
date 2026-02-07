@@ -81,37 +81,63 @@ def _load_all_syntheses() -> List[Dict]:
 # ChromaDB index (for seed clustering)
 # ============================================================================
 
+_chroma_client = None
+_chroma_collection = None
+_chroma_seed_collection = None
+
+
+def _get_client():
+    global _chroma_client
+    if _chroma_client is not None:
+        return _chroma_client
+    SYNTHESIS_DB_DIR.mkdir(parents=True, exist_ok=True)
+    _chroma_client = chromadb.PersistentClient(
+        path=str(SYNTHESIS_DB_DIR),
+        settings=Settings(anonymized_telemetry=False),
+    )
+    return _chroma_client
+
+
 def _get_collection():
+    global _chroma_collection
+
     if not CHROMA_AVAILABLE:
         return None
+
+    if _chroma_collection is not None:
+        return _chroma_collection
+
     try:
-        client = chromadb.PersistentClient(
-            path=str(SYNTHESIS_DB_DIR),
-            settings=Settings(anonymized_telemetry=False),
-        )
-        return client.get_or_create_collection(
+        client = _get_client()
+        _chroma_collection = client.get_or_create_collection(
             name="elara_synthesis",
             metadata={"hnsw:space": "cosine"},
         )
-    except Exception as e:
+        return _chroma_collection
+    except (OSError, ValueError, RuntimeError) as e:
         logger.warning("Failed to get synthesis ChromaDB collection: %s", e)
         return None
 
 
 def _get_seed_collection():
     """Separate collection for individual seeds — used for clustering."""
+    global _chroma_seed_collection
+
     if not CHROMA_AVAILABLE:
         return None
+
+    if _chroma_seed_collection is not None:
+        return _chroma_seed_collection
+
     try:
-        client = chromadb.PersistentClient(
-            path=str(SYNTHESIS_DB_DIR),
-            settings=Settings(anonymized_telemetry=False),
-        )
-        return client.get_or_create_collection(
+        client = _get_client()
+        _chroma_seed_collection = client.get_or_create_collection(
             name="elara_synthesis_seeds",
             metadata={"hnsw:space": "cosine"},
         )
-    except Exception:
+        return _chroma_seed_collection
+    except (OSError, ValueError, RuntimeError) as e:
+        logger.warning("Failed to get synthesis seed collection: %s", e)
         return None
 
 

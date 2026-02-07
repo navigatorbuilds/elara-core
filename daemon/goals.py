@@ -76,14 +76,21 @@ def update_goal(
     goals = _load()
     for g in goals:
         if g["id"] == goal_id:
+            changed = False
             if status:
                 g["status"] = status
+                changed = True
             if notes:
                 g["notes"] = notes
+                changed = True
             if priority:
                 g["priority"] = priority
+                changed = True
             if title:
                 g["title"] = title
+                changed = True
+            if not changed:
+                return g
             g["last_touched"] = datetime.now().isoformat()
             _save(goals)
             bus.emit(Events.GOAL_UPDATED, {

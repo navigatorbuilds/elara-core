@@ -254,12 +254,12 @@ class Competitor(ElaraModel):
 
 class IdeaScore(ElaraModel):
     """5-axis viability score."""
-    problem: int = 0
-    market: int = 0
-    effort: int = 0
-    monetization: int = 0
-    fit: int = 0
-    total: int = 0
+    problem: int = Field(default=0, ge=0, le=5)
+    market: int = Field(default=0, ge=0, le=5)
+    effort: int = Field(default=0, ge=0, le=5)
+    monetization: int = Field(default=0, ge=0, le=5)
+    fit: int = Field(default=0, ge=0, le=5)
+    total: int = Field(default=0, ge=0, le=25)
     scored_at: Optional[str] = None
 
 
@@ -464,6 +464,16 @@ def load_validated(path: Path, schema: Type[T], default: Any = None) -> T:
         return schema()
 
 
+def _atomic_rename(tmp: Path, dest: Path):
+    """Flush, fsync, then rename — crash-safe atomic write."""
+    fd = os.open(str(tmp), os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+    os.rename(str(tmp), str(dest))
+
+
 def save_validated(path: Path, model: ElaraModel, atomic: bool = True):
     """
     Save a validated model to JSON file.
@@ -479,7 +489,7 @@ def save_validated(path: Path, model: ElaraModel, atomic: bool = True):
     if atomic:
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(content)
-        os.rename(str(tmp), str(path))
+        _atomic_rename(tmp, path)
     else:
         path.write_text(content)
 
@@ -505,7 +515,7 @@ def save_validated_list(path: Path, items: List[ElaraModel], atomic: bool = True
     if atomic:
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(content)
-        os.rename(str(tmp), str(path))
+        _atomic_rename(tmp, path)
     else:
         path.write_text(content)
 
@@ -519,4 +529,4 @@ def atomic_write_json(path: Path, data: Any, indent: int = 2):
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(data, indent=indent))
-    os.rename(str(tmp), str(path))
+    _atomic_rename(tmp, path)

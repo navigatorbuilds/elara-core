@@ -165,9 +165,7 @@ def monthly_emotional_dream() -> dict:
     month_id = now.strftime("%Y-%m")
 
     weekly_emotionals = []
-    for f in sorted(EMOTIONAL_DIR.glob("*.json")):
-        if f.name in ("latest.json", "monthly-latest.json"):
-            continue
+    for f in sorted(EMOTIONAL_DIR.glob("[0-9]*-W*-emotional.json")):
         try:
             report = json.loads(f.read_text())
             if report.get("type") == "emotional":

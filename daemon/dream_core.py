@@ -121,7 +121,8 @@ def _gather_memories(days: int = 7) -> List[dict]:
             except (ValueError, TypeError):
                 recent.append(r)
         return recent
-    except Exception:
+    except (OSError, ValueError, RuntimeError) as e:
+        logger.warning("Memory recall failed during dream: %s", e)
         return []
 
 

@@ -47,6 +47,8 @@ def _extract_user_quote(content: str, max_len: int = 120) -> str:
         parts = content.split("User:", 1)
         if len(parts) > 1:
             user_part = parts[1].split("\n\nElara:", 1)[0].strip()
+            if len(user_part) < 2:
+                return ""
             if len(user_part) > max_len:
                 user_part = user_part[:max_len - 3] + "..."
             return user_part

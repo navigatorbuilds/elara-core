@@ -109,11 +109,12 @@ def list_feeds() -> List[Dict]:
 # ChromaDB collection
 # ============================================================================
 
+_chroma_client = None
 _collection = None
 
 
 def _get_collection():
-    global _collection
+    global _chroma_client, _collection
     if _collection is not None:
         return _collection
 
@@ -121,11 +122,11 @@ def _get_collection():
         return None
 
     BRIEFING_DB_DIR.mkdir(parents=True, exist_ok=True)
-    client = chromadb.PersistentClient(
+    _chroma_client = chromadb.PersistentClient(
         path=str(BRIEFING_DB_DIR),
         settings=Settings(anonymized_telemetry=False),
     )
-    _collection = client.get_or_create_collection(
+    _collection = _chroma_client.get_or_create_collection(
         name="elara_briefing",
         metadata={"hnsw:space": "cosine"},
     )

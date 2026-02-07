@@ -85,19 +85,32 @@ def _load_all_trails() -> List[Dict]:
 # ChromaDB index (semantic search over trails)
 # ============================================================================
 
+_chroma_client = None
+_chroma_collection = None
+
+
 def _get_collection():
+    global _chroma_client, _chroma_collection
+
     if not CHROMA_AVAILABLE:
         return None
+
+    if _chroma_collection is not None:
+        return _chroma_collection
+
     try:
-        client = chromadb.PersistentClient(
+        REASONING_DB_DIR.mkdir(parents=True, exist_ok=True)
+        _chroma_client = chromadb.PersistentClient(
             path=str(REASONING_DB_DIR),
             settings=Settings(anonymized_telemetry=False),
         )
-        return client.get_or_create_collection(
+        _chroma_collection = _chroma_client.get_or_create_collection(
             name="elara_reasoning",
             metadata={"hnsw:space": "cosine"},
         )
-    except Exception:
+        return _chroma_collection
+    except (OSError, ValueError, RuntimeError) as e:
+        logger.warning("Failed to init reasoning ChromaDB: %s", e)
         return None
 
 

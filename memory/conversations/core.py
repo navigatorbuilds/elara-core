@@ -5,12 +5,15 @@ Database init, manifest management, text extraction utilities, stats.
 """
 
 import json
+import logging
 import os
 import hashlib
 import re
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any
+
+logger = logging.getLogger("elara.memory.conversations")
 
 try:
     import chromadb
@@ -62,10 +65,18 @@ class ConversationBase:
         )
 
     def _load_manifest(self) -> Dict[str, Any]:
-        if MANIFEST_PATH.exists():
+        if not MANIFEST_PATH.exists():
+            return {}
+        try:
             with open(MANIFEST_PATH) as f:
-                return json.load(f)
-        return {}
+                data = json.load(f)
+            if not isinstance(data, dict):
+                logger.warning("Manifest is not a dict, resetting")
+                return {}
+            return data
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning("Corrupt manifest, resetting: %s", e)
+            return {}
 
     def _save_manifest(self, manifest: Dict[str, Any]):
         manifest["_schema_version"] = SCHEMA_VERSION

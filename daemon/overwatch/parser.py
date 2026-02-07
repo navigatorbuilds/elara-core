@@ -51,6 +51,9 @@ class ParserMixin:
         entries = []
         try:
             file_size = jsonl_path.stat().st_size
+            if file_size < self.last_position:
+                log.warning("JSONL truncated (%d < %d), resetting position", file_size, self.last_position)
+                self.last_position = 0
             if file_size <= self.last_position:
                 return []
 

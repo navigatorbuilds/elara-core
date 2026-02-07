@@ -14,6 +14,7 @@ Falls back gracefully when Ollama is down — nothing breaks.
 
 import json
 import logging
+import threading
 import time
 import urllib.request
 import urllib.error
@@ -30,6 +31,7 @@ DEFAULT_TIMEOUT = 30  # seconds
 _last_check: float = 0
 _last_available: bool = False
 _CHECK_INTERVAL = 60  # recheck every 60s
+_check_lock = threading.Lock()
 
 
 def _api_call(
@@ -60,20 +62,25 @@ def _api_call(
 
 
 def is_available() -> bool:
-    """Check if Ollama is running and responsive. Cached for 60s."""
+    """Check if Ollama is running and responsive. Cached for 60s, thread-safe."""
     global _last_check, _last_available
 
     now = time.time()
     if now - _last_check < _CHECK_INTERVAL:
         return _last_available
 
-    _last_check = now
-    try:
-        req = urllib.request.Request(f"{OLLAMA_URL}/api/tags", method="GET")
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            _last_available = resp.status == 200
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError):
-        _last_available = False
+    with _check_lock:
+        # Double-check after acquiring lock
+        if now - _last_check < _CHECK_INTERVAL:
+            return _last_available
+
+        _last_check = now
+        try:
+            req = urllib.request.Request(f"{OLLAMA_URL}/api/tags", method="GET")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                _last_available = resp.status == 200
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError):
+            _last_available = False
 
     return _last_available
 
@@ -335,9 +342,6 @@ def status() -> Dict[str, Any]:
     }
 
     if available:
-        result = _api_call("/api/tags", {}, timeout=5)
-        # GET doesn't use payload, but our _api_call is POST-only
-        # Use direct request
         try:
             req = urllib.request.Request(f"{OLLAMA_URL}/api/tags", method="GET")
             with urllib.request.urlopen(req, timeout=5) as resp:
