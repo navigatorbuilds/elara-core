@@ -51,6 +51,11 @@ OVERDUE_BOOST = 0.15         # score boost for results matching overdue items
 MICRO_INGEST_EXCHANGES = 5   # ingest every N exchanges
 MICRO_INGEST_SECONDS = 600   # or every N seconds, whichever first
 
+# Session snapshot — lightweight state for boot continuity
+SNAPSHOT_PATH = Path.home() / ".claude" / "elara-session-snapshot.json"
+SNAPSHOT_INTERVAL = 1200     # 20 min between snapshots
+SNAPSHOT_MIN_EXCHANGES = 3   # need at least 3 exchanges before first snapshot
+
 # Event detection keywords
 TASK_COMPLETE_WORDS = {"done", "built", "fixed", "shipped", "committed", "deployed", "pushed", "created", "finished"}
 WINDING_DOWN_WORDS = {"anything else", "that's it", "what else", "done for", "calling it", "bye", "goodnight", "heading out"}
@@ -91,6 +96,10 @@ class Overwatch:
         self.last_ingest_time: float = time.time()
         self.pending_exchanges: List[Dict[str, str]] = []
         self.exchange_counter: int = 0  # monotonic counter for exchange_index
+
+        # Session snapshot tracking
+        self.last_snapshot_time: float = 0
+        self.recent_exchanges: List[Dict[str, str]] = []  # rolling window for snapshot context
 
     def find_active_session(self) -> Optional[Path]:
         """Find the most recently modified JSONL file — that's the active session."""
@@ -442,6 +451,81 @@ class Overwatch:
         except (json.JSONDecodeError, OSError) as e:
             log.error(f"Session state update error: {e}")
 
+    def _build_snapshot(self) -> None:
+        """Build a session snapshot — one file, always overwritten.
+
+        Two fields for boot:
+        - continuation: for quick reboots (<30 min) — what we were just doing
+        - greeting_hint: for fresh sessions (hours later) — summary of what happened
+        """
+        if not self.recent_exchanges:
+            return
+
+        # Get last 5 exchanges for context
+        recent = self.recent_exchanges[-5:]
+        context_parts = []
+        for ex in recent:
+            user_short = ex["user_text"][:150]
+            assistant_short = ex["assistant_text"][:150]
+            context_parts.append(f"User: {user_short}\nAssistant: {assistant_short}")
+        context = "\n---\n".join(context_parts)
+
+        # Ask Ollama for continuation (what we were mid-thought on)
+        continuation = llm.query(
+            "You are reading the last few exchanges of a work session between a developer "
+            "and his AI partner. What were they working on and what was the next step? "
+            "Write 1-2 sentences as if you're picking up the conversation. Start with "
+            "what they were doing, end with what's next. No greetings, no fluff.\n\n"
+            f"{context}",
+            temperature=0.3,
+            max_tokens=128,
+        )
+
+        # Ask Ollama for greeting hint (session summary for fresh boots)
+        greeting_hint = llm.query(
+            "Summarize this work session in one casual sentence. What got done? "
+            "Write it like a colleague catching someone up, not a report. "
+            "Example: 'Shipped the Ollama integration, all reviewer items done now.'\n\n"
+            f"{context}",
+            temperature=0.4,
+            max_tokens=64,
+        )
+
+        snapshot = {
+            "timestamp": datetime.now().isoformat(),
+            "session_id": self.current_session_id,
+            "exchange_count": self.exchange_counter,
+            "continuation": continuation or self._fallback_continuation(),
+            "greeting_hint": greeting_hint or self._fallback_greeting(),
+        }
+
+        try:
+            tmp = SNAPSHOT_PATH.with_suffix(".tmp")
+            tmp.write_text(json.dumps(snapshot, indent=2))
+            os.rename(str(tmp), str(SNAPSHOT_PATH))
+            log.info(f"Snapshot written ({self.exchange_counter} exchanges)")
+        except OSError as e:
+            log.error(f"Snapshot write error: {e}")
+
+    def _fallback_continuation(self) -> str:
+        """Fallback continuation when Ollama is unavailable."""
+        if self.recent_exchanges:
+            last = self.recent_exchanges[-1]
+            return f"Last: {last['user_text'][:100]}"
+        return ""
+
+    def _fallback_greeting(self) -> str:
+        """Fallback greeting hint when Ollama is unavailable."""
+        return f"Session had {self.exchange_counter} exchanges."
+
+    def _check_snapshot(self) -> None:
+        """Check if it's time to write a snapshot."""
+        now = time.time()
+        if (self.exchange_counter >= SNAPSHOT_MIN_EXCHANGES
+                and now - self.last_snapshot_time > SNAPSHOT_INTERVAL):
+            self._build_snapshot()
+            self.last_snapshot_time = now
+
     def _process_exchange(self, exchange: Dict[str, str]):
         """Core logic: process one new exchange."""
         combined = exchange["user_text"] + " " + exchange["assistant_text"]
@@ -466,6 +550,12 @@ class Overwatch:
 
         self.prev_user_text = exchange["user_text"]
 
+        # Track for snapshot
+        self.recent_exchanges.append(exchange)
+        if len(self.recent_exchanges) > 10:
+            self.recent_exchanges = self.recent_exchanges[-10:]
+        self._check_snapshot()
+
     def watch(self):
         """Main loop — find active session, tail it, react."""
         log.info("Overwatch starting...")
@@ -486,7 +576,9 @@ class Overwatch:
                 try:
                     mtime = active.stat().st_mtime
                     if time.time() - mtime > HEARTBEAT_TIMEOUT:
-                        # Flush any pending micro-ingestion before exiting
+                        # Final snapshot + flush before exiting
+                        if self.recent_exchanges:
+                            self._build_snapshot()
                         if self.pending_exchanges:
                             self._micro_ingest()
                         log.info(f"Session JSONL stale for {HEARTBEAT_TIMEOUT}s, exiting (orphan prevention)")
@@ -508,6 +600,8 @@ class Overwatch:
                     self.pending_exchanges = []
                     self.exchanges_since_ingest = 0
                     self.last_ingest_time = time.time()
+                    self.last_snapshot_time = 0
+                    self.recent_exchanges = []
 
                     # Reload session state (may have been updated by new boot)
                     self.session_state = self._load_session_state()

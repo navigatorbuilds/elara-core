@@ -138,8 +138,40 @@ def boot():
         except Exception:
             pass
 
+    # Session snapshot — continuity between sessions
+    _show_snapshot(quick_ctx.get("gap_seconds") if CONTEXT_AVAILABLE and quick_ctx else None)
+
     # Start Overwatch daemon if not already running
     _start_overwatch()
+
+
+SNAPSHOT_PATH = Path.home() / ".claude" / "elara-session-snapshot.json"
+
+
+def _show_snapshot(gap_seconds=None):
+    """Show session snapshot for continuity.
+
+    Quick reboot (<30 min): show continuation (what we were just doing)
+    Fresh session (>30 min): show greeting_hint (summary of last session)
+    """
+    if not SNAPSHOT_PATH.exists():
+        return
+
+    try:
+        snapshot = json.loads(SNAPSHOT_PATH.read_text())
+    except (json.JSONDecodeError, OSError):
+        return
+
+    if gap_seconds is not None and gap_seconds < 1800:
+        # Quick reboot — show continuation
+        continuation = snapshot.get("continuation", "")
+        if continuation:
+            print(f"[Snapshot] {continuation}")
+    else:
+        # Fresh session — show greeting hint
+        hint = snapshot.get("greeting_hint", "")
+        if hint:
+            print(f"[Snapshot] Last session: {hint}")
 
 
 def _start_overwatch():
