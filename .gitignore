@@ -30,4 +30,5 @@ Thumbs.db
 # Personal (do not ship)
 claude-config/
 windows/
-docs/
+docs/*.md
+!docs/index.html

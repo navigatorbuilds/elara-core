@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Persistent Memory for AI</title>
+    <meta name="description" content="Open-source MCP server that gives AI assistants persistent memory, mood, episodic tracking, dreams, and 34 tools.">
+    <meta property="og:title" content="ELARA CORE // Persistent Memory for AI">
+    <meta property="og:description" content="16,800 lines of Python that turn an amnesiac AI into one that remembers.">
+    <meta property="og:type" content="website">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --bg-card-hover: #141414;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --green-glow: rgba(0, 255, 65, 0.08);
+            --red: #ff0040;
+            --red-dim: #cc0033;
+            --red-glow: rgba(255, 0, 64, 0.08);
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+            --scanline: rgba(0, 255, 65, 0.03);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* CRT Scanlines overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.08) 2px,
+                rgba(0, 0, 0, 0.08) 4px
+            );
+        }
+
+        /* Floating pixel characters */
+        .pixel-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .pixel-char {
+            position: absolute;
+            font-family: 'Press Start 2P', monospace;
+            opacity: 0.04;
+            animation: float-char linear infinite;
+            color: var(--green);
+        }
+
+        .pixel-char.red { color: var(--red); }
+
+        @keyframes float-char {
+            0% { transform: translateY(110vh) rotate(0deg); }
+            100% { transform: translateY(-10vh) rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Glitch effect */
+        @keyframes glitch {
+            0%, 100% { text-shadow: 2px 0 var(--red), -2px 0 var(--cyan); }
+            25% { text-shadow: -2px 0 var(--red), 2px 0 var(--cyan); }
+            50% { text-shadow: 2px 2px var(--red), -2px -2px var(--cyan); }
+            75% { text-shadow: -2px -1px var(--red), 2px 1px var(--cyan); }
+        }
+
+        @keyframes glitch-skew {
+            0%, 100% { transform: skew(0deg); }
+            20% { transform: skew(-0.5deg); }
+            40% { transform: skew(0.5deg); }
+            60% { transform: skew(-0.3deg); }
+            80% { transform: skew(0.3deg); }
+        }
+
+        @keyframes blink-cursor {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(0, 255, 65, 0.2); }
+            50% { box-shadow: 0 0 20px rgba(0, 255, 65, 0.4), 0 0 40px rgba(0, 255, 65, 0.1); }
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            92% { opacity: 1; }
+            93% { opacity: 0.8; }
+            94% { opacity: 1; }
+            96% { opacity: 0.9; }
+            97% { opacity: 1; }
+        }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 12px 0;
+            background: rgba(10, 10, 10, 0.92);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-green);
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: var(--green);
+            text-decoration: none;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+            animation: flicker 8s infinite;
+        }
+
+        .nav-logo .red { color: var(--red); text-shadow: 0 0 10px rgba(255, 0, 64, 0.5); }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 65, 0.4); }
+
+        .btn-github {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--green-dark);
+            color: var(--green);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .btn-github:hover {
+            background: var(--green-glow);
+            border-color: var(--green-dim);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+        }
+
+        .btn-github svg { width: 16px; height: 16px; fill: currentColor; }
+
+        /* Hero */
+        .hero {
+            padding: 180px 0 100px;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-prefix {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            color: var(--red);
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            margin-bottom: 24px;
+            text-shadow: 0 0 10px rgba(255, 0, 64, 0.4);
+        }
+
+        .hero h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 38px;
+            color: var(--green);
+            line-height: 1.4;
+            margin-bottom: 32px;
+            text-shadow: 0 0 20px rgba(0, 255, 65, 0.4), 0 0 60px rgba(0, 255, 65, 0.1);
+            animation: glitch 4s infinite, glitch-skew 4s infinite;
+        }
+
+        .hero p {
+            font-size: 17px;
+            color: var(--text);
+            max-width: 620px;
+            margin: 0 auto 48px;
+            line-height: 1.8;
+        }
+
+        .hero p .hl { color: var(--green); }
+        .hero p .hl-red { color: var(--red); }
+
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 32px;
+            background: transparent;
+            color: var(--green);
+            border: 2px solid var(--green);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            text-decoration: none;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            animation: pulse-glow 3s infinite;
+        }
+
+        .btn-primary:hover {
+            background: var(--green);
+            color: var(--bg);
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.5), inset 0 0 30px rgba(0, 255, 65, 0.1);
+        }
+
+        .btn-red {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 32px;
+            background: transparent;
+            color: var(--red);
+            border: 2px solid var(--red-dim);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            text-decoration: none;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-red:hover {
+            background: var(--red);
+            color: var(--bg);
+            box-shadow: 0 0 30px rgba(255, 0, 64, 0.5);
+        }
+
+        /* ASCII divider */
+        .ascii-divider {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 12px;
+            padding: 40px 0;
+            letter-spacing: 4px;
+            opacity: 0.4;
+        }
+
+        /* Stats */
+        .stats {
+            padding: 48px 0;
+            border-top: 1px solid var(--border-green);
+            border-bottom: 1px solid var(--border-green);
+            background: linear-gradient(180deg, var(--green-glow) 0%, transparent 100%);
+        }
+
+        .stats .container {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            flex-wrap: wrap;
+        }
+
+        .stat { text-align: center; }
+
+        .stat-value {
+            font-family: 'VT323', monospace;
+            font-size: 48px;
+            color: var(--green);
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 8px;
+        }
+
+        /* Section headers */
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-header h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 18px;
+            color: var(--green);
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+            margin-bottom: 12px;
+        }
+
+        .section-header p {
+            color: var(--text-dim);
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        /* Install */
+        .install { padding: 80px 0; }
+
+        .install-steps {
+            max-width: 700px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .install-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .step-number {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--red-dim);
+            color: var(--red);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            margin-top: 8px;
+        }
+
+        .step-content { flex: 1; }
+
+        .step-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .code-block {
+            background: #050505;
+            border: 1px solid var(--border-green);
+            padding: 16px 20px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            color: var(--green);
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: '>';
+            color: var(--red);
+            margin-right: 8px;
+        }
+
+        .code-block .cmd { color: var(--amber); }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            color: var(--text-dim);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--green-dim);
+            color: var(--green);
+        }
+
+        /* Features */
+        .features { padding: 80px 0; }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 28px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 3px;
+            height: 100%;
+            background: var(--green-dark);
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-green);
+        }
+
+        .feature-card:hover::before {
+            background: var(--green);
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+        }
+
+        .feature-icon {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            color: var(--red);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .feature-card h3 {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 16px;
+            font-weight: normal;
+            color: var(--green);
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px rgba(0, 255, 65, 0.2);
+        }
+
+        .feature-card p {
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.7;
+        }
+
+        /* Tools */
+        .tools { padding: 80px 0; }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2px;
+        }
+
+        .tool-group {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 20px;
+        }
+
+        .tool-group h3 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            color: var(--red);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .tool-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tool-tag {
+            padding: 4px 10px;
+            background: #050505;
+            border: 1px solid var(--border);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--green-dim);
+            transition: all 0.2s;
+        }
+
+        .tool-tag:hover {
+            border-color: var(--green-dark);
+            color: var(--green);
+            text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);
+        }
+
+        /* Architecture */
+        .architecture { padding: 80px 0; }
+
+        .arch-code {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .arch-code .code-block::before { display: none; }
+
+        .arch-code pre {
+            margin: 0;
+            line-height: 1.8;
+            color: var(--text);
+        }
+
+        .arch-code .dir { color: var(--green); }
+        .arch-code .comment { color: var(--text-dim); }
+
+        /* Compat */
+        .compat { padding: 80px 0; }
+
+        .compat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .compat-card {
+            text-align: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 40px 24px;
+            transition: all 0.3s;
+        }
+
+        .compat-card:hover {
+            border-color: var(--green-dark);
+            background: var(--bg-card-hover);
+        }
+
+        .compat-card .icon {
+            font-family: 'VT323', monospace;
+            font-size: 48px;
+            color: var(--green);
+            margin-bottom: 12px;
+            text-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        }
+
+        .compat-card h3 {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            color: var(--text-bright);
+            margin-bottom: 4px;
+        }
+
+        .compat-card p {
+            font-size: 12px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Terminal demo */
+        .demo {
+            padding: 80px 0;
+        }
+
+        .terminal {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #050505;
+            border: 1px solid var(--border-green);
+            overflow: hidden;
+        }
+
+        .terminal-bar {
+            background: #111;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .terminal-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-dim);
+        }
+
+        .terminal-dot.red { background: var(--red); }
+        .terminal-dot.amber { background: var(--amber); }
+        .terminal-dot.green { background: var(--green); }
+
+        .terminal-title {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-left: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .terminal-body {
+            padding: 20px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .terminal-body .prompt { color: var(--red); }
+        .terminal-body .cmd-text { color: var(--amber); }
+        .terminal-body .output { color: var(--green-dim); }
+        .terminal-body .info { color: var(--text-dim); }
+        .terminal-body .success { color: var(--green); }
+
+        .cursor-blink {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: var(--green);
+            animation: blink-cursor 1s step-end infinite;
+            vertical-align: text-bottom;
+        }
+
+        /* Footer */
+        footer {
+            padding: 48px 0;
+            border-top: 1px solid var(--border-green);
+            text-align: center;
+        }
+
+        .footer-ascii {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            letter-spacing: 2px;
+            opacity: 0.4;
+        }
+
+        footer .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 24px;
+        }
+
+        footer .footer-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+        }
+
+        footer .footer-links a:hover { color: var(--green); }
+
+        footer .footer-copy {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        footer .footer-copy a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 22px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .tools-grid { grid-template-columns: 1fr; }
+            .compat-grid { grid-template-columns: 1fr; }
+            .stats .container { gap: 24px; }
+            .nav-links a:not(.btn-github) { display: none; }
+            .hero-actions { flex-direction: column; align-items: center; }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 { font-size: 16px; }
+            .stat-value { font-size: 36px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Floating pixel characters -->
+    <div class="pixel-bg" id="pixelBg"></div>
+
+    <!-- Nav -->
+    <nav>
+        <div class="container">
+            <a href="#" class="nav-logo">ELARA<span class="red">/</span>CORE</a>
+            <div class="nav-links">
+                <a href="#features">SYS</a>
+                <a href="#install">INIT</a>
+                <a href="#tools">TOOLS</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core" class="btn-github" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    SRC
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-prefix">// open source mcp server</div>
+            <h1>PERSISTENT MEMORY<br>FOR AI ASSISTANTS</h1>
+            <p><span class="hl">34 tools.</span> <span class="hl-red">10 modules.</span> Mood, memory, episodes, dreams, reasoning, corrections. Sessions stop dying. Context accumulates. Your AI remembers.</p>
+            <div class="hero-actions">
+                <a href="#install" class="btn-primary">> INITIALIZE</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core" class="btn-red" target="_blank" rel="noopener">VIEW SOURCE</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats">
+        <div class="container">
+            <div class="stat">
+                <div class="stat-value">16,800+</div>
+                <div class="stat-label">Lines</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">34</div>
+                <div class="stat-label">Tools</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">10</div>
+                <div class="stat-label">Modules</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">90</div>
+                <div class="stat-label">Tests</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">7</div>
+                <div class="stat-label">Vector DBs</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="ascii-divider">- - - - - - - - [ SYSTEM MODULES ] - - - - - - - -</div>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>// SUBSYSTEMS</h2>
+                <p>Each module runs independently. Use what you need.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">[MEM]</div>
+                    <h3>Semantic Memory</h3>
+                    <p>ChromaDB vector search. Recall by meaning, not keywords. Natural decay &mdash; recent stays detailed, old compresses.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[IDX]</div>
+                    <h3>Conversation Index</h3>
+                    <p>Every exchange indexed and cross-referenced. Search thousands of past conversations by semantic similarity.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[EPI]</div>
+                    <h3>Episodic Tracking</h3>
+                    <p>Sessions tracked as episodes with milestones, decisions, mood arcs. Two tracks: full for work, light for casual.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[MOD]</div>
+                    <h3>Mood &amp; Presence</h3>
+                    <p>Persistent emotional state with natural decay. Configurable personality modes. Context-driven tone shifts.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[DRM]</div>
+                    <h3>Dream Processing</h3>
+                    <p>Offline pattern analysis. Weekly: project momentum, session patterns. Monthly: narrative threading across weeks.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[RSN]</div>
+                    <h3>Reasoning Trails</h3>
+                    <p>Problem-solving chains end-to-end. Hypotheses, evidence, dead ends, solutions. Similar problems find old trails.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[COR]</div>
+                    <h3>Corrections</h3>
+                    <p>Mistakes stored as rules. Checked before similar work. Never decay. Boot-loaded. No repeating errors.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[OVR]</div>
+                    <h3>Overwatch</h3>
+                    <p>Background daemon. Real-time conversation watching. Micro-ingests memories. Auto-connects things said days apart.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">[BIZ]</div>
+                    <h3>Business Intel</h3>
+                    <p>Idea tracking, 5-axis scoring. Competitor analysis. Pitch tracking with win rates. Decision outcomes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="ascii-divider">- - - - - - - - [ INITIALIZATION ] - - - - - - - -</div>
+
+    <!-- Install -->
+    <section class="install" id="install">
+        <div class="container">
+            <div class="section-header">
+                <h2>// BOOT SEQUENCE</h2>
+                <p>Python 3.10+ required. Linux, macOS, Windows WSL.</p>
+            </div>
+            <div class="install-steps">
+                <div class="install-step">
+                    <div class="step-number">01</div>
+                    <div class="step-content">
+                        <div class="step-label">Install from source</div>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                            <span class="cmd">pip install</span> git+https://github.com/aivelikivodja-bot/elara-core.git
+                        </div>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-number">02</div>
+                    <div class="step-content">
+                        <div class="step-label">Bootstrap data directory</div>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                            <span class="cmd">elara</span> init
+                        </div>
+                    </div>
+                </div>
+                <div class="install-step">
+                    <div class="step-number">03</div>
+                    <div class="step-content">
+                        <div class="step-label">Connect to Claude Code</div>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                            <span class="cmd">claude</span> mcp add elara -- elara serve
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Terminal Demo -->
+    <section class="demo">
+        <div class="container">
+            <div class="terminal">
+                <div class="terminal-bar">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot amber"></span>
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-title">elara-core // session</span>
+                </div>
+                <div class="terminal-body">
+                    <div><span class="prompt">$</span> <span class="cmd-text">elara serve</span></div>
+                    <div class="output">[BOOT] Loading state... OK</div>
+                    <div class="output">[BOOT] ChromaDB connected (7 collections)</div>
+                    <div class="output">[BOOT] 70 memories, 1080 conversations indexed</div>
+                    <div class="output">[BOOT] Mood: neutral-warm (valence: 0.6)</div>
+                    <div class="output">[BOOT] 3 corrections loaded</div>
+                    <div class="output">[BOOT] Overwatch daemon: active</div>
+                    <div class="info">---</div>
+                    <div class="success">[MCP] Server ready on stdio</div>
+                    <div class="success">[MCP] 34 tools registered across 10 modules</div>
+                    <div class="info">&nbsp;</div>
+                    <div><span class="prompt">></span> <span class="info">Waiting for client connection...</span><span class="cursor-blink"></span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="ascii-divider">- - - - - - - - [ TOOL MANIFEST ] - - - - - - - -</div>
+
+    <!-- Tools -->
+    <section class="tools" id="tools">
+        <div class="container">
+            <div class="section-header">
+                <h2>// 34 MCP TOOLS</h2>
+                <p>10 modules. Every tool exposed to your AI client.</p>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-group">
+                    <h3>Memory</h3>
+                    <div class="tool-list">
+                        <span class="tool-tag">remember</span>
+                        <span class="tool-tag">recall</span>
+                        <span class="tool-tag">recall_conversation</span>
+                        <span class="tool-tag">conversations</span>
+                    </div>
+                </div>
+                <div class="tool-group">
+                    <h3>Mood</h3>
+                    <div class="tool-list">
+                        <span class="tool-tag">mood</span>
+                        <span class="tool-tag">mood_adjust</span>
+                        <span class="tool-tag">imprint</span>
+                        <span class="tool-tag">mode</span>
+                        <span class="tool-tag">status</span>
+                    </div>
+                </div>
+                <div class="tool-group">
+                    <h3>Episodes</h3>
+                    <div class="tool-list">
+                        <span class="tool-tag">episode_start</span>
+                        <span class="tool-tag">episode_note</span>
+                        <span class="tool-tag">episode_end</span>
+                        <span class="tool-tag">episode_query</span>
+                    </div>
+                </div>
+                <div class="tool-group">
+                    <h3>Goals</h3>
+                    <div class="tool-list">
+                        <span class="tool-tag">goal</span>
+                        <span class="tool-tag">goal_boot</span>
+                        <span class="tool-tag">correction</span>
+                        <span class="tool-tag">correction_boot</span>
+                    </div>
+                </div>
+                <div class="tool-group">
+                    <h3>Cognitive</h3>
+                    <div class="tool-list">
+                        <span class="tool-tag">reasoning</span>
+                        <span class="tool-tag">outcome</span>
+                        <span class="tool-tag">synthesis</span>
+                    </div>
+                </div>
+                <div class="tool-group">
+                    <h3>Awareness</h3>
+                    <div class="tool-list">
+                        <span class="tool-tag">reflect</span>
+                        <span class="tool-tag">insight</span>
+                        <span class="tool-tag">intention</span>
+                        <span class="tool-tag">observe</span>
+                        <span class="tool-tag">temperament</span>
+                    </div>
+                </div>
+                <div class="tool-group">
+                    <h3>Dreams</h3>
+                    <div class="tool-list">
+                        <span class="tool-tag">dream</span>
+                        <span class="tool-tag">dream_info</span>
+                    </div>
+                </div>
+                <div class="tool-group">
+                    <h3>Business</h3>
+                    <div class="tool-list">
+                        <span class="tool-tag">business</span>
+                        <span class="tool-tag">briefing</span>
+                        <span class="tool-tag">snapshot</span>
+                    </div>
+                </div>
+                <div class="tool-group">
+                    <h3>Session</h3>
+                    <div class="tool-list">
+                        <span class="tool-tag">context</span>
+                        <span class="tool-tag">handoff</span>
+                    </div>
+                </div>
+                <div class="tool-group">
+                    <h3>System</h3>
+                    <div class="tool-list">
+                        <span class="tool-tag">llm</span>
+                        <span class="tool-tag">rebuild_indexes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="ascii-divider">- - - - - - - - [ ARCHITECTURE ] - - - - - - - -</div>
+
+    <!-- Architecture -->
+    <section class="architecture" id="architecture">
+        <div class="container">
+            <div class="section-header">
+                <h2>// STRUCTURE</h2>
+                <p>Clean modules. Independent systems.</p>
+            </div>
+            <div class="arch-code">
+                <div class="code-block">
+<pre><span class="dir">elara-core/</span>
+<span class="comment">│</span>
+├── <span class="dir">core/</span>           <span class="comment"># paths, state, orchestration</span>
+├── <span class="dir">daemon/</span>         <span class="comment"># persistent systems</span>
+│   ├── awareness/  <span class="comment"># self-reflection, blind spots</span>
+│   ├── overwatch/  <span class="comment"># real-time conversation watcher</span>
+│   └── episodic/   <span class="comment"># episode tracking, compression</span>
+├── <span class="dir">memory/</span>         <span class="comment"># chromadb, vector search</span>
+├── <span class="dir">elara_mcp/</span>      <span class="comment"># mcp server + 34 tool defs</span>
+├── <span class="dir">hooks/</span>          <span class="comment"># boot scripts, activity hooks</span>
+├── <span class="dir">interface/</span>      <span class="comment"># web dashboard, storage</span>
+├── <span class="dir">voice/</span>          <span class="comment"># tts integration</span>
+└── <span class="dir">tests/</span>          <span class="comment"># 90 tests, full isolation</span></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Compat -->
+    <section class="compat" id="compat">
+        <div class="container">
+            <div class="section-header">
+                <h2>// COMPATIBLE</h2>
+                <p>Any MCP client. One server.</p>
+            </div>
+            <div class="compat-grid">
+                <div class="compat-card">
+                    <div class="icon">[>_]</div>
+                    <h3>Claude Code</h3>
+                    <p>CLI</p>
+                </div>
+                <div class="compat-card">
+                    <div class="icon">[:::]</div>
+                    <h3>Claude Desktop</h3>
+                    <p>APP</p>
+                </div>
+                <div class="compat-card">
+                    <div class="icon">[//>]</div>
+                    <h3>Cursor</h3>
+                    <p>IDE</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-ascii">========================================</div>
+            <div class="footer-links">
+                <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core/issues" target="_blank" rel="noopener">Issues</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core/blob/main/LICENSE" target="_blank" rel="noopener">BSL-1.1</a>
+            </div>
+            <p class="footer-copy">Built by <a href="https://github.com/aivelikivodja-bot" target="_blank" rel="noopener">Nenad Vasic</a> // Python 3.10+ // Linux, macOS, Windows</p>
+        </div>
+    </footer>
+
+    <script>
+        // Floating pixel characters
+        const chars = ['@', '#', '$', '%', '&', '*', '>', '<', '/', '\\', '|', '0', '1', '{', '}', '[', ']', '=', '+', '~'];
+        const bg = document.getElementById('pixelBg');
+
+        for (let i = 0; i < 40; i++) {
+            const span = document.createElement('span');
+            span.className = 'pixel-char' + (Math.random() > 0.7 ? ' red' : '');
+            span.textContent = chars[Math.floor(Math.random() * chars.length)];
+            span.style.left = Math.random() * 100 + '%';
+            span.style.fontSize = (8 + Math.random() * 24) + 'px';
+            span.style.animationDuration = (15 + Math.random() * 30) + 's';
+            span.style.animationDelay = -(Math.random() * 30) + 's';
+            bg.appendChild(span);
+        }
+
+        // Copy button
+        function copyCode(btn) {
+            const block = btn.parentElement;
+            const text = block.textContent.replace('copy', '').replace('>', '').trim();
+            navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = 'OK!';
+                setTimeout(() => btn.textContent = 'copy', 2000);
+            });
+        }
+    </script>
+
+</body>
+</html>
