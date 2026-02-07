@@ -2,6 +2,7 @@
 Overwatch search — history search, event detection, LLM filtering, injection writing.
 """
 
+import logging
 import json
 import time
 import hashlib
@@ -17,6 +18,8 @@ from daemon.overwatch.config import (
     INJECT_PATH, INJECT_TMP_PATH, SESSION_STATE_PATH, log,
 )
 
+
+logger = logging.getLogger("elara.overwatch.search")
 
 class SearchMixin:
     """Mixin for history search, event detection, and injection."""

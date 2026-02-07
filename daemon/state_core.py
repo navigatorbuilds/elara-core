@@ -5,6 +5,7 @@ This is the foundation that mood, sessions, and temperament all depend on.
 Everything here is internal — external code imports from daemon.state (the re-export layer).
 """
 
+import logging
 import json
 import math
 import os
@@ -16,6 +17,8 @@ from typing import Optional, List
 from daemon.schemas import atomic_write_json
 
 from daemon.emotions import get_primary_emotion
+
+logger = logging.getLogger("elara.state_core")
 
 STATE_FILE = Path.home() / ".claude" / "elara-state.json"
 MOOD_JOURNAL_FILE = Path.home() / ".claude" / "elara-mood-journal.jsonl"
@@ -120,6 +123,7 @@ def _archive_imprint(imprint: dict) -> None:
 
 def _load_state() -> dict:
     """Load current emotional state with crash recovery."""
+    logger.debug("Loading state from %s", STATE_FILE)
     tmp_file = STATE_FILE.with_suffix(".json.tmp")
 
     # Crash recovery: if .tmp exists but .json doesn't, the rename was interrupted
@@ -144,7 +148,7 @@ def _load_state() -> dict:
                 state["current_session"] = DEFAULT_STATE["current_session"].copy()
             return state
         except json.JSONDecodeError:
-            pass
+            logger.error("Corrupt state file %s, using defaults", STATE_FILE)
     return DEFAULT_STATE.copy()
 
 
@@ -158,6 +162,7 @@ def _apply_time_decay(state: dict) -> dict:
     """Apply time-based decay toward temperament."""
     if not state.get("last_update"):
         return state
+    logger.debug("Applying time decay from last_update=%s", state["last_update"])
 
     try:
         last_update = datetime.fromisoformat(state["last_update"])

@@ -9,6 +9,7 @@ Real code lives in:
 Infrastructure in daemon/dream_core.py.
 """
 
+import logging
 from daemon.dream_core import (
     dream_status, dream_boot_check, read_latest_dream, EMOTIONAL_DIR,
 )
@@ -16,3 +17,5 @@ from daemon.dream_weekly import weekly_dream
 from daemon.dream_monthly import monthly_dream
 from daemon.dream_emotional import emotional_dream, monthly_emotional_dream
 from daemon.dream_threads import narrative_threads
+
+logger = logging.getLogger("elara.dream")

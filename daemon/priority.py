@@ -14,12 +14,15 @@ Rules:
 - writes session state for Overwatch integration
 """
 
+import logging
 import json
 from pathlib import Path
 from datetime import datetime
 
 from daemon.handoff import load_handoff, HANDOFF_PATH
 from daemon.schemas import atomic_write_json
+
+logger = logging.getLogger("elara.priority")
 
 SESSION_STATE_PATH = Path.home() / ".claude" / "elara-session-state.json"
 

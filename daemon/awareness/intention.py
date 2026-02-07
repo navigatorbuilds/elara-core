@@ -4,10 +4,13 @@ Elara Self-Awareness — Intention lens.
 "What do I want to change?" — closes the loop: awareness → growth.
 """
 
+import logging
 import json
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
+
+logger = logging.getLogger("elara.awareness.intention")
 
 INTENTION_FILE = Path.home() / ".claude" / "elara-intention.json"
 

@@ -7,6 +7,7 @@ No ChromaDB needed (small dataset, direct JSON lookup).
 Storage: ~/.claude/elara-business/ (one JSON per idea)
 """
 
+import logging
 import hashlib
 from datetime import datetime
 from pathlib import Path
@@ -14,7 +15,10 @@ from typing import Optional, List, Dict
 
 from daemon.schemas import (
     BusinessIdea, Competitor, IdeaScore, load_validated, save_validated,
+    ElaraNotFoundError, ElaraValidationError,
 )
+
+logger = logging.getLogger("elara.business")
 
 BUSINESS_DIR = Path.home() / ".claude" / "elara-business"
 
@@ -89,11 +93,12 @@ def create_idea(
     tags: Optional[List[str]] = None,
 ) -> Dict:
     """Create a new business idea."""
+    logger.info("Creating business idea: %s", name)
     idea_id = _generate_id(name)
 
     # Don't overwrite existing
     if _load_idea(idea_id):
-        return {"error": f"Idea '{idea_id}' already exists. Use update_idea() to modify."}
+        raise ElaraValidationError(f"Idea '{idea_id}' already exists. Use update_idea() to modify.")
 
     now = datetime.now().isoformat()
     idea = BusinessIdea(
@@ -120,8 +125,9 @@ def add_competitor(
     """Add a competitor to an idea."""
     idea = _load_idea(idea_id)
     if not idea:
-        return {"error": f"Idea '{idea_id}' not found."}
+        raise ElaraNotFoundError(f"Idea '{idea_id}' not found.")
 
+    logger.debug("Adding competitor '%s' to idea %s", name, idea_id)
     competitor = Competitor(
         name=name,
         strengths=strengths,
@@ -146,7 +152,7 @@ def score_idea(
     """Score an idea on 5 axes (each 1-5). Total /25."""
     idea = _load_idea(idea_id)
     if not idea:
-        return {"error": f"Idea '{idea_id}' not found."}
+        raise ElaraNotFoundError(f"Idea '{idea_id}' not found.")
 
     # Clamp to 1-5
     axes = {"problem": problem, "market": market, "effort": effort,
@@ -155,6 +161,7 @@ def score_idea(
         axes[k] = max(1, min(5, v))
 
     total = sum(axes.values())
+    logger.info("Scoring idea %s: %d/25", idea_id, total)
     score = IdeaScore(
         **axes,
         total=total,
@@ -174,11 +181,11 @@ def update_idea(
     """Update idea status or add a note."""
     idea = _load_idea(idea_id)
     if not idea:
-        return {"error": f"Idea '{idea_id}' not found."}
+        raise ElaraNotFoundError(f"Idea '{idea_id}' not found.")
 
     if status:
         if status not in VALID_STATUSES:
-            return {"error": f"Invalid status '{status}'. Use: {', '.join(VALID_STATUSES)}"}
+            raise ElaraValidationError(f"Invalid status '{status}'. Use: {', '.join(VALID_STATUSES)}")
         idea["status"] = status
 
     if notes:
@@ -223,7 +230,7 @@ def link_to_reasoning(idea_id: str, trail_id: str) -> Dict:
     """Connect an idea to a reasoning trail."""
     idea = _load_idea(idea_id)
     if not idea:
-        return {"error": f"Idea '{idea_id}' not found."}
+        raise ElaraNotFoundError(f"Idea '{idea_id}' not found.")
 
     if trail_id not in idea["reasoning_trails"]:
         idea["reasoning_trails"].append(trail_id)
@@ -236,7 +243,7 @@ def link_to_outcome(idea_id: str, outcome_id: str) -> Dict:
     """Connect an idea to a decision outcome."""
     idea = _load_idea(idea_id)
     if not idea:
-        return {"error": f"Idea '{idea_id}' not found."}
+        raise ElaraNotFoundError(f"Idea '{idea_id}' not found.")
 
     if outcome_id not in idea["outcomes"]:
         idea["outcomes"].append(outcome_id)

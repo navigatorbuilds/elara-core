@@ -4,6 +4,7 @@ Elara Self-Awareness — Boot Surfacing.
 Reads saved reflection/pulse/blind_spots files cheaply at session start.
 """
 
+import logging
 import json
 from pathlib import Path
 from datetime import datetime
@@ -14,6 +15,8 @@ from daemon.awareness.pulse import PULSE_FILE
 from daemon.awareness.blind_spots import BLIND_SPOTS_FILE
 from daemon.awareness.intention import get_intention
 
+
+logger = logging.getLogger("elara.awareness.boot")
 
 def boot_check() -> Optional[str]:
     """

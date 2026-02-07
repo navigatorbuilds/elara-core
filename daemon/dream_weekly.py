@@ -5,6 +5,7 @@ Project momentum, session patterns, mood trends, goal progress.
 Also runs reflect() and emotional_dream alongside.
 """
 
+import logging
 from datetime import datetime, timedelta
 from typing import List, Dict
 import json
@@ -17,6 +18,8 @@ from daemon.dream_core import (
     _gather_mood_journal, WEEKLY_DIR,
 )
 
+
+logger = logging.getLogger("elara.dream_weekly")
 
 def weekly_dream() -> dict:
     """Weekly pattern analysis. Also runs reflect() and emotional_dream alongside."""

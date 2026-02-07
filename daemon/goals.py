@@ -5,6 +5,7 @@ Storage: ~/.claude/elara-goals.json
 Simple JSON, no database. Checked at boot, updated during sessions.
 """
 
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict
@@ -12,15 +13,19 @@ from typing import Optional, List, Dict
 from daemon.events import bus, Events
 from daemon.schemas import Goal, load_validated_list, save_validated_list
 
+logger = logging.getLogger("elara.goals")
+
 GOALS_FILE = Path.home() / ".claude" / "elara-goals.json"
 
 
 def _load() -> List[Dict]:
+    logger.debug("Loading goals from %s", GOALS_FILE)
     models = load_validated_list(GOALS_FILE, Goal)
     return [m.model_dump() for m in models]
 
 
 def _save(goals: List[Dict]):
+    logger.debug("Saving %d goals to %s", len(goals), GOALS_FILE)
     models = [Goal.model_validate(g) for g in goals]
     save_validated_list(GOALS_FILE, models)
 
@@ -37,6 +42,7 @@ def add_goal(
     notes: Optional[str] = None,
     priority: str = "medium",
 ) -> Dict:
+    logger.info("Adding goal: %s (priority=%s)", title, priority)
     goals = _load()
     now = datetime.now().isoformat()
     goal = Goal(
@@ -86,6 +92,7 @@ def update_goal(
                 "title": g["title"],
             }, source="goals")
             return g
+    logger.warning("Goal %d not found for update", goal_id)
     return {"error": f"Goal {goal_id} not found"}
 
 

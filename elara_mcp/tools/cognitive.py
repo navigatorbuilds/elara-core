@@ -5,6 +5,7 @@
 
 from typing import Optional
 from elara_mcp._app import mcp
+from daemon.schemas import ElaraNotFoundError, ElaraValidationError
 from daemon.reasoning import (
     start_trail, add_hypothesis, update_hypothesis,
     abandon_approach, solve_trail, search_trails,
@@ -87,9 +88,10 @@ def elara_reasoning(
         tid = trail_id or _active_trail_id()
         if not tid:
             return "Error: no active trail. Start one first or provide trail_id."
-        result = add_hypothesis(tid, hypothesis, evidence_list, confidence or 0.5)
-        if "error" in result:
-            return result["error"]
+        try:
+            result = add_hypothesis(tid, hypothesis, evidence_list, confidence or 0.5)
+        except (ElaraNotFoundError, ElaraValidationError) as e:
+            return str(e)
         idx = len(result["hypotheses"]) - 1
         return f"Hypothesis #{idx} added to trail {tid}: {hypothesis} (confidence: {confidence or 0.5})"
 
@@ -99,9 +101,10 @@ def elara_reasoning(
         tid = trail_id or _active_trail_id()
         if not tid:
             return "Error: no active trail."
-        result = update_hypothesis(tid, hypothesis_index, outcome=outcome, evidence=evidence_list, confidence=confidence)
-        if "error" in result:
-            return result["error"]
+        try:
+            result = update_hypothesis(tid, hypothesis_index, outcome=outcome, evidence=evidence_list, confidence=confidence)
+        except (ElaraNotFoundError, ElaraValidationError) as e:
+            return str(e)
         h = result["hypotheses"][hypothesis_index]
         parts = [f"Hypothesis #{hypothesis_index} updated"]
         if outcome:
@@ -118,9 +121,10 @@ def elara_reasoning(
         tid = trail_id or _active_trail_id()
         if not tid:
             return "Error: no active trail."
-        result = abandon_approach(tid, approach)
-        if "error" in result:
-            return result["error"]
+        try:
+            result = abandon_approach(tid, approach)
+        except ElaraNotFoundError as e:
+            return str(e)
         n = len(result["abandoned_approaches"])
         return f"Approach abandoned ({n} total): {approach}"
 
@@ -130,9 +134,10 @@ def elara_reasoning(
         tid = trail_id or _active_trail_id()
         if not tid:
             return "Error: no active trail."
-        result = solve_trail(tid, solution, breakthrough, tag_list)
-        if "error" in result:
-            return result["error"]
+        try:
+            result = solve_trail(tid, solution, breakthrough, tag_list)
+        except ElaraNotFoundError as e:
+            return str(e)
         lines = [f"Trail {tid} solved!", f"Solution: {solution}"]
         if breakthrough:
             lines.append(f"Breakthrough: {breakthrough}")
@@ -258,9 +263,10 @@ def elara_outcome(
             return "Error: outcome_id is required for check."
         if not all([actual, assessment]):
             return "Error: actual and assessment are required for check."
-        result = check_outcome(outcome_id, actual, assessment, lesson)
-        if "error" in result:
-            return result["error"]
+        try:
+            result = check_outcome(outcome_id, actual, assessment, lesson)
+        except (ElaraNotFoundError, ElaraValidationError) as e:
+            return str(e)
         lines = [
             f"Outcome {outcome_id} checked: {assessment}",
             f"Decision: {result['decision']}",
@@ -417,18 +423,20 @@ def elara_synthesis(
     if action == "add_seed":
         if not synthesis_id or not quote:
             return "Error: synthesis_id and quote are required."
-        result = add_seed(synthesis_id, quote, source or "conversation")
-        if "error" in result:
-            return result["error"]
+        try:
+            result = add_seed(synthesis_id, quote, source or "conversation")
+        except ElaraNotFoundError as e:
+            return str(e)
         return f"Seed added to {synthesis_id}. Seeds: {result['times_surfaced']}, Confidence: {result['confidence']}"
 
     if action in ("activate", "abandon", "implement"):
         if not synthesis_id:
             return "Error: synthesis_id is required."
         new_status = {"activate": "activated", "abandon": "abandoned", "implement": "implemented"}.get(action, action)
-        result = update_status(synthesis_id, new_status)
-        if "error" in result:
-            return result["error"]
+        try:
+            result = update_status(synthesis_id, new_status)
+        except (ElaraNotFoundError, ElaraValidationError) as e:
+            return str(e)
         return f"Synthesis {synthesis_id} → {new_status}"
 
     if action == "list":

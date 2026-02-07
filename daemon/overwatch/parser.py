@@ -2,12 +2,15 @@
 Overwatch parser — text extraction, JSONL reading, exchange parsing.
 """
 
+import logging
 import json
 from pathlib import Path
 from typing import Optional, List, Dict
 
 from daemon.overwatch.config import SYSTEM_REMINDER_RE, log
 
+
+logger = logging.getLogger("elara.overwatch.parser")
 
 class ParserMixin:
     """Mixin for JSONL parsing and exchange extraction."""

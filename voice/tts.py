@@ -3,6 +3,7 @@ Elara Voice - Text to Speech
 Uses Piper for local, fast, neural TTS.
 """
 
+import logging
 import subprocess
 import tempfile
 import wave
@@ -21,7 +22,9 @@ try:
     PIPER_AVAILABLE = True
 except ImportError:
     PIPER_AVAILABLE = False
-    print("Piper not available. Run: pip install piper-tts")
+    logging.getLogger("elara.voice.tts").warning("Piper not available. Run: pip install piper-tts")
+
+logger = logging.getLogger("elara.voice.tts")
 
 # Global voice instance (lazy loaded)
 _voice: Optional['PiperVoice'] = None
@@ -55,7 +58,7 @@ def synthesize_to_file(text: str, output_path: str) -> bool:
 
         return True
     except Exception as e:
-        print(f"TTS synthesis failed: {e}")
+        logger.error("TTS synthesis failed: %s", e)
         return False
 
 
@@ -80,7 +83,7 @@ def play_audio_windows(wav_path: str) -> bool:
         )
         return result.returncode == 0
     except (OSError, subprocess.SubprocessError) as e:
-        print(f"Audio playback failed: {e}")
+        logger.error("Audio playback failed: %s", e)
         return False
 
 
@@ -96,7 +99,7 @@ def speak(text: str, wait: bool = True) -> bool:
         True on success
     """
     if not PIPER_AVAILABLE:
-        print("Piper TTS not available")
+        logger.warning("Piper TTS not available")
         return False
 
     try:
@@ -119,7 +122,7 @@ def speak(text: str, wait: bool = True) -> bool:
 
         return success
     except Exception as e:
-        print(f"Speak failed: {e}")
+        logger.error("Speak failed: %s", e)
         return False
 
 

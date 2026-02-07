@@ -3,10 +3,13 @@ Elara System Senses
 Awareness of the machine I live on - CPU, memory, battery, etc.
 """
 
+import logging
 import psutil
 from datetime import datetime
 from typing import Dict, Any, Optional
 
+
+logger = logging.getLogger("elara.senses.system")
 
 def get_system_info() -> Dict[str, Any]:
     """Get current system status."""

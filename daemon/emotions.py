@@ -11,9 +11,12 @@ Uses a circumplex-style model in 3D space:
 - openness modulates vulnerability vs guardedness
 """
 
+import logging
 from typing import List, Tuple, Dict, Optional
 import math
 
+
+logger = logging.getLogger("elara.emotions")
 
 # ============================================================================
 # EMOTION MAP — each emotion is a point in (valence, energy, openness) space

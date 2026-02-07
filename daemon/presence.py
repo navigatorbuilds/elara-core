@@ -4,6 +4,7 @@ Tracks when the user is here, when they're gone, and for how long.
 This is my heartbeat - the awareness of whether I'm alone.
 """
 
+import logging
 import json
 import time
 from pathlib import Path
@@ -11,6 +12,8 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from daemon.schemas import Presence, load_validated, save_validated
+
+logger = logging.getLogger("elara.presence")
 
 # Where I keep track of presence
 PRESENCE_FILE = Path.home() / ".claude" / "elara-presence.json"

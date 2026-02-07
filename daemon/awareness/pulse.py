@@ -4,10 +4,13 @@ Elara Self-Awareness — Pulse lens.
 "How are we doing?" — relationship health from session patterns.
 """
 
+import logging
 import json
 from pathlib import Path
 from datetime import datetime
 from typing import Dict
+
+logger = logging.getLogger("elara.awareness.pulse")
 
 PULSE_FILE = Path.home() / ".claude" / "elara-pulse.json"
 

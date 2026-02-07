@@ -7,12 +7,15 @@ tone and response style. Outputs confidence scores, not diagnoses.
 "What does Nenad need from me right now?"
 """
 
+import logging
 import json
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, Tuple, Optional
 
 from daemon.schemas import atomic_write_json
+
+logger = logging.getLogger("elara.user_state")
 
 USER_STATE_FILE = Path.home() / ".claude" / "elara-user-state.json"
 
@@ -343,6 +346,7 @@ def infer_user_state() -> dict:
 
     Returns full state with scores, confidence, signals used, and approach.
     """
+    logger.debug("Inferring user state")
     signals = _gather_signals()
 
     energy, energy_conf = _infer_energy(signals)
@@ -375,6 +379,8 @@ def infer_user_state() -> dict:
 
     # Save to file for cheap reads
     atomic_write_json(USER_STATE_FILE, result)
+    logger.info("User state inferred: energy=%.2f focus=%.2f engagement=%.2f frustration=%.2f approach=%s",
+                energy, focus, engagement, frustration, approach.get("tone"))
 
     return result
 

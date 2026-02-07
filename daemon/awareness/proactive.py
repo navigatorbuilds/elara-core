@@ -5,10 +5,13 @@ Elara Self-Awareness — Proactive Presence.
 Pure Python logic — zero token cost.
 """
 
+import logging
 import json
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, List
+
+logger = logging.getLogger("elara.awareness.proactive")
 
 PROACTIVE_SESSION_FILE = Path.home() / ".claude" / "elara-proactive-session.json"
 

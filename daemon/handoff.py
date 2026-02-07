@@ -9,6 +9,7 @@ Previously written freeform by the LLM; now validated by Pydantic models.
 - Carry-forward logic reads previous handoff and identifies unfulfilled items
 """
 
+import logging
 import json
 from pathlib import Path
 from datetime import datetime
@@ -16,6 +17,8 @@ from typing import List, Dict, Any, Optional
 
 from daemon.events import bus, Events
 from daemon.schemas import Handoff, load_validated, save_validated
+
+logger = logging.getLogger("elara.handoff")
 
 HANDOFF_PATH = Path.home() / ".claude" / "elara-handoff.json"
 HANDOFF_ARCHIVE_DIR = Path.home() / ".claude" / "elara-handoff-archive"
@@ -28,9 +31,11 @@ def save_handoff(data: dict) -> Dict[str, Any]:
     Returns {"ok": True, "path": str} on success,
     or {"ok": False, "errors": list} on validation failure.
     """
+    logger.info("Saving handoff for session %s", data.get("session_number"))
     try:
         handoff = Handoff.model_validate(data)
     except Exception as e:
+        logger.error("Handoff validation failed: %s", e)
         return {"ok": False, "errors": [str(e)]}
 
     HANDOFF_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -41,6 +46,7 @@ def save_handoff(data: dict) -> Dict[str, Any]:
     try:
         save_validated(HANDOFF_PATH, handoff)
     except OSError as e:
+        logger.error("Failed to save handoff to %s: %s", HANDOFF_PATH, e)
         return {"ok": False, "errors": [f"Write failed: {e}"]}
 
     bus.emit(Events.HANDOFF_SAVED, {
@@ -54,11 +60,13 @@ def save_handoff(data: dict) -> Dict[str, Any]:
 def load_handoff() -> Optional[dict]:
     """Load the current handoff file. Returns None if missing or broken."""
     if not HANDOFF_PATH.exists():
+        logger.debug("No handoff file at %s", HANDOFF_PATH)
         return None
     try:
         handoff = load_validated(HANDOFF_PATH, Handoff)
         return handoff.model_dump()
-    except Exception:
+    except Exception as e:
+        logger.error("Failed to load handoff from %s: %s", HANDOFF_PATH, e)
         return None
 
 

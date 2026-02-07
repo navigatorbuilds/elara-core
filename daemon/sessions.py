@@ -4,6 +4,7 @@ Elara Sessions — episode/session lifecycle management.
 External code imports from daemon.state (re-export layer), not directly from here.
 """
 
+import logging
 from datetime import datetime
 from typing import Optional, Dict
 
@@ -15,8 +16,11 @@ from daemon.mood import create_imprint, get_session_arc
 from daemon.events import bus, Events
 
 
+logger = logging.getLogger("elara.sessions")
+
 def start_session() -> dict:
     """Mark session start. Apply time-based adjustments and consolidation."""
+    logger.info("Starting session")
     state = _load_state()
     state = _apply_time_decay(state)
 
@@ -66,6 +70,7 @@ def start_session() -> dict:
 
 def end_session(session_summary: Optional[str] = None, was_deep: bool = False) -> dict:
     """End session, record for consolidation."""
+    logger.info("Ending session (was_deep=%s)", was_deep)
     state = _load_state()
     state = _apply_time_decay(state)
 
@@ -152,6 +157,7 @@ def start_episode(
     auto_type = _detect_session_type()
     final_type = session_type or auto_type
 
+    logger.info("Starting episode %s (type=%s, project=%s)", session_id, final_type, project)
     state["current_session"] = {
         "id": session_id,
         "type": final_type,
@@ -236,8 +242,10 @@ def end_episode(
 
     session = state.get("current_session", {})
     if not session.get("id"):
+        logger.warning("No active episode to end")
         return {"error": "No active episode to end"}
 
+    logger.info("Ending episode %s (meaningful=%s)", session.get("id"), was_meaningful)
     arc = get_session_arc()
 
     episode_record = {

@@ -5,9 +5,12 @@ Takes ChromaDB search results and formats them into concise, natural
 context that gets prepended to the user's message via a hook.
 """
 
+import logging
 from datetime import datetime
 from typing import List, Dict, Any
 
+
+logger = logging.getLogger("elara.injector")
 
 def _humanize_age(epoch: float) -> str:
     """Convert epoch to human-readable age string."""

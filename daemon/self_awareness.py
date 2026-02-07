@@ -4,6 +4,7 @@ Elara Self-Awareness Engine — backwards compatibility re-export.
 Real code lives in daemon/awareness/ package.
 """
 
+import logging
 from daemon.awareness import (
     reflect, pulse, blind_spots,
     set_intention, get_intention,
@@ -12,6 +13,8 @@ from daemon.awareness import (
     surface_observation, get_observation_count,
     reset_proactive_session,
 )
+
+logger = logging.getLogger("elara.self_awareness")
 
 __all__ = [
     "reflect", "pulse", "blind_spots",

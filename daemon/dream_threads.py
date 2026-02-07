@@ -4,6 +4,7 @@ Elara Dream Mode — Narrative Threading.
 Groups episodes into story arcs (threads) by project and temporal proximity.
 """
 
+import logging
 import json
 from datetime import datetime
 from typing import List
@@ -14,6 +15,8 @@ from daemon.dream_core import (
     _ensure_dirs, _load_status, _save_status, THREADS_DIR,
 )
 
+
+logger = logging.getLogger("elara.dream_threads")
 
 def narrative_threads() -> dict:
     """Group episodes into story arcs (threads)."""

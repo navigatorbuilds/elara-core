@@ -4,6 +4,7 @@ A simple dashboard accessible from mobile.
 Secured with ELARA_SECRET env var — all API requests must authenticate.
 """
 
+import logging
 from flask import Flask, render_template, jsonify, request, send_from_directory
 from functools import wraps
 import os
@@ -23,6 +24,8 @@ from interface.storage import (
     add_note, get_recent_notes,
     add_message, get_recent_messages, get_unread_messages, mark_messages_read
 )
+
+logger = logging.getLogger("elara.interface.web")
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 app = Flask(__name__, static_folder='static', template_folder=str(TEMPLATE_DIR))
@@ -229,13 +232,13 @@ def _format_date(timestamp_str):
 def run_server(host='100.76.193.34', port=5000, debug=False):
     """Run the web server."""
     if not ELARA_SECRET:
-        print("ERROR: ELARA_SECRET env var not set. Refusing to start.")
-        print("Set it: export ELARA_SECRET=$(python3 -c \"import secrets; print(secrets.token_urlsafe(32))\")")
+        logger.error("ELARA_SECRET env var not set. Refusing to start.")
+        logger.error("Set it: export ELARA_SECRET=$(python3 -c \"import secrets; print(secrets.token_urlsafe(32))\")")
         sys.exit(1)
 
-    print(f"Elara web interface starting on http://{host}:{port}")
-    print(f"Access: http://{host}:{port}/?secret=<ELARA_SECRET>")
-    print(f"Auth: all API endpoints require X-Elara-Secret header")
+    logger.info("Elara web interface starting on http://%s:%s", host, port)
+    logger.info("Access: http://%s:%s/?secret=<ELARA_SECRET>", host, port)
+    logger.info("Auth: all API endpoints require X-Elara-Secret header")
     app.run(host=host, port=port, debug=debug, threaded=True)
 
 
