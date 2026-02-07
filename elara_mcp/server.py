@@ -5,13 +5,13 @@ Elara MCP Server
 Tools are organized into domain modules under elara_mcp/tools/.
 Importing each module registers its tools with the shared mcp instance.
 
-Modules:
-- memory:    semantic memory + conversation search (7 tools)
-- mood:      emotions, imprints, mode presets, status (10 tools)
-- episodes:  episode lifecycle, milestones, decisions, context (13 tools)
-- goals:     goals + corrections (7 tools)
-- awareness: reflect, pulse, blind spots, observe, temperament (7 tools)
-- dreams:    weekly, monthly, emotional pattern discovery (3 tools)
+26 tools across 6 modules:
+- memory:    elara_remember, elara_recall, elara_recall_conversation, elara_conversations (4)
+- mood:      elara_mood, elara_mood_adjust, elara_imprint, elara_mode, elara_status (5)
+- episodes:  elara_episode_start, elara_episode_note, elara_episode_end, elara_episode_query, elara_context (5)
+- goals:     elara_goal, elara_goal_boot, elara_correction, elara_correction_boot, elara_handoff (5)
+- awareness: elara_reflect, elara_insight, elara_intention, elara_observe, elara_temperament (5)
+- dreams:    elara_dream, elara_dream_info (2)
 """
 
 from elara_mcp._app import mcp

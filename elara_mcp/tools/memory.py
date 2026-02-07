@@ -1,4 +1,7 @@
-"""Semantic memory + conversation memory tools."""
+"""Semantic memory + conversation memory tools.
+
+Consolidated from 7 → 4 tools.
+"""
 
 from typing import Optional
 from elara_mcp._app import mcp
@@ -72,32 +75,82 @@ def elara_recall(
 
 @mcp.tool()
 def elara_recall_conversation(
-    query: str,
+    query: Optional[str] = None,
     n_results: int = 5,
-    project: Optional[str] = None
+    project: Optional[str] = None,
+    context_size: int = 0,
+    episode_id: Optional[str] = None,
 ) -> str:
     """
-    Search past conversations by meaning. Returns what we actually said.
+    Search past conversations by meaning, with optional context or episode filter.
 
-    This searches through real conversation exchanges (user + assistant pairs)
-    across all past sessions. Use it to find specific discussions, decisions,
-    or moments from our history.
-
-    v2: Now uses cosine similarity (better scores), recency weighting
-    (recent conversations rank higher), and episode cross-referencing.
+    Searches through real conversation exchanges (user + assistant pairs)
+    across all past sessions.
 
     Args:
-        query: What to search for (searches by meaning, not keywords)
+        query: What to search for (by meaning). Required unless episode_id is set.
         n_results: How many results to return (default 5)
         project: Filter by project dir (e.g., "-home-neboo")
+        context_size: Include N exchanges before/after each match (0 = no context)
+        episode_id: Get conversations from a specific episode instead of searching
 
     Returns:
         Matching conversation exchanges with dates and relevance
     """
-    results = recall_conversation(query, n_results=n_results, project=project)
+    # Episode-specific retrieval
+    if episode_id:
+        results = get_conversations_for_episode(episode_id, n_results=n_results)
+        if not results:
+            return f"No conversations found for episode {episode_id}. Run elara_conversations(action='ingest') to index."
 
+        lines = [f"Episode {episode_id} — {len(results)} exchanges:"]
+        for r in results:
+            idx = r.get("exchange_index", 0)
+            content = r.get("content", "")
+            preview = content[:300] + "..." if len(content) > 300 else content
+            lines.append(f"\n[{idx}] {preview}")
+        return "\n".join(lines)
+
+    if not query:
+        return "Provide a query to search, or an episode_id to retrieve."
+
+    # With surrounding context
+    if context_size > 0:
+        results = recall_conversation_with_context(
+            query, n_results=n_results, context_size=context_size, project=project
+        )
+        if not results:
+            return "No matching conversations found."
+
+        lines = []
+        for r in results:
+            date = r.get("date", "unknown")
+            score = r.get("score", 0)
+            episode = r.get("episode_id", "")
+
+            section = [f"[{date}] (score: {score:.2f})"]
+            if episode:
+                section.append(f"  Episode: {episode}")
+
+            for ctx in r.get("context_before", []):
+                preview = ctx[:200] + "..." if len(ctx) > 200 else ctx
+                section.append(f"  [before] {preview}")
+
+            content = r.get("content", "")
+            preview = content[:400] + "..." if len(content) > 400 else content
+            section.append(f"  >>> {preview}")
+
+            for ctx in r.get("context_after", []):
+                preview = ctx[:200] + "..." if len(ctx) > 200 else ctx
+                section.append(f"  [after] {preview}")
+
+            lines.append("\n".join(section))
+        return "\n\n---\n\n".join(lines)
+
+    # Standard search
+    results = recall_conversation(query, n_results=n_results, project=project)
     if not results:
-        return "No matching conversations found. Try running elara_ingest_conversations first."
+        return "No matching conversations found. Try running elara_conversations(action='ingest') first."
 
     lines = []
     for r in results:
@@ -120,134 +173,30 @@ def elara_recall_conversation(
 
 
 @mcp.tool()
-def elara_recall_conversation_context(
-    query: str,
-    n_results: int = 3,
-    context_size: int = 2,
-    project: Optional[str] = None
-) -> str:
+def elara_conversations(action: str = "stats", force: bool = False) -> str:
     """
-    Search past conversations WITH surrounding context.
-
-    Like grep -C but for conversation memory. Returns the matched exchange
-    plus nearby exchanges from the same session for full context.
-
-    Use this when you need to understand the flow of a conversation,
-    not just a single exchange.
+    Conversation memory management — stats or ingestion.
 
     Args:
-        query: What to search for (searches by meaning)
-        n_results: How many primary matches (default 3)
-        context_size: How many exchanges before/after to include (default 2)
-        project: Filter by project dir
+        action: "stats" to view statistics, "ingest" to index new conversations
+        force: For ingest: if True, re-index everything (default: incremental)
 
     Returns:
-        Matches with surrounding conversation context
+        Statistics or ingestion results
     """
-    results = recall_conversation_with_context(
-        query, n_results=n_results, context_size=context_size, project=project
-    )
+    if action == "ingest":
+        stats = ingest_conversations(force=force)
+        return (
+            f"Ingestion complete:\n"
+            f"  Scanned: {stats['files_scanned']} files\n"
+            f"  Ingested: {stats['files_ingested']} ({stats['exchanges_total']} exchanges)\n"
+            f"  Skipped: {stats['files_skipped']} (unchanged)\n"
+            f"  Errors: {len(stats['errors'])}"
+        )
 
-    if not results:
-        return "No matching conversations found."
-
-    lines = []
-    for r in results:
-        date = r.get("date", "unknown")
-        score = r.get("score", 0)
-        episode = r.get("episode_id", "")
-
-        section = [f"[{date}] (score: {score:.2f})"]
-        if episode:
-            section.append(f"  Episode: {episode}")
-
-        for ctx in r.get("context_before", []):
-            preview = ctx[:200] + "..." if len(ctx) > 200 else ctx
-            section.append(f"  [before] {preview}")
-
-        content = r.get("content", "")
-        preview = content[:400] + "..." if len(content) > 400 else content
-        section.append(f"  >>> {preview}")
-
-        for ctx in r.get("context_after", []):
-            preview = ctx[:200] + "..." if len(ctx) > 200 else ctx
-            section.append(f"  [after] {preview}")
-
-        lines.append("\n".join(section))
-
-    return "\n\n---\n\n".join(lines)
-
-
-@mcp.tool()
-def elara_episode_conversations(
-    episode_id: str,
-    n_results: int = 20,
-) -> str:
-    """
-    Get all conversation exchanges from a specific episode.
-
-    Cross-references episodic memory with conversation memory.
-    Shows what we actually said during that episode.
-
-    Args:
-        episode_id: The episode ID (e.g., "2026-02-05-2217")
-        n_results: Max exchanges to return (default 20)
-
-    Returns:
-        Conversation exchanges from that episode, in order
-    """
-    results = get_conversations_for_episode(episode_id, n_results=n_results)
-
-    if not results:
-        return f"No conversations found for episode {episode_id}. Run elara_ingest_conversations to index."
-
-    lines = [f"Episode {episode_id} — {len(results)} exchanges:"]
-    for r in results:
-        idx = r.get("exchange_index", 0)
-        content = r.get("content", "")
-        preview = content[:300] + "..." if len(content) > 300 else content
-        lines.append(f"\n[{idx}] {preview}")
-
-    return "\n".join(lines)
-
-
-@mcp.tool()
-def elara_ingest_conversations(force: bool = False) -> str:
-    """
-    Index past conversation files for semantic search.
-
-    Walks through all Claude Code session files, extracts user/assistant
-    exchange pairs, and indexes them in ChromaDB. Incremental — only
-    processes new or modified files unless force=True.
-
-    Args:
-        force: If True, re-index everything (default: False, incremental)
-
-    Returns:
-        Ingestion statistics
-    """
-    stats = ingest_conversations(force=force)
-
-    return (
-        f"Ingestion complete:\n"
-        f"  Scanned: {stats['files_scanned']} files\n"
-        f"  Ingested: {stats['files_ingested']} ({stats['exchanges_total']} exchanges)\n"
-        f"  Skipped: {stats['files_skipped']} (unchanged)\n"
-        f"  Errors: {len(stats['errors'])}"
-    )
-
-
-@mcp.tool()
-def elara_conversation_stats() -> str:
-    """
-    Get conversation memory statistics.
-
-    Returns:
-        Indexed exchange count, sessions ingested, cross-references, schema version
-    """
+    # stats (default)
     conv = get_conversations()
     s = conv.stats()
-
     return (
         f"Conversation Memory Stats (v{s.get('schema_version', 1)}):\n"
         f"  Indexed exchanges: {s['indexed_exchanges']}\n"

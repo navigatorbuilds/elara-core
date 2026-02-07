@@ -64,10 +64,13 @@ class VectorMemory:
             settings=Settings(anonymized_telemetry=False)
         )
 
-        # Main memory collection
+        # Main memory collection — cosine similarity
         self.collection = self.client.get_or_create_collection(
             name="elara_memories",
-            metadata={"description": "Elara's long-term semantic memory"}
+            metadata={
+                "description": "Elara's long-term semantic memory",
+                "hnsw:space": "cosine",
+            }
         )
 
     def _generate_id(self, text: str, timestamp: str) -> str:

@@ -66,7 +66,10 @@ class EpisodicMemory:
         )
         self.milestones_collection = self.chroma_client.get_or_create_collection(
             name="elara_milestones",
-            metadata={"description": "Searchable milestones from episodes"}
+            metadata={
+                "description": "Searchable milestones from episodes",
+                "hnsw:space": "cosine",
+            }
         )
 
     def _load_index(self) -> dict:
