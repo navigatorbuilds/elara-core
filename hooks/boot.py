@@ -50,6 +50,12 @@ try:
 except ImportError:
     BUSINESS_AVAILABLE = False
 
+try:
+    from daemon.briefing import boot_summary as briefing_boot_summary
+    BRIEFING_AVAILABLE = True
+except ImportError:
+    BRIEFING_AVAILABLE = False
+
 
 def boot():
     """Run boot sequence and output context."""
@@ -135,6 +141,15 @@ def boot():
             biz = business_boot_summary()
             if biz:
                 print(biz)
+        except Exception:
+            pass
+
+    # Daily briefing — RSS feed highlights
+    if BRIEFING_AVAILABLE:
+        try:
+            brief = briefing_boot_summary()
+            if brief:
+                print(brief)
         except Exception:
             pass
 
