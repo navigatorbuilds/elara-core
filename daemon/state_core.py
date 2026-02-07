@@ -14,16 +14,18 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
 
+from core.paths import get_paths
 from daemon.schemas import atomic_write_json
 
 from daemon.emotions import get_primary_emotion
 
 logger = logging.getLogger("elara.state_core")
 
-STATE_FILE = Path.home() / ".claude" / "elara-state.json"
-MOOD_JOURNAL_FILE = Path.home() / ".claude" / "elara-mood-journal.jsonl"
-IMPRINT_ARCHIVE_FILE = Path.home() / ".claude" / "elara-imprint-archive.jsonl"
-TEMPERAMENT_LOG_FILE = Path.home() / ".claude" / "elara-temperament-log.jsonl"
+_p = get_paths()
+STATE_FILE = _p.state_file
+MOOD_JOURNAL_FILE = _p.mood_journal
+IMPRINT_ARCHIVE_FILE = _p.imprint_archive
+TEMPERAMENT_LOG_FILE = _p.temperament_log
 
 # My temperament - who I am at my core, where I return to
 TEMPERAMENT = {

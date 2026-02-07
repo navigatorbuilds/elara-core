@@ -10,9 +10,11 @@ from pathlib import Path
 from datetime import datetime
 from typing import List
 
+from core.paths import get_paths
+
 logger = logging.getLogger("elara.awareness.reflect")
 
-REFLECTIONS_DIR = Path.home() / ".claude" / "elara-reflections"
+REFLECTIONS_DIR = get_paths().reflections_dir
 
 
 def reflect() -> dict:

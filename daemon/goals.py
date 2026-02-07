@@ -10,12 +10,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict
 
+from core.paths import get_paths
 from daemon.events import bus, Events
 from daemon.schemas import Goal, load_validated_list, save_validated_list
 
 logger = logging.getLogger("elara.goals")
 
-GOALS_FILE = Path.home() / ".claude" / "elara-goals.json"
+GOALS_FILE = get_paths().goals_file
 
 
 def _load() -> List[Dict]:

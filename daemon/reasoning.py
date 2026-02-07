@@ -25,6 +25,7 @@ try:
 except ImportError:
     CHROMA_AVAILABLE = False
 
+from core.paths import get_paths
 from daemon.schemas import (
     ReasoningTrail, Hypothesis, load_validated, save_validated,
     ElaraNotFoundError, ElaraValidationError,
@@ -32,8 +33,9 @@ from daemon.schemas import (
 
 logger = logging.getLogger("elara.reasoning")
 
-REASONING_DIR = Path.home() / ".claude" / "elara-reasoning"
-REASONING_DB_DIR = Path.home() / ".claude" / "elara-reasoning-db"
+_p = get_paths()
+REASONING_DIR = _p.reasoning_dir
+REASONING_DB_DIR = _p.reasoning_db
 
 
 # ============================================================================

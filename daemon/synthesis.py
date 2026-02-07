@@ -21,12 +21,14 @@ try:
 except ImportError:
     CHROMA_AVAILABLE = False
 
+from core.paths import get_paths
 from daemon.schemas import Synthesis, SynthesisSeed, load_validated, save_validated, ElaraNotFoundError, ElaraValidationError
 
 logger = logging.getLogger("elara.synthesis")
 
-SYNTHESIS_DIR = Path.home() / ".claude" / "elara-synthesis"
-SYNTHESIS_DB_DIR = Path.home() / ".claude" / "elara-synthesis-db"
+_p = get_paths()
+SYNTHESIS_DIR = _p.synthesis_dir
+SYNTHESIS_DB_DIR = _p.synthesis_db
 
 # Clustering threshold — how similar two quotes need to be to count as same idea
 SEED_SIMILARITY_THRESHOLD = 0.75

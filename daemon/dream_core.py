@@ -10,17 +10,19 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Any
 
+from core.paths import get_paths
 from daemon.schemas import DreamStatus, load_validated, save_validated
 
 logger = logging.getLogger("elara.dream_core")
 
 # Storage
-DREAMS_DIR = Path.home() / ".claude" / "elara-dreams"
-WEEKLY_DIR = DREAMS_DIR / "weekly"
-MONTHLY_DIR = DREAMS_DIR / "monthly"
-THREADS_DIR = DREAMS_DIR / "threads"
-EMOTIONAL_DIR = DREAMS_DIR / "emotional"
-DREAM_STATUS_FILE = DREAMS_DIR / "status.json"
+_p = get_paths()
+DREAMS_DIR = _p.dreams_dir
+WEEKLY_DIR = _p.dreams_weekly
+MONTHLY_DIR = _p.dreams_monthly
+THREADS_DIR = _p.dreams_threads
+EMOTIONAL_DIR = _p.dreams_emotional
+DREAM_STATUS_FILE = _p.dream_status
 
 
 def _ensure_dirs():

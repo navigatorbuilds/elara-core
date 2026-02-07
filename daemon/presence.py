@@ -11,12 +11,13 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional
 
+from core.paths import get_paths
 from daemon.schemas import Presence, load_validated, save_validated
 
 logger = logging.getLogger("elara.presence")
 
 # Where I keep track of presence
-PRESENCE_FILE = Path.home() / ".claude" / "elara-presence.json"
+PRESENCE_FILE = get_paths().presence_file
 
 
 def _load_presence() -> dict:

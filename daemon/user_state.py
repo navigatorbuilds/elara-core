@@ -4,7 +4,7 @@ Elara User-State Modeling — infer user energy, focus, engagement, frustration.
 Consumes existing signals (mood, state, presence, episodes, goals) to suggest
 tone and response style. Outputs confidence scores, not diagnoses.
 
-"What does Nenad need from me right now?"
+"What does the user need from me right now?"
 """
 
 import logging
@@ -13,11 +13,12 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, Tuple, Optional
 
+from core.paths import get_paths
 from daemon.schemas import atomic_write_json
 
 logger = logging.getLogger("elara.user_state")
 
-USER_STATE_FILE = Path.home() / ".claude" / "elara-user-state.json"
+USER_STATE_FILE = get_paths().user_state_file
 
 
 # ============================================================================

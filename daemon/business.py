@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict
 
+from core.paths import get_paths
 from daemon.schemas import (
     BusinessIdea, Competitor, IdeaScore, load_validated, save_validated,
     ElaraNotFoundError, ElaraValidationError,
@@ -20,7 +21,7 @@ from daemon.schemas import (
 
 logger = logging.getLogger("elara.business")
 
-BUSINESS_DIR = Path.home() / ".claude" / "elara-business"
+BUSINESS_DIR = get_paths().business_dir
 
 # Status lifecycle
 VALID_STATUSES = ("exploring", "validated", "building", "launched", "abandoned")

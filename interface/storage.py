@@ -9,9 +9,11 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any
 
+from core.paths import get_paths
+
 logger = logging.getLogger("elara.interface.storage")
 
-STORAGE_DIR = Path.home() / ".claude" / "elara-messages"
+STORAGE_DIR = get_paths().messages_dir
 NOTES_FILE = STORAGE_DIR / "notes.json"
 MESSAGES_FILE = STORAGE_DIR / "elara_messages.json"
 

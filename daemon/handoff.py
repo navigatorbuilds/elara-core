@@ -15,13 +15,15 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
+from core.paths import get_paths
 from daemon.events import bus, Events
 from daemon.schemas import Handoff, load_validated, save_validated
 
 logger = logging.getLogger("elara.handoff")
 
-HANDOFF_PATH = Path.home() / ".claude" / "elara-handoff.json"
-HANDOFF_ARCHIVE_DIR = Path.home() / ".claude" / "elara-handoff-archive"
+_p = get_paths()
+HANDOFF_PATH = _p.handoff_file
+HANDOFF_ARCHIVE_DIR = _p.handoff_archive
 
 
 def save_handoff(data: dict) -> Dict[str, Any]:

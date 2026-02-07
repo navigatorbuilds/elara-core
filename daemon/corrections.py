@@ -25,13 +25,15 @@ try:
 except ImportError:
     CHROMA_AVAILABLE = False
 
+from core.paths import get_paths
 from daemon.events import bus, Events
 from daemon.schemas import Correction, load_validated_list, save_validated_list
 
 logger = logging.getLogger("elara.corrections")
 
-CORRECTIONS_FILE = Path.home() / ".claude" / "elara-corrections.json"
-CORRECTIONS_DB_DIR = Path.home() / ".claude" / "elara-corrections-db"
+_p = get_paths()
+CORRECTIONS_FILE = _p.corrections_file
+CORRECTIONS_DB_DIR = _p.corrections_db
 MAX_CORRECTIONS = 50
 
 

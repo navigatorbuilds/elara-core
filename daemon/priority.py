@@ -19,12 +19,13 @@ import json
 from pathlib import Path
 from datetime import datetime
 
+from core.paths import get_paths
 from daemon.handoff import load_handoff, HANDOFF_PATH
 from daemon.schemas import atomic_write_json
 
 logger = logging.getLogger("elara.priority")
 
-SESSION_STATE_PATH = Path.home() / ".claude" / "elara-session-state.json"
+SESSION_STATE_PATH = get_paths().session_state
 
 # Priority thresholds
 OVERDUE_THRESHOLD = 3      # carried N+ sessions = overdue
@@ -52,7 +53,7 @@ def is_work_item(text: str) -> bool:
     work_signals = [
         "cleanup", "refactor", "build", "fix", "deploy", "test",
         "phase", "v1", "v2", "audit", "ship", "commit", "push",
-        "firebase", "flutter", "python", "planpulse", "handybill",
+        "firebase", "flutter", "python",
         "elara-core", "overwatch", "chromadb", "scoring", "priority",
         "bug", "feature", "implement", "migration"
     ]

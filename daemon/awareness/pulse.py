@@ -10,9 +10,11 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict
 
+from core.paths import get_paths
+
 logger = logging.getLogger("elara.awareness.pulse")
 
-PULSE_FILE = Path.home() / ".claude" / "elara-pulse.json"
+PULSE_FILE = get_paths().pulse_file
 
 
 def pulse() -> dict:

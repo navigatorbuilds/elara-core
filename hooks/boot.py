@@ -5,13 +5,9 @@ Run this at the start of each Claude Code session.
 Outputs context that can be injected into the prompt.
 """
 
-import sys
 import json
 from pathlib import Path
 from datetime import datetime
-
-# Add parent to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
     from core.elara import get_elara
@@ -160,7 +156,8 @@ def boot():
     _start_overwatch()
 
 
-SNAPSHOT_PATH = Path.home() / ".claude" / "elara-session-snapshot.json"
+from core.paths import get_paths
+SNAPSHOT_PATH = get_paths().session_snapshot
 
 
 def _show_snapshot(gap_seconds=None):

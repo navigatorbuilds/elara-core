@@ -153,6 +153,6 @@ if __name__ == "__main__":
 
     if PIPER_AVAILABLE and DEFAULT_MODEL.exists():
         print("Testing speech synthesis...")
-        speak("Hello Nenad. I can speak now. This is my voice.")
+        speak("Hello. I can speak now. This is my voice.")
     else:
         print("Cannot test - missing dependencies or model")

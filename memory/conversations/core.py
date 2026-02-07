@@ -22,10 +22,13 @@ try:
 except ImportError:
     CHROMA_AVAILABLE = False
 
-CONVERSATIONS_DIR = Path.home() / ".claude" / "elara-conversations-db"
+from core.paths import get_paths
+
+_p = get_paths()
+CONVERSATIONS_DIR = _p.conversations_db
 MANIFEST_PATH = CONVERSATIONS_DIR / "ingested.json"
-PROJECTS_DIR = Path.home() / ".claude" / "projects"
-EPISODES_DIR = Path.home() / ".claude" / "elara-episodes"
+PROJECTS_DIR = _p.claude_projects
+EPISODES_DIR = _p.episodes_dir
 EPISODES_INDEX = EPISODES_DIR / "index.json"
 
 # Current schema version — bump to force re-index on upgrade

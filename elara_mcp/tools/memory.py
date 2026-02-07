@@ -90,7 +90,7 @@ def elara_recall_conversation(
     Args:
         query: What to search for (by meaning). Required unless episode_id is set.
         n_results: How many results to return (default 5)
-        project: Filter by project dir (e.g., "-home-neboo")
+        project: Filter by project dir (e.g., "-home-user")
         context_size: Include N exchanges before/after each match (0 = no context)
         episode_id: Get conversations from a specific episode instead of searching
 
