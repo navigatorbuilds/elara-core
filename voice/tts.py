@@ -79,7 +79,7 @@ def play_audio_windows(wav_path: str) -> bool:
             timeout=30
         )
         return result.returncode == 0
-    except Exception as e:
+    except (OSError, subprocess.SubprocessError) as e:
         print(f"Audio playback failed: {e}")
         return False
 
@@ -114,7 +114,7 @@ def speak(text: str, wait: bool = True) -> bool:
         # Cleanup
         try:
             os.unlink(temp_path)
-        except:
+        except OSError:
             pass
 
         return success

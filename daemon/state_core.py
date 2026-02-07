@@ -103,7 +103,7 @@ def _log_mood(state: dict, reason: Optional[str] = None, trigger: str = "adjust"
         MOOD_JOURNAL_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(MOOD_JOURNAL_FILE, "a") as f:
             f.write(json.dumps(entry) + "\n")
-    except Exception:
+    except OSError:
         pass
 
 
@@ -114,7 +114,7 @@ def _archive_imprint(imprint: dict) -> None:
         IMPRINT_ARCHIVE_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(IMPRINT_ARCHIVE_FILE, "a") as f:
             f.write(json.dumps(entry) + "\n")
-    except Exception:
+    except OSError:
         pass
 
 

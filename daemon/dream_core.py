@@ -125,7 +125,7 @@ def _is_late(ts: str) -> bool:
     try:
         hour = datetime.fromisoformat(ts).hour
         return hour >= 22 or hour < 6
-    except Exception:
+    except (ValueError, TypeError):
         return False
 
 

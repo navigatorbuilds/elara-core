@@ -15,7 +15,7 @@ def is_wsl() -> bool:
     try:
         with open('/proc/version', 'r') as f:
             return 'microsoft' in f.read().lower()
-    except:
+    except OSError:
         return False
 
 
@@ -41,7 +41,7 @@ def notify_wsl(title: str, message: str, duration: int = 5000) -> bool:
             stderr=subprocess.DEVNULL
         )
         return True
-    except Exception as e:
+    except (OSError, subprocess.SubprocessError) as e:
         print(f"WSL notification failed: {e}")
         return False
 
@@ -58,7 +58,7 @@ def notify_linux(title: str, message: str, duration: int = 5000) -> bool:
     except FileNotFoundError:
         print("notify-send not found. Install libnotify-bin.")
         return False
-    except Exception as e:
+    except (OSError, subprocess.SubprocessError) as e:
         print(f"Linux notification failed: {e}")
         return False
 

@@ -53,7 +53,7 @@ def _read_us_md() -> dict:
             "exists": True, "total_entries": len(dates),
             "recent_entries": len(recent), "recent_dates": recent,
         }
-    except Exception:
+    except OSError:
         return {"exists": True, "total_entries": 0, "error": "parse failed"}
 
 
@@ -426,7 +426,7 @@ def monthly_emotional_dream() -> dict:
                 generated = datetime.fromisoformat(report.get("generated", ""))
                 if (now - generated).days <= 30:
                     weekly_emotionals.append(report)
-        except Exception:
+        except (json.JSONDecodeError, OSError, ValueError):
             pass
 
     drift_episodes = _gather_drift_episodes(days=30)

@@ -342,7 +342,7 @@ def read_mood_journal(n: int = 50) -> List[dict]:
                 if line:
                     entries.append(json.loads(line))
         return entries[-n:]
-    except Exception:
+    except (json.JSONDecodeError, OSError):
         return []
 
 
@@ -358,5 +358,5 @@ def read_imprint_archive(n: int = 20) -> List[dict]:
                 if line:
                     entries.append(json.loads(line))
         return entries[-n:]
-    except Exception:
+    except (json.JSONDecodeError, OSError):
         return []

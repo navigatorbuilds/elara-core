@@ -72,7 +72,7 @@ def is_available() -> bool:
         req = urllib.request.Request(f"{OLLAMA_URL}/api/tags", method="GET")
         with urllib.request.urlopen(req, timeout=5) as resp:
             _last_available = resp.status == 200
-    except Exception:
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError):
         _last_available = False
 
     return _last_available
@@ -350,7 +350,7 @@ def status() -> Dict[str, Any]:
                     }
                     for m in models
                 ]
-        except Exception:
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, OSError):
             info["models"] = []
 
     return info

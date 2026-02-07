@@ -39,7 +39,7 @@ def _log_temperament_adjustment(dimension: str, delta: float, reason: str, new_v
         TEMPERAMENT_LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(TEMPERAMENT_LOG_FILE, "a") as f:
             f.write(json.dumps(entry) + "\n")
-    except Exception:
+    except OSError:
         pass
 
 
@@ -133,7 +133,7 @@ def get_temperament_status() -> dict:
                 line = line.strip()
                 if line:
                     recent_log.append(json.loads(line))
-        except Exception:
+        except (json.JSONDecodeError, OSError):
             pass
 
     return {
