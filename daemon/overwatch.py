@@ -28,6 +28,13 @@ from memory.conversations import get_conversations, ConversationMemory
 from daemon.injector import format_injection, format_event_injection
 from daemon import llm
 
+# Optional: synthesis for recurring idea detection
+try:
+    from daemon.synthesis import check_for_recurring_ideas
+    SYNTHESIS_AVAILABLE = True
+except ImportError:
+    SYNTHESIS_AVAILABLE = False
+
 # Paths
 PROJECTS_DIR = Path.home() / ".claude" / "projects"
 INJECT_PATH = Path.home() / ".claude" / "elara-overwatch-inject.md"
@@ -95,7 +102,12 @@ class Overwatch:
         self.exchanges_since_ingest: int = 0
         self.last_ingest_time: float = time.time()
         self.pending_exchanges: List[Dict[str, str]] = []
+        self.pending_exchanges_for_synthesis: List[Dict[str, str]] = []
         self.exchange_counter: int = 0  # monotonic counter for exchange_index
+
+        # Cross-poll parsing state — user and assistant entries often land in different batches
+        self._pending_user: Optional[Dict[str, str]] = None
+        self._assistant_texts: List[str] = []
 
         # Session snapshot tracking
         self.last_snapshot_time: float = 0
@@ -160,7 +172,26 @@ class Overwatch:
             log.info(f"Micro-ingested {ingested}/{len(self.pending_exchanges)} exchanges{triage_msg}")
         except Exception as e:
             log.error(f"Micro-ingest error: {e}")
+        # Synthesis auto-detection — check ingested exchanges for recurring ideas
+        if SYNTHESIS_AVAILABLE and ingested > 0:
+            try:
+                synthesis_exchanges = [
+                    {
+                        "text": ex["user_text"] + " " + ex["assistant_text"],
+                        "session_id": self.current_session_id,
+                        "timestamp": ex.get("timestamp", ""),
+                    }
+                    for ex in self.pending_exchanges_for_synthesis
+                ]
+                if synthesis_exchanges:
+                    reinforced = check_for_recurring_ideas(synthesis_exchanges)
+                    if reinforced:
+                        log.info(f"Synthesis: {len(reinforced)} idea(s) reinforced from conversation")
+            except Exception as e:
+                log.debug(f"Synthesis check error: {e}")
+
         self.pending_exchanges = []
+        self.pending_exchanges_for_synthesis = []
         self.exchanges_since_ingest = 0
         self.last_ingest_time = time.time()
 
@@ -176,20 +207,26 @@ class Overwatch:
         return text.strip()
 
     def _extract_text(self, entry: dict) -> Optional[str]:
-        """Extract readable text from a JSONL entry."""
+        """Extract readable text from a JSONL entry.
+
+        Handles two content formats:
+        - content=str: direct user messages (e.g. "test3", "ok go")
+        - content=list: blocks array — only extracts from type="text" blocks
+          (thinking, tool_use, tool_result blocks are ignored)
+        """
         msg = entry.get("message", {})
         content = msg.get("content", "")
 
         if isinstance(content, str):
             text = self._clean_text(content)
-            return text if text and len(text) > 5 else None
+            return text if text and len(text) > 1 else None
 
         if isinstance(content, list):
             texts = []
             for block in content:
                 if isinstance(block, dict) and block.get("type") == "text":
                     cleaned = self._clean_text(block.get("text", ""))
-                    if cleaned and len(cleaned) > 5:
+                    if cleaned and len(cleaned) > 1:
                         texts.append(cleaned)
             return "\n".join(texts) if texts else None
 
@@ -222,9 +259,14 @@ class Overwatch:
         return entries
 
     def _parse_exchanges(self, entries: List[dict]) -> List[Dict[str, str]]:
-        """Parse JSONL entries into user+assistant exchange pairs."""
+        """Parse JSONL entries into user+assistant exchange pairs.
+
+        State persists across calls via self._pending_user and self._assistant_texts,
+        because user and assistant entries often arrive in different poll cycles.
+        Accumulates text across multiple assistant entries (tool_use and thinking
+        blocks produce entries with no text — we skip those).
+        """
         exchanges = []
-        pending_user = None
 
         for entry in entries:
             entry_type = entry.get("type")
@@ -232,23 +274,32 @@ class Overwatch:
             if entry_type == "user":
                 text = self._extract_text(entry)
                 if text:
-                    # Skip very short messages and system stuff
-                    if text.startswith("<") or text.startswith("{"):
-                        continue
-                    pending_user = {
-                        "user_text": text,
-                        "timestamp": entry.get("timestamp", ""),
-                    }
+                    log.debug(f"User text extracted ({len(text)} chars): {text[:60]}")
+                if not text or text.startswith("<") or text.startswith("{"):
+                    # Empty user entry (tool permission, hook, tool_result) — ignore, don't reset state
+                    continue
 
-            elif entry_type == "assistant" and pending_user:
+                # Real user message — flush any accumulated exchange first
+                if self._pending_user and self._assistant_texts:
+                    exchanges.append({
+                        "user_text": self._pending_user["user_text"],
+                        "assistant_text": " ".join(self._assistant_texts),
+                        "timestamp": self._pending_user["timestamp"],
+                    })
+
+                self._pending_user = {
+                    "user_text": text,
+                    "timestamp": entry.get("timestamp", ""),
+                }
+                self._assistant_texts = []
+
+            elif entry_type == "assistant" and self._pending_user:
                 text = self._extract_text(entry)
                 if text:
-                    exchanges.append({
-                        "user_text": pending_user["user_text"],
-                        "assistant_text": text,
-                        "timestamp": pending_user["timestamp"],
-                    })
-                    pending_user = None
+                    self._assistant_texts.append(text)
+
+        # Don't flush at end — wait for next user entry to confirm exchange is complete.
+        # This prevents premature pairing when assistant is still generating.
 
         return exchanges
 
@@ -340,6 +391,27 @@ class Overwatch:
 
             r["score"] = score  # update with adjusted score
             relevant.append(r)
+
+        # Ollama relevance judgment — filter false positives from cosine similarity
+        if relevant and llm.is_available():
+            judged = []
+            for r in relevant[:MAX_INJECTIONS_PER_CHECK + 2]:  # judge a few extra
+                judgment = llm.judge_relevance(
+                    current_text=text,
+                    historical_text=r.get("content", r.get("user_text", "")),
+                )
+                if judgment and judgment.get("relevant"):
+                    # Blend Ollama importance with cosine score
+                    ollama_importance = judgment.get("importance", 0.5)
+                    r["score"] = r["score"] * 0.6 + ollama_importance * 0.4
+                    r["_llm_reason"] = judgment.get("reason", "")
+                    judged.append(r)
+                elif judgment is None:
+                    # Ollama failed mid-batch, keep remaining on score alone
+                    judged.append(r)
+                else:
+                    log.debug(f"LLM filtered: {r.get('content', '')[:50]}... — {judgment.get('reason', '')}")
+            relevant = judged
 
         return relevant[:MAX_INJECTIONS_PER_CHECK]
 
@@ -551,10 +623,11 @@ class Overwatch:
         if results or event_results:
             self._write_inject(results, event_results)
 
-        # 4. Queue for micro-ingestion
+        # 4. Queue for micro-ingestion + synthesis detection
         self.exchange_counter += 1
         exchange["exchange_index"] = self.exchange_counter
         self.pending_exchanges.append(exchange)
+        self.pending_exchanges_for_synthesis.append(exchange)
         self.exchanges_since_ingest += 1
         self._check_micro_ingest()
 
@@ -608,7 +681,10 @@ class Overwatch:
                     self.cooldowns.clear()
                     self.exchange_counter = 0
                     self.pending_exchanges = []
+                    self.pending_exchanges_for_synthesis = []
                     self.exchanges_since_ingest = 0
+                    self._pending_user = None
+                    self._assistant_texts = []
                     self.last_ingest_time = time.time()
                     self.last_snapshot_time = 0
                     self.recent_exchanges = []
@@ -629,10 +705,13 @@ class Overwatch:
                 # Parse into exchanges
                 exchanges = self._parse_exchanges(new_entries)
 
+                if exchanges:
+                    log.info(f"Parsed {len(exchanges)} exchange(s) from {len(new_entries)} entries")
+
                 # Process each exchange
                 for exchange in exchanges:
                     self._process_exchange(exchange)
-                    log.debug(f"Processed: {exchange['user_text'][:60]}...")
+                    log.info(f"Processed: {exchange['user_text'][:60]}...")
 
                 time.sleep(POLL_INTERVAL)
 

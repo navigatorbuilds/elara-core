@@ -5,16 +5,17 @@ Elara MCP Server
 Tools are organized into domain modules under elara_mcp/tools/.
 Importing each module registers its tools with the shared mcp instance.
 
-31 tools across 9 modules:
-- memory:    elara_remember, elara_recall, elara_recall_conversation, elara_conversations (4)
-- mood:      elara_mood, elara_mood_adjust, elara_imprint, elara_mode, elara_status (5)
-- episodes:  elara_episode_start, elara_episode_note, elara_episode_end, elara_episode_query, elara_context (5)
-- goals:     elara_goal, elara_goal_boot, elara_correction, elara_correction_boot, elara_handoff (5)
-- awareness: elara_reflect, elara_insight, elara_intention, elara_observe, elara_temperament (5)
-- dreams:    elara_dream, elara_dream_info (2)
-- cognitive: elara_reasoning, elara_outcome, elara_synthesis (3)
-- business:  elara_business (1)
-- llm:       elara_llm (1)
+34 tools across 10 modules:
+- memory:      elara_remember, elara_recall, elara_recall_conversation, elara_conversations (4)
+- mood:        elara_mood, elara_mood_adjust, elara_imprint, elara_mode, elara_status (5)
+- episodes:    elara_episode_start, elara_episode_note, elara_episode_end, elara_episode_query, elara_context (5)
+- goals:       elara_goal, elara_goal_boot, elara_correction, elara_correction_boot, elara_handoff (5)
+- awareness:   elara_reflect, elara_insight, elara_intention, elara_observe, elara_temperament (5)
+- dreams:      elara_dream, elara_dream_info (2)
+- cognitive:   elara_reasoning, elara_outcome, elara_synthesis (3)
+- business:    elara_business (1)
+- llm:         elara_llm (1)
+- maintenance: elara_rebuild_indexes, elara_briefing, elara_snapshot (3)
 """
 
 from elara_mcp._app import mcp
@@ -29,6 +30,7 @@ import elara_mcp.tools.dreams
 import elara_mcp.tools.cognitive
 import elara_mcp.tools.business
 import elara_mcp.tools.llm
+import elara_mcp.tools.maintenance
 
 
 if __name__ == "__main__":
