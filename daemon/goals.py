@@ -11,6 +11,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict
 
+from daemon.events import bus, Events
+
 GOALS_FILE = Path.home() / ".claude" / "elara-goals.json"
 
 
@@ -52,6 +54,12 @@ def add_goal(
     }
     goals.append(goal)
     _save(goals)
+    bus.emit(Events.GOAL_ADDED, {
+        "id": goal["id"],
+        "title": title,
+        "project": project,
+        "priority": priority,
+    }, source="goals")
     return goal
 
 
@@ -75,6 +83,11 @@ def update_goal(
                 g["title"] = title
             g["last_touched"] = datetime.now().isoformat()
             _save(goals)
+            bus.emit(Events.GOAL_UPDATED, {
+                "id": goal_id,
+                "status": g["status"],
+                "title": g["title"],
+            }, source="goals")
             return g
     return {"error": f"Goal {goal_id} not found"}
 

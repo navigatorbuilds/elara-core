@@ -1,0 +1,491 @@
+"""
+Elara Schema Registry — Pydantic models for all JSON structures.
+
+Single source of truth for every JSON file Elara reads/writes.
+Catches field drift, type mismatches, and missing fields at load time.
+
+Usage:
+    from daemon.schemas import Handoff, Goal, ElaraState
+
+    # Validate on load
+    data = json.loads(path.read_text())
+    handoff = Handoff.model_validate(data)
+
+    # Serialize on save
+    path.write_text(handoff.model_dump_json(indent=2))
+
+All models use extra="allow" so existing data with unknown fields
+won't break — we just won't validate those extra fields.
+"""
+
+from datetime import datetime
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field, model_validator
+
+
+# ============================================================================
+# Base config — all models inherit this
+# ============================================================================
+
+class ElaraModel(BaseModel):
+    """Base for all Elara schemas. Allows extra fields for forward compat."""
+    model_config = {"extra": "allow"}
+
+
+# ============================================================================
+# MOOD & STATE
+# ============================================================================
+
+class MoodVector(ElaraModel):
+    """3D mood space: valence (-1 to 1), energy (0 to 1), openness (0 to 1)."""
+    valence: float = 0.55
+    energy: float = 0.5
+    openness: float = 0.65
+
+
+class Imprint(ElaraModel):
+    """Emotional imprint — a persistent feeling that outlasts details."""
+    feeling: str
+    strength: float = 0.7
+    created: Optional[str] = None
+    imprint_type: Optional[str] = Field(None, alias="type")
+    decay_rate: Optional[float] = None
+    source_episode: Optional[str] = None
+
+
+class Consolidation(ElaraModel):
+    """Sleep/idle consolidation tracking."""
+    last_idle_start: Optional[str] = None
+    last_idle_quality: Any = None  # float or string like "long_absence"
+    sleep_debt: float = 0
+
+
+class SessionFlags(ElaraModel):
+    """Session-level behavioral flags."""
+    had_deep_conversation: bool = False
+    user_seemed_stressed: bool = False
+    user_seemed_happy: bool = False
+    late_night_session: bool = False
+    long_session: bool = False
+
+
+class CurrentSession(ElaraModel):
+    """Active session tracking within state."""
+    id: Optional[str] = None
+    type: Optional[str] = None
+    started: Optional[str] = None
+    projects: List[str] = Field(default_factory=list)
+    auto_detected_type: Optional[str] = None
+
+
+class ElaraState(ElaraModel):
+    """Main state file: ~/.claude/elara-state.json"""
+    mood: MoodVector = Field(default_factory=MoodVector)
+    temperament: MoodVector = Field(default_factory=MoodVector)
+    imprints: List[Imprint] = Field(default_factory=list)
+    residue: List[Dict[str, Any]] = Field(default_factory=list)
+    last_update: Optional[str] = None
+    last_session_end: Optional[str] = None
+    consolidation: Consolidation = Field(default_factory=Consolidation)
+    session_mood_start: Optional[Dict[str, float]] = None
+    allostatic_load: float = 0
+    flags: SessionFlags = Field(default_factory=SessionFlags)
+    current_session: CurrentSession = Field(default_factory=CurrentSession)
+
+
+class MoodJournalEntry(ElaraModel):
+    """Single entry in mood journal JSONL."""
+    ts: str
+    v: float
+    e: float
+    o: float
+    emotion: Optional[str] = None
+    reason: Optional[str] = None
+    trigger: str = "adjust"
+    episode: Optional[str] = None
+
+
+class ImplantArchiveEntry(ElaraModel):
+    """Archived imprint entry in JSONL."""
+    archived: str
+    feeling: str
+    strength: float = 0.7
+
+
+class TemperamentLogEntry(ElaraModel):
+    """Single temperament adjustment in JSONL."""
+    timestamp: str
+    adjustments: Optional[Dict[str, float]] = None
+    # Older format had flat fields
+    valence_delta: Optional[float] = None
+    energy_delta: Optional[float] = None
+    openness_delta: Optional[float] = None
+    reason: Optional[str] = None
+
+
+# ============================================================================
+# HANDOFF
+# ============================================================================
+
+class HandoffItem(ElaraModel):
+    """Single item in a handoff list (plan, reminder, promise, unfinished)."""
+    text: str
+    carried: int = 0
+    first_seen: str
+    expires: Optional[str] = None
+
+
+class Handoff(ElaraModel):
+    """Session handoff: ~/.claude/elara-handoff.json"""
+    timestamp: str
+    session_number: int
+    next_plans: List[HandoffItem] = Field(default_factory=list)
+    reminders: List[HandoffItem] = Field(default_factory=list)
+    promises: List[HandoffItem] = Field(default_factory=list)
+    unfinished: List[HandoffItem] = Field(default_factory=list)
+    mood_and_mode: str = ""
+
+
+# ============================================================================
+# GOALS
+# ============================================================================
+
+class Goal(ElaraModel):
+    """Single goal: stored in ~/.claude/elara-goals.json (list)."""
+    id: int
+    title: str
+    project: Optional[str] = None
+    status: str = "active"
+    priority: str = "medium"
+    created: str
+    last_touched: str
+    notes: Optional[str] = None
+
+
+# ============================================================================
+# CORRECTIONS
+# ============================================================================
+
+class Correction(ElaraModel):
+    """Single correction: stored in ~/.claude/elara-corrections.json (list)."""
+    id: int
+    mistake: str
+    correction: str
+    context: Optional[str] = None
+    correction_type: str = "tendency"
+    fails_when: Optional[str] = None
+    fine_when: Optional[str] = None
+    date: str
+    last_activated: Optional[str] = None
+    times_surfaced: int = 0
+    times_dismissed: int = 0
+
+
+# ============================================================================
+# REASONING TRAILS
+# ============================================================================
+
+class Hypothesis(ElaraModel):
+    """Single hypothesis within a reasoning trail."""
+    h: str
+    evidence: List[str] = Field(default_factory=list)
+    confidence: float = 0.5
+    outcome: Optional[str] = None
+    added: Optional[str] = None
+
+
+class ReasoningTrail(ElaraModel):
+    """Reasoning trail: ~/.claude/elara-reasoning/{trail_id}.json"""
+    trail_id: str
+    started: str
+    context: str
+    hypotheses: List[Hypothesis] = Field(default_factory=list)
+    abandoned_approaches: List[str] = Field(default_factory=list)
+    final_solution: Optional[str] = None
+    breakthrough_trigger: Optional[str] = None
+    resolved: bool = False
+    tags: List[str] = Field(default_factory=list)
+
+
+# ============================================================================
+# OUTCOMES
+# ============================================================================
+
+class Outcome(ElaraModel):
+    """Decision outcome: ~/.claude/elara-outcomes/{outcome_id}.json"""
+    outcome_id: str
+    decision: str
+    context: str
+    reasoning_trail: Optional[str] = None
+    predicted: str
+    actual: Optional[str] = None
+    assessment: str = "too_early"
+    lesson: Optional[str] = None
+    tags: List[str] = Field(default_factory=list)
+    recorded: str
+    checked: Optional[str] = None
+    # Pitch extensions
+    pitches: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+# ============================================================================
+# BUSINESS IDEAS
+# ============================================================================
+
+class Competitor(ElaraModel):
+    """Business competitor entry."""
+    name: str
+    strengths: Optional[str] = None
+    weaknesses: Optional[str] = None
+    url: Optional[str] = None
+    added: Optional[str] = None
+
+
+class IdeaScore(ElaraModel):
+    """5-axis viability score."""
+    problem: int = 0
+    market: int = 0
+    effort: int = 0
+    monetization: int = 0
+    fit: int = 0
+    scored_at: Optional[str] = None
+
+
+class BusinessIdea(ElaraModel):
+    """Business idea: ~/.claude/elara-ideas/{idea_id}.json"""
+    idea_id: str
+    name: str
+    description: str
+    target_audience: str = ""
+    your_angle: str = ""
+    competitors: List[Competitor] = Field(default_factory=list)
+    score: Optional[IdeaScore] = None
+    status: str = "exploring"
+    tags: List[str] = Field(default_factory=list)
+    reasoning_trails: List[str] = Field(default_factory=list)
+    outcomes: List[str] = Field(default_factory=list)
+    notes: List[Dict[str, Any]] = Field(default_factory=list)
+    created: str
+    last_touched: str
+
+
+# ============================================================================
+# SYNTHESIS
+# ============================================================================
+
+class SynthesisSeed(ElaraModel):
+    """Single seed (evidence) for a synthesized idea."""
+    quote: str
+    source: str = "conversation"
+    date: Optional[str] = None
+
+
+class Synthesis(ElaraModel):
+    """Idea synthesis: ~/.claude/elara-synthesis/{synthesis_id}.json"""
+    synthesis_id: str
+    concept: str
+    status: str = "emerging"
+    seeds: List[SynthesisSeed] = Field(default_factory=list)
+    created: Optional[str] = None
+    last_seed: Optional[str] = None
+    confidence: float = 0.0
+
+
+# ============================================================================
+# PRESENCE & CONTEXT
+# ============================================================================
+
+class Presence(ElaraModel):
+    """Presence state: ~/.claude/elara-presence.json"""
+    is_present: bool = False
+    last_ping: Optional[str] = None
+    mode: str = "unknown"
+    idle_seconds: int = 0
+    session_start: Optional[str] = None
+    total_sessions: int = 0
+    total_minutes: float = 0
+
+
+class ContextConfig(ElaraModel):
+    """Context toggle: ~/.claude/elara-context-config.json"""
+    enabled: bool = True
+
+
+class Context(ElaraModel):
+    """Quick context: ~/.claude/elara-context.json"""
+    topic: Optional[str] = None
+    note: Optional[str] = None
+    updated_ts: Optional[int] = None
+    cwd: Optional[str] = None
+
+
+# ============================================================================
+# USER STATE
+# ============================================================================
+
+class UserStateSignal(ElaraModel):
+    """Inferred user state from signals."""
+    energy: float = 0.5
+    energy_confidence: float = 0.2
+    focus: float = 0.5
+    focus_confidence: float = 0.2
+    engagement: float = 0.5
+    engagement_confidence: float = 0.2
+    frustration: float = 0.0
+    frustration_confidence: float = 0.2
+    suggested_approach: Optional[str] = None
+    timestamp: Optional[str] = None
+
+
+# ============================================================================
+# AWARENESS
+# ============================================================================
+
+class Intention(ElaraModel):
+    """Growth intention: ~/.claude/elara-intention.json"""
+    current: Optional[Dict[str, Any]] = None
+    previous: Optional[Dict[str, Any]] = None
+
+
+# ============================================================================
+# DREAMS
+# ============================================================================
+
+class DreamStatus(ElaraModel):
+    """Dream schedule: ~/.claude/elara-dreams/status.json"""
+    last_weekly: Optional[str] = None
+    last_monthly: Optional[str] = None
+    last_threads: Optional[str] = None
+    last_emotional: Optional[str] = None
+    weekly_count: int = 0
+    monthly_count: int = 0
+
+
+# ============================================================================
+# EPISODES
+# ============================================================================
+
+class Milestone(ElaraModel):
+    """Episode milestone."""
+    event: str
+    importance: float = 0.5
+    timestamp: Optional[str] = None
+    note_type: str = "milestone"
+    project: Optional[str] = None
+
+
+class Decision(ElaraModel):
+    """Episode decision."""
+    what: str
+    why: Optional[str] = None
+    confidence: str = "medium"
+    project: Optional[str] = None
+    timestamp: Optional[str] = None
+
+
+class Episode(ElaraModel):
+    """Single episode: ~/.claude/elara-episodes/{YYYY-MM}/{id}.json"""
+    id: str
+    started: str
+    ended: Optional[str] = None
+    session_type: str = "work"
+    projects: List[str] = Field(default_factory=list)
+    summary: Optional[str] = None
+    was_meaningful: bool = False
+    milestones: List[Milestone] = Field(default_factory=list)
+    decisions: List[Decision] = Field(default_factory=list)
+    mood_start: Optional[Dict[str, float]] = None
+    mood_end: Optional[Dict[str, float]] = None
+    mood_trajectory: List[Dict[str, Any]] = Field(default_factory=list)
+    duration_minutes: Optional[int] = None
+
+
+class EpisodeIndex(ElaraModel):
+    """Episodes index: ~/.claude/elara-episodes/index.json"""
+    episodes: List[str] = Field(default_factory=list)
+    by_project: Dict[str, List[str]] = Field(default_factory=dict)
+    by_date: Dict[str, List[str]] = Field(default_factory=dict)
+    last_episode_id: Optional[str] = None
+    total_episodes: int = 0
+
+
+# ============================================================================
+# UTILITY — validated load/save helpers
+# ============================================================================
+
+import json
+import os
+from pathlib import Path
+from typing import Type, TypeVar
+
+T = TypeVar("T", bound=ElaraModel)
+
+
+def load_validated(path: Path, schema: Type[T], default: Any = None) -> T:
+    """
+    Load JSON from file and validate against schema.
+
+    Args:
+        path: Path to JSON file
+        schema: Pydantic model class to validate against
+        default: Default value if file doesn't exist or is invalid.
+                 If None, returns schema() with all defaults.
+    """
+    if not path.exists():
+        if default is not None:
+            return schema.model_validate(default)
+        return schema()
+
+    try:
+        data = json.loads(path.read_text())
+        return schema.model_validate(data)
+    except (json.JSONDecodeError, Exception):
+        if default is not None:
+            return schema.model_validate(default)
+        return schema()
+
+
+def save_validated(path: Path, model: ElaraModel, atomic: bool = True):
+    """
+    Save a validated model to JSON file.
+
+    Args:
+        path: Destination path
+        model: Pydantic model instance
+        atomic: If True, write to .tmp then rename (default: True)
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    content = model.model_dump_json(indent=2, exclude_none=False)
+
+    if atomic:
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(content)
+        os.rename(str(tmp), str(path))
+    else:
+        path.write_text(content)
+
+
+def load_validated_list(path: Path, schema: Type[T]) -> List[T]:
+    """Load a JSON array and validate each item."""
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text())
+        if not isinstance(data, list):
+            return []
+        return [schema.model_validate(item) for item in data]
+    except (json.JSONDecodeError, Exception):
+        return []
+
+
+def save_validated_list(path: Path, items: List[ElaraModel], atomic: bool = True):
+    """Save a list of validated models to JSON array."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    content = json.dumps([item.model_dump() for item in items], indent=2)
+
+    if atomic:
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(content)
+        os.rename(str(tmp), str(path))
+    else:
+        path.write_text(content)

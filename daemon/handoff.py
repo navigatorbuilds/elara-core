@@ -15,6 +15,8 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
+from daemon.events import bus, Events
+
 HANDOFF_PATH = Path.home() / ".claude" / "elara-handoff.json"
 HANDOFF_ARCHIVE_DIR = Path.home() / ".claude" / "elara-handoff-archive"
 
@@ -133,6 +135,11 @@ def save_handoff(data: dict) -> Dict[str, Any]:
     except OSError as e:
         return {"ok": False, "errors": [f"Write failed: {e}"]}
 
+    bus.emit(Events.HANDOFF_SAVED, {
+        "session_number": data.get("session_number"),
+        "plans": len(data.get("next_plans", [])),
+        "unfinished": len(data.get("unfinished", [])),
+    }, source="handoff")
     return {"ok": True, "path": str(HANDOFF_PATH)}
 
 

@@ -12,6 +12,7 @@ from daemon.state_core import (
     DEFAULT_STATE, SESSION_TYPE_RULES, TEMPERAMENT,
 )
 from daemon.mood import create_imprint, get_session_arc
+from daemon.events import bus, Events
 
 
 def start_session() -> dict:
@@ -56,6 +57,10 @@ def start_session() -> dict:
             state["flags"][flag] = False
 
     _save_state(state)
+    bus.emit(Events.SESSION_STARTED, {
+        "hour": hour,
+        "late_night": state["flags"].get("late_night_session", False),
+    }, source="sessions")
     return state
 
 
@@ -89,6 +94,11 @@ def end_session(session_summary: Optional[str] = None, was_deep: bool = False) -
         del state["active_mode"]
 
     _save_state(state)
+    bus.emit(Events.SESSION_ENDED, {
+        "summary": session_summary,
+        "was_deep": was_deep,
+        "allostatic_load": state["allostatic_load"],
+    }, source="sessions")
     return state
 
 
@@ -160,13 +170,19 @@ def start_episode(
 
     _save_state(state)
 
-    return {
+    result = {
         "session_id": session_id,
         "type": final_type,
         "auto_detected": auto_type,
         "mood_at_start": state["session_mood_start"],
         "message": f"Episode started: {final_type} session"
     }
+    bus.emit(Events.EPISODE_STARTED, {
+        "session_id": session_id,
+        "type": final_type,
+        "project": project,
+    }, source="sessions")
+    return result
 
 
 def add_project_to_session(project: str) -> None:
@@ -257,4 +273,12 @@ def end_episode(
     state["session_mood_start"] = None
 
     _save_state(state)
+    bus.emit(Events.EPISODE_ENDED, {
+        "session_id": episode_record["id"],
+        "type": episode_record["type"],
+        "duration_minutes": episode_record["duration_minutes"],
+        "projects": episode_record["projects"],
+        "was_meaningful": was_meaningful,
+        "summary": summary,
+    }, source="sessions")
     return episode_record

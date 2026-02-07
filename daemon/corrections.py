@@ -26,6 +26,8 @@ try:
 except ImportError:
     CHROMA_AVAILABLE = False
 
+from daemon.events import bus, Events
+
 CORRECTIONS_FILE = Path.home() / ".claude" / "elara-corrections.json"
 CORRECTIONS_DB_DIR = Path.home() / ".claude" / "elara-corrections-db"
 MAX_CORRECTIONS = 50
@@ -206,6 +208,12 @@ def add_correction(
 
     # Index in ChromaDB
     _sync_to_chroma([entry])
+
+    bus.emit(Events.CORRECTION_ADDED, {
+        "id": entry["id"],
+        "mistake": mistake,
+        "correction_type": correction_type,
+    }, source="corrections")
 
     return entry
 

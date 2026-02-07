@@ -16,6 +16,7 @@ from daemon.state_core import (
     _load_state, _save_state, _apply_time_decay, _log_mood,
     TEMPERAMENT, MOOD_JOURNAL_FILE, IMPRINT_ARCHIVE_FILE,
 )
+from daemon.events import bus, Events
 
 
 def get_mood() -> dict:
@@ -58,6 +59,12 @@ def set_mood(
 
     _save_state(state)
     _log_mood(state, reason=reason, trigger="set")
+    bus.emit(Events.MOOD_SET, {
+        "valence": state["mood"]["valence"],
+        "energy": state["mood"]["energy"],
+        "openness": state["mood"]["openness"],
+        "reason": reason,
+    }, source="mood")
     return state["mood"]
 
 
@@ -102,6 +109,15 @@ def adjust_mood(
 
     _save_state(state)
     _log_mood(state, reason=reason, trigger="adjust")
+    bus.emit(Events.MOOD_CHANGED, {
+        "valence": state["mood"]["valence"],
+        "energy": state["mood"]["energy"],
+        "openness": state["mood"]["openness"],
+        "valence_delta": valence_delta,
+        "energy_delta": energy_delta,
+        "openness_delta": openness_delta,
+        "reason": reason,
+    }, source="mood")
     return state["mood"]
 
 
@@ -124,6 +140,11 @@ def create_imprint(feeling: str, strength: float = 0.7, imprint_type: str = "mom
     state["imprints"] = state["imprints"][-20:]
 
     _save_state(state)
+    bus.emit(Events.IMPRINT_CREATED, {
+        "feeling": feeling,
+        "strength": strength,
+        "type": imprint_type,
+    }, source="mood")
     return imprint
 
 
