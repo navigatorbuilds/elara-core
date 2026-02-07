@@ -23,7 +23,7 @@ logger = logging.getLogger("elara.llm")
 
 # Ollama API
 OLLAMA_URL = "http://localhost:11434"
-DEFAULT_MODEL = "mistral:7b"
+DEFAULT_MODEL = "qwen2.5:1.5b"
 DEFAULT_TIMEOUT = 30  # seconds
 
 # Cache availability check (don't spam connection attempts)
@@ -124,10 +124,10 @@ def classify(
     """
     cats = ", ".join(categories)
     prompt = (
-        f"Classify the following text as exactly one of: {cats}. "
-        f"Respond with ONLY the label, nothing else.\n\n{text[:500]}"
+        f"Classify as one of: {cats}\n"
+        f"Reply with ONLY the label.\n\n{text[:500]}"
     )
-    result = query(prompt, model=model, temperature=0.1)
+    result = query(prompt, model=model, temperature=0.1, max_tokens=10)
     if result:
         # Find which category the response matches (fuzzy)
         result_lower = result.lower().strip().rstrip(".")
@@ -146,10 +146,9 @@ def summarize(
 ) -> Optional[str]:
     """Summarize text in N sentences or fewer."""
     prompt = (
-        f"Summarize the following in exactly {max_sentences} sentence(s). "
-        f"Be concise and factual.\n\n{text[:1500]}"
+        f"Summarize in {max_sentences} sentence(s). Be concise.\n\n{text[:1000]}"
     )
-    return query(prompt, model=model, temperature=0.3, max_tokens=512)
+    return query(prompt, model=model, temperature=0.3, max_tokens=80)
 
 
 def judge(
@@ -164,10 +163,10 @@ def judge(
     """
     prompt = f"{question}"
     if context:
-        prompt += f"\n\nContext:\n{context[:500]}"
+        prompt += f"\n\nContext:\n{context[:300]}"
     prompt += "\n\nAnswer YES or NO only."
 
-    result = query(prompt, model=model, temperature=0.1)
+    result = query(prompt, model=model, temperature=0.1, max_tokens=3)
     if result:
         lower = result.lower().strip()
         if lower.startswith("yes"):
@@ -189,11 +188,10 @@ def generate_search_queries(
     Used by Overwatch for smarter cross-referencing.
     """
     prompt = (
-        f"Given this conversation exchange, generate {n_queries} short search queries "
-        f"(5-10 words each) that would find related past conversations on similar topics. "
-        f"Return one query per line, nothing else.\n\n{exchange_text[:800]}"
+        f"Generate {n_queries} search queries (5-10 words each) to find related conversations. "
+        f"One per line, nothing else.\n\n{exchange_text[:500]}"
     )
-    result = query(prompt, model=model, temperature=0.4)
+    result = query(prompt, model=model, temperature=0.4, max_tokens=60)
     if result:
         lines = [l.strip().lstrip("0123456789.-) ") for l in result.split("\n") if l.strip()]
         return lines[:n_queries] if lines else None
@@ -215,17 +213,12 @@ def triage_memory(
     Or None if unavailable.
     """
     prompt = (
-        "Analyze this conversation exchange and respond in exactly this JSON format:\n"
-        '{"worth_keeping": true/false, "category": "technical|emotional|planning|casual|meta", '
-        '"importance": 0.0-1.0}\n\n'
-        "Rules:\n"
-        "- worth_keeping: false for greetings, confirmations, yes/no only\n"
-        "- importance: 0.8+ for decisions, insights, emotional moments\n"
-        "- importance: 0.3-0.6 for routine work discussion\n"
-        "- importance: 0.0-0.2 for small talk, single words\n\n"
-        f"User: {user_text[:300]}\nAssistant: {assistant_text[:300]}"
+        "Reply with JSON only, no explanation:\n"
+        '{"worth_keeping": true/false, "category": "technical|emotional|planning|casual|meta", "importance": 0.0-1.0}\n\n'
+        "worth_keeping=false for greetings/confirmations. importance 0.8+ for decisions/insights.\n\n"
+        f"User: {user_text[:200]}\nAssistant: {assistant_text[:200]}"
     )
-    result = query(prompt, model=model, temperature=0.1)
+    result = query(prompt, model=model, temperature=0.1, max_tokens=40)
     if result:
         # Try to parse JSON from response
         try:
@@ -285,12 +278,11 @@ def generate_narrative(
     context = "\n".join(parts)
 
     prompt = (
-        "Write a 2-3 sentence narrative summary of this work session. "
-        "Be specific about what was accomplished. Write in past tense, third person "
-        "(e.g. 'Built X, decided Y, shipped Z'). No fluff.\n\n"
+        "Write 2 sentences about this session. Past tense. "
+        "Be specific (e.g. 'Built X, fixed Y'). No fluff.\n\n"
         f"{context}"
     )
-    return query(prompt, model=model, temperature=0.4, max_tokens=512)
+    return query(prompt, model=model, temperature=0.4, max_tokens=80)
 
 
 def detect_conflicts(
@@ -307,12 +299,11 @@ def detect_conflicts(
     Or None if unavailable.
     """
     prompt = (
-        "Do these two goals conflict with each other? "
-        "Answer in this exact JSON format:\n"
-        '{"conflicts": true/false, "reason": "one sentence explanation"}\n\n'
+        "Do these goals conflict? Reply JSON only:\n"
+        '{"conflicts": true/false, "reason": "short explanation"}\n\n'
         f"Goal 1: {goal_a}\nGoal 2: {goal_b}"
     )
-    result = query(prompt, model=model, temperature=0.1)
+    result = query(prompt, model=model, temperature=0.1, max_tokens=40)
     if result:
         try:
             cleaned = result.strip().strip("`").strip()
