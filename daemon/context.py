@@ -15,6 +15,10 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any
 
+from daemon.schemas import (
+    Context, ContextConfig, load_validated, save_validated,
+)
+
 CONTEXT_FILE = Path.home() / ".claude" / "elara-context.json"
 CONFIG_FILE = Path.home() / ".claude" / "elara-context-config.json"
 
@@ -22,18 +26,15 @@ CONFIG_FILE = Path.home() / ".claude" / "elara-context-config.json"
 def is_enabled() -> bool:
     """Check if context tracking is enabled. Default: ON"""
     if CONFIG_FILE.exists():
-        try:
-            config = json.loads(CONFIG_FILE.read_text())
-            return config.get("enabled", True)
-        except:
-            pass
+        config = load_validated(CONFIG_FILE, ContextConfig)
+        return config.enabled
     return True  # Default ON
 
 
 def set_enabled(enabled: bool):
     """Enable or disable context tracking."""
-    CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-    CONFIG_FILE.write_text(json.dumps({"enabled": enabled}, indent=2))
+    model = ContextConfig(enabled=enabled)
+    save_validated(CONFIG_FILE, model)
 
 
 def save_context(
@@ -65,24 +66,14 @@ def save_context(
     current["updated"] = datetime.now().isoformat()
     current["updated_ts"] = int(datetime.now().timestamp())
 
-    CONTEXT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    CONTEXT_FILE.write_text(json.dumps(current, indent=2))
+    model = Context.model_validate(current)
+    save_validated(CONTEXT_FILE, model)
 
 
 def get_context() -> Dict[str, Any]:
     """Get saved context."""
-    if CONTEXT_FILE.exists():
-        try:
-            return json.loads(CONTEXT_FILE.read_text())
-        except:
-            pass
-    return {
-        "topic": None,
-        "last_exchange": None,
-        "task_in_progress": None,
-        "updated": None,
-        "updated_ts": None
-    }
+    model = load_validated(CONTEXT_FILE, Context)
+    return model.model_dump()
 
 
 def get_gap_seconds() -> Optional[int]:

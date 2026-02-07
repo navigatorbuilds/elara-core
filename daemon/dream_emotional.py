@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Dict, Optional
 
+from daemon.schemas import atomic_write_json
+
 from daemon.dream_core import (
     _ensure_dirs, _load_status, _save_status, _is_late,
     _gather_episodes, _gather_mood_journal,
@@ -395,9 +397,9 @@ def emotional_dream() -> dict:
     }
 
     filepath = EMOTIONAL_DIR / f"{dream_id}.json"
-    filepath.write_text(json.dumps(report, indent=2))
+    atomic_write_json(filepath, report)
     latest = EMOTIONAL_DIR / "latest.json"
-    latest.write_text(json.dumps(report, indent=2))
+    atomic_write_json(latest, report)
 
     status = _load_status()
     status["last_emotional"] = now.isoformat()
@@ -511,8 +513,8 @@ def monthly_emotional_dream() -> dict:
     }
 
     filepath = EMOTIONAL_DIR / f"{month_id}.json"
-    filepath.write_text(json.dumps(report, indent=2))
+    atomic_write_json(filepath, report)
     monthly_latest = EMOTIONAL_DIR / "monthly-latest.json"
-    monthly_latest.write_text(json.dumps(report, indent=2))
+    atomic_write_json(monthly_latest, report)
 
     return report

@@ -9,6 +9,8 @@ from datetime import datetime, timedelta
 from typing import List, Dict
 import json
 
+from daemon.schemas import atomic_write_json
+
 from daemon.dream_core import (
     _ensure_dirs, _load_status, _save_status, _is_late,
     _gather_episodes, _gather_goals, _gather_corrections,
@@ -111,9 +113,9 @@ def weekly_dream() -> dict:
     }
 
     filepath = WEEKLY_DIR / f"{dream_id}.json"
-    filepath.write_text(json.dumps(report, indent=2))
+    atomic_write_json(filepath, report)
     latest = WEEKLY_DIR / "latest.json"
-    latest.write_text(json.dumps(report, indent=2))
+    atomic_write_json(latest, report)
 
     # Run emotional dream alongside
     try:

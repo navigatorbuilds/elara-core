@@ -15,11 +15,11 @@ Rules:
 """
 
 import json
-import os
 from pathlib import Path
 from datetime import datetime
 
 from daemon.handoff import load_handoff, HANDOFF_PATH
+from daemon.schemas import atomic_write_json
 
 SESSION_STATE_PATH = Path.home() / ".claude" / "elara-session-state.json"
 
@@ -380,9 +380,7 @@ def _write_session_state(brief: dict):
         "injected_topics": [],
     }
     try:
-        tmp = SESSION_STATE_PATH.with_suffix('.tmp')
-        tmp.write_text(json.dumps(state, indent=2))
-        os.rename(str(tmp), str(SESSION_STATE_PATH))
+        atomic_write_json(SESSION_STATE_PATH, state)
     except OSError:
         pass
 

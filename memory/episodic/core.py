@@ -3,9 +3,10 @@ Episodic memory core — init, ChromaDB, index management, helpers.
 """
 
 import json
-import os
 from pathlib import Path
 from typing import Optional
+
+from daemon.schemas import atomic_write_json
 
 try:
     import chromadb
@@ -75,9 +76,7 @@ class CoreMixin:
 
     def _save_index(self):
         """Save episodes index via atomic rename."""
-        tmp_file = EPISODES_INDEX.with_suffix(".json.tmp")
-        tmp_file.write_text(json.dumps(self.index, indent=2))
-        os.rename(str(tmp_file), str(EPISODES_INDEX))
+        atomic_write_json(EPISODES_INDEX, self.index)
 
     def _get_episode_path(self, episode_id: str) -> Path:
         """Get path to episode JSON file."""
@@ -99,9 +98,7 @@ class CoreMixin:
     def _save_episode(self, episode: dict) -> None:
         """Save an episode via atomic rename."""
         path = self._get_episode_path(episode["id"])
-        tmp_path = path.with_suffix(".json.tmp")
-        tmp_path.write_text(json.dumps(episode, indent=2))
-        os.rename(str(tmp_path), str(path))
+        atomic_write_json(path, episode)
 
     def _get_current_mood(self) -> dict:
         """Get current mood for tagging."""

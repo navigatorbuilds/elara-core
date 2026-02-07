@@ -8,6 +8,8 @@ import json
 from datetime import datetime
 from typing import List
 
+from daemon.schemas import atomic_write_json
+
 from daemon.dream_core import (
     _ensure_dirs, _load_status, _save_status, THREADS_DIR,
 )
@@ -96,12 +98,12 @@ def narrative_threads() -> dict:
     result = {"generated": datetime.now().isoformat(), "thread_count": len(threads), "threads": threads}
 
     threads_file = THREADS_DIR / "latest.json"
-    threads_file.write_text(json.dumps(result, indent=2))
+    atomic_write_json(threads_file, result)
 
     for thread in threads:
         safe_name = thread["name"].lower().replace(" ", "-").replace("/", "-")[:50]
         thread_file = THREADS_DIR / f"{safe_name}.json"
-        thread_file.write_text(json.dumps(thread, indent=2))
+        atomic_write_json(thread_file, thread)
 
     status = _load_status()
     status["last_threads"] = datetime.now().isoformat()
