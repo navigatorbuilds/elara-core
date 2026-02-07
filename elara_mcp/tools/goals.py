@@ -1,5 +1,9 @@
-"""Goals and corrections tools."""
+"""Goals, corrections, and session handoff tools.
 
+Consolidated from 8 → 4 tools + 1 handoff tool.
+"""
+
+import json
 from typing import Optional
 from elara_mcp._app import mcp
 from daemon.goals import (
@@ -10,73 +14,51 @@ from daemon.corrections import (
     add_correction, list_corrections, boot_corrections,
     check_corrections, record_activation,
 )
+from daemon.handoff import (
+    save_handoff, load_handoff, get_carry_forward, validate_handoff,
+)
 
 
 @mcp.tool()
-def elara_goal_add(
-    title: str,
+def elara_goal(
+    action: str = "list",
+    title: Optional[str] = None,
+    goal_id: Optional[int] = None,
+    status: Optional[str] = None,
     project: Optional[str] = None,
     notes: Optional[str] = None,
     priority: str = "medium",
 ) -> str:
     """
-    Add a new goal to track across sessions.
+    Manage goals — add, update, or list.
 
     Args:
-        title: What needs to be done (e.g., "Ship HandyBill dark theme")
-        project: Project this belongs to (e.g., "handybill")
+        action: "add" to create, "update" to modify, "list" to view
+        title: Goal title (required for add, optional for update)
+        goal_id: Goal ID number (required for update)
+        status: Filter for list, or new status for update ("active", "stalled", "done", "dropped")
+        project: Project filter/association
         notes: Additional context
         priority: "high", "medium", or "low"
 
     Returns:
-        Confirmation with goal ID
+        Goal info or list
     """
-    goal = add_goal(title=title, project=project, notes=notes, priority=priority)
-    return f"Goal #{goal['id']} added: {title} [{priority}]"
+    if action == "add":
+        if not title:
+            return "Error: title is required for adding a goal."
+        goal = add_goal(title=title, project=project, notes=notes, priority=priority)
+        return f"Goal #{goal['id']} added: {title} [{priority}]"
 
+    if action == "update":
+        if goal_id is None:
+            return "Error: goal_id is required for updating a goal."
+        result = update_goal(goal_id=goal_id, status=status, notes=notes, priority=priority, title=title)
+        if "error" in result:
+            return result["error"]
+        return f"Goal #{goal_id} updated -> {result['status']}: {result['title']}"
 
-@mcp.tool()
-def elara_goal_update(
-    goal_id: int,
-    status: Optional[str] = None,
-    notes: Optional[str] = None,
-    priority: Optional[str] = None,
-    title: Optional[str] = None,
-) -> str:
-    """
-    Update a goal's status or details.
-
-    Args:
-        goal_id: The goal ID number
-        status: New status: "active", "stalled", "done", "dropped"
-        notes: Updated notes
-        priority: New priority: "high", "medium", "low"
-        title: Updated title
-
-    Returns:
-        Updated goal info
-    """
-    result = update_goal(goal_id=goal_id, status=status, notes=notes, priority=priority, title=title)
-    if "error" in result:
-        return result["error"]
-    return f"Goal #{goal_id} updated → {result['status']}: {result['title']}"
-
-
-@mcp.tool()
-def elara_goal_list(
-    status: Optional[str] = None,
-    project: Optional[str] = None,
-) -> str:
-    """
-    List goals, optionally filtered by status or project.
-
-    Args:
-        status: Filter by "active", "stalled", "done", "dropped"
-        project: Filter by project name
-
-    Returns:
-        Goal list with status and priority
-    """
+    # list (default)
     goals = list_goals(status=status, project=project)
     if not goals:
         return "No goals found."
@@ -104,90 +86,70 @@ def elara_goal_boot() -> str:
 
 
 @mcp.tool()
-def elara_correction_add(
-    mistake: str,
-    correction: str,
+def elara_correction(
+    action: str = "check",
+    task: Optional[str] = None,
+    mistake: Optional[str] = None,
+    correction: Optional[str] = None,
     context: Optional[str] = None,
     correction_type: str = "tendency",
     fails_when: Optional[str] = None,
     fine_when: Optional[str] = None,
+    n: int = 20,
 ) -> str:
     """
-    Record a correction - something I got wrong that I shouldn't repeat.
+    Manage corrections — add, check relevance, or list.
 
-    These never decay. They load at boot so I remember.
-
-    Args:
-        mistake: What I said/did wrong
-        correction: What's actually correct
-        context: When/why this happened (optional)
-        correction_type: "tendency" (behavioral habit) or "technical" (code/task pattern)
-        fails_when: When does this mistake actually apply? (avoids overgeneralization)
-        fine_when: When is this pattern actually correct? (prevents false warnings)
-
-    Returns:
-        Confirmation
-    """
-    entry = add_correction(
-        mistake=mistake,
-        correction=correction,
-        context=context,
-        correction_type=correction_type,
-        fails_when=fails_when,
-        fine_when=fine_when,
-    )
-    type_label = "tendency" if correction_type == "tendency" else "technical"
-    return f"Correction #{entry['id']} saved [{type_label}]. Won't repeat: {mistake}"
-
-
-@mcp.tool()
-def elara_check_corrections(task: str) -> str:
-    """
-    Check if any past corrections are relevant to the current task.
-
-    Semantic search — matches corrections by meaning, not keywords.
-    Returns corrections with their conditions (fails_when/fine_when)
-    so I can decide whether to heed or ignore the warning.
-
-    Use this before starting work that might repeat a past mistake.
+    Corrections are mistakes I shouldn't repeat. They never decay and load at boot.
 
     Args:
-        task: Description of what I'm about to do
+        action: "add" to record, "check" to find relevant ones, "list" to view all
+        task: What I'm about to do (required for check — semantic search)
+        mistake: What I said/did wrong (required for add)
+        correction: What's actually correct (required for add)
+        context: When/why this happened (for add)
+        correction_type: "tendency" (behavioral) or "technical" (code/task pattern)
+        fails_when: When does this mistake apply? (avoids overgeneralization)
+        fine_when: When is this pattern correct? (prevents false warnings)
+        n: How many to show for list (default 20)
 
     Returns:
-        Relevant corrections with context, or "all clear"
+        Correction info, matches, or list
     """
-    matches = check_corrections(task)
+    if action == "add":
+        if not mistake or not correction:
+            return "Error: 'mistake' and 'correction' are required for adding."
+        entry = add_correction(
+            mistake=mistake,
+            correction=correction,
+            context=context,
+            correction_type=correction_type,
+            fails_when=fails_when,
+            fine_when=fine_when,
+        )
+        type_label = "tendency" if correction_type == "tendency" else "technical"
+        return f"Correction #{entry['id']} saved [{type_label}]. Won't repeat: {mistake}"
 
-    if not matches:
-        return "No relevant corrections found. Proceed."
+    if action == "check":
+        if not task:
+            return "Error: 'task' is required for checking corrections."
+        matches = check_corrections(task)
+        if not matches:
+            return "No relevant corrections found. Proceed."
 
-    lines = [f"[Corrections Check] {len(matches)} relevant:"]
-    for m in matches:
-        lines.append(f"  #{m['id']} ({m.get('relevance', '?')}) {m['mistake']}")
-        lines.append(f"    → {m['correction']}")
-        if m.get("fails_when"):
-            lines.append(f"    fails when: {m['fails_when']}")
-        if m.get("fine_when"):
-            lines.append(f"    fine when: {m['fine_when']}")
+        lines = [f"[Corrections Check] {len(matches)} relevant:"]
+        for m in matches:
+            lines.append(f"  #{m['id']} ({m.get('relevance', '?')}) {m['mistake']}")
+            lines.append(f"    -> {m['correction']}")
+            if m.get("fails_when"):
+                lines.append(f"    fails when: {m['fails_when']}")
+            if m.get("fine_when"):
+                lines.append(f"    fine when: {m['fine_when']}")
+            record_activation(m["id"], was_relevant=True)
 
-        # Record activation
-        record_activation(m["id"], was_relevant=True)
+        return "\n".join(lines)
 
-    return "\n".join(lines)
-
-
-@mcp.tool()
-def elara_correction_list(n: int = 20) -> str:
-    """
-    List recent corrections.
-
-    Args:
-        n: How many to show (default 20)
-
-    Returns:
-        List of corrections with dates and v2 metadata
-    """
+    # list (default)
     corrections = list_corrections(n=n)
     if not corrections:
         return "No corrections recorded yet."
@@ -197,7 +159,7 @@ def elara_correction_list(n: int = 20) -> str:
         date = c["date"][:10]
         ctype = c.get("correction_type", "tendency")
         surfaced = c.get("times_surfaced", 0)
-        line = f"  [{date}] #{c['id']} ({ctype}) {c['mistake']} → {c['correction']}"
+        line = f"  [{date}] #{c['id']} ({ctype}) {c['mistake']} -> {c['correction']}"
         if surfaced > 0:
             line += f" [surfaced {surfaced}x]"
         lines.append(line)
@@ -216,3 +178,98 @@ def elara_correction_boot() -> str:
     """
     result = boot_corrections(n=10)
     return result if result else "No corrections to review."
+
+
+@mcp.tool()
+def elara_handoff(
+    action: str = "save",
+    session_number: int = 0,
+    next_plans: str = "[]",
+    reminders: str = "[]",
+    promises: str = "[]",
+    unfinished: str = "[]",
+    mood_and_mode: str = "",
+) -> str:
+    """
+    Session handoff — save or read between-session memory.
+
+    This replaces freeform handoff writes. Code validates the schema,
+    archives previous handoff, and writes atomically.
+
+    Args:
+        action: "save" to write handoff, "read" to see previous, "carry" to get items needing carry-forward
+        session_number: Current session number (required for save)
+        next_plans: JSON array of plans. Each: {"text": "...", "carried": 0, "first_seen": "ISO"}
+        reminders: JSON array of reminders. Same format as plans.
+        promises: JSON array of promises. Same format as plans.
+        unfinished: JSON array of unfinished items. Same format as plans.
+        mood_and_mode: Free-text mood/context summary for the session
+
+    Returns:
+        Success/error message, or previous handoff data
+    """
+    if action == "read":
+        previous = load_handoff()
+        if not previous:
+            return "No previous handoff found."
+
+        lines = [f"[Previous Handoff — Session {previous.get('session_number', '?')}]"]
+        lines.append(f"Timestamp: {previous.get('timestamp', '?')}")
+        lines.append(f"Mood: {previous.get('mood_and_mode', 'none')}")
+
+        for field in ("next_plans", "reminders", "promises", "unfinished"):
+            items = previous.get(field, [])
+            if items:
+                lines.append(f"\n{field.replace('_', ' ').title()} ({len(items)}):")
+                for item in items:
+                    carried = item.get("carried", 0)
+                    tag = f" [carried {carried}x]" if carried > 0 else ""
+                    lines.append(f"  - {item.get('text', '?')}{tag}")
+
+        return "\n".join(lines)
+
+    if action == "carry":
+        carry = get_carry_forward()
+        if not carry["items_to_carry"]:
+            return "No items to carry forward (no previous handoff or all items fulfilled)."
+
+        lines = [f"[Carry Forward from Session {carry['previous_session']}]"]
+        if carry["mood"]:
+            lines.append(f"Last mood: {carry['mood'][:100]}")
+
+        for item in carry["items_to_carry"]:
+            overdue = " ** OVERDUE **" if item["carried"] >= 3 else ""
+            lines.append(f"  [{item['source']}] {item['text']} (carried {item['carried']}x){overdue}")
+
+        return "\n".join(lines)
+
+    # save (default)
+    if session_number <= 0:
+        return "Error: session_number must be positive for save."
+
+    # Parse JSON arrays
+    try:
+        plans_list = json.loads(next_plans)
+        reminders_list = json.loads(reminders)
+        promises_list = json.loads(promises)
+        unfinished_list = json.loads(unfinished)
+    except json.JSONDecodeError as e:
+        return f"Error: invalid JSON in list parameter: {e}"
+
+    from datetime import datetime
+    data = {
+        "timestamp": datetime.now().isoformat(),
+        "session_number": session_number,
+        "next_plans": plans_list,
+        "reminders": reminders_list,
+        "mood_and_mode": mood_and_mode,
+        "promises": promises_list,
+        "unfinished": unfinished_list,
+    }
+
+    result = save_handoff(data)
+    if result["ok"]:
+        total = len(plans_list) + len(reminders_list) + len(promises_list) + len(unfinished_list)
+        return f"Handoff saved (session {session_number}, {total} items). Archived previous. Path: {result['path']}"
+    else:
+        return f"Handoff validation failed:\n" + "\n".join(f"  - {e}" for e in result["errors"])

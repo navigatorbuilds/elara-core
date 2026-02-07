@@ -1,4 +1,7 @@
-"""Episode lifecycle, milestones, decisions, and context tools."""
+"""Episode lifecycle, notes, queries, and context tools.
+
+Consolidated from 12 → 5 tools.
+"""
 
 from typing import Optional
 from elara_mcp._app import mcp
@@ -54,29 +57,30 @@ def elara_episode_start(
 
 
 @mcp.tool()
-def elara_milestone(
+def elara_episode_note(
     event: str,
-    milestone_type: str = "event",
+    note_type: str = "milestone",
     importance: float = 0.5,
-    project: Optional[str] = None
+    project: Optional[str] = None,
+    why: Optional[str] = None,
+    confidence: str = "medium",
 ) -> str:
     """
-    Record a milestone in the current episode.
+    Record a milestone or decision in the current episode.
 
-    Milestones are significant events worth remembering:
-    - Task completed
-    - Problem solved
-    - Error encountered
-    - Insight gained
+    Milestones: significant events (task completed, problem solved, insight gained).
+    Decisions: choices that affect future work (architecture, priorities, process).
 
     Args:
-        event: Description of what happened
-        milestone_type: "event", "completion", "insight", "error"
+        event: Description of what happened or was decided
+        note_type: "milestone", "decision", "insight", or "error"
         importance: 0-1, affects recall priority (0.7+ = key moment)
         project: Project this relates to (auto-added to episode)
+        why: Reasoning behind decisions (used when note_type="decision")
+        confidence: For decisions: "low", "medium", or "high"
 
     Returns:
-        Confirmation of milestone recorded
+        Confirmation of note recorded
     """
     current = get_current_episode()
     if not current:
@@ -88,10 +92,23 @@ def elara_milestone(
         add_project_to_session(project)
         episodic.add_project(current["id"], project)
 
+    if note_type == "decision":
+        decision = episodic.add_decision(
+            episode_id=current["id"],
+            what=event,
+            why=why,
+            confidence=confidence,
+            project=project
+        )
+        if "error" in decision:
+            return f"Error: {decision['error']}"
+        return f"Decision recorded ({confidence} confidence): {event}"
+
+    # milestone, insight, error — all go through add_milestone
     milestone = episodic.add_milestone(
         episode_id=current["id"],
         event=event,
-        milestone_type=milestone_type,
+        milestone_type=note_type,
         importance=importance,
         metadata={"project": project} if project else None
     )
@@ -100,53 +117,7 @@ def elara_milestone(
         return f"Error: {milestone['error']}"
 
     importance_label = "key" if importance >= 0.7 else "normal"
-    return f"Milestone recorded ({importance_label}): {event}"
-
-
-@mcp.tool()
-def elara_decision(
-    what: str,
-    why: Optional[str] = None,
-    confidence: str = "medium",
-    project: Optional[str] = None
-) -> str:
-    """
-    Record a decision made during this session.
-
-    Decisions are choices that affect future work - architecture choices,
-    feature decisions, process changes, priorities.
-
-    Args:
-        what: The decision made
-        why: Reasoning behind the decision
-        confidence: "low", "medium", or "high"
-        project: Project this decision relates to
-
-    Returns:
-        Confirmation of decision recorded
-    """
-    current = get_current_episode()
-    if not current:
-        return "No active episode. Start one with elara_episode_start."
-
-    episodic = get_episodic()
-
-    if project:
-        add_project_to_session(project)
-        episodic.add_project(current["id"], project)
-
-    decision = episodic.add_decision(
-        episode_id=current["id"],
-        what=what,
-        why=why,
-        confidence=confidence,
-        project=project
-    )
-
-    if "error" in decision:
-        return f"Error: {decision['error']}"
-
-    return f"Decision recorded ({confidence} confidence): {what}"
+    return f"{note_type.capitalize()} recorded ({importance_label}): {event}"
 
 
 @mcp.tool()
@@ -158,7 +129,7 @@ def elara_episode_end(
     End the current episode.
 
     Finalizes the episode record with summary and mood trajectory.
-    Meaningful sessions create emotional imprints that persist.
+    Meaningful sessions create stronger emotional imprints that persist.
 
     Args:
         summary: Brief summary of what happened (1-2 sentences)
@@ -202,57 +173,91 @@ def elara_episode_end(
 
 
 @mcp.tool()
-def elara_episode_current() -> str:
-    """
-    Get current episode status.
-
-    Returns:
-        Current episode info or message if no active episode
-    """
-    current = get_current_episode()
-    if not current:
-        return "No active episode. Start one with elara_episode_start."
-
-    episodic = get_episodic()
-    episode = episodic.get_episode(current["id"])
-
-    if not episode:
-        return f"Episode {current['id']} active but not yet recorded in episodic memory."
-
-    return (
-        f"Current episode: {episode['id']}\n"
-        f"Type: {episode['type']}\n"
-        f"Duration: {current['duration_minutes']} minutes\n"
-        f"Projects: {', '.join(episode['projects']) or 'none'}\n"
-        f"Milestones so far: {len(episode.get('milestones', []))}\n"
-        f"Decisions so far: {len(episode.get('decisions', []))}"
-    )
-
-
-@mcp.tool()
-def elara_recall_episodes(
+def elara_episode_query(
+    query: Optional[str] = None,
     project: Optional[str] = None,
     n: int = 5,
-    session_type: Optional[str] = None
+    session_type: Optional[str] = None,
+    current: bool = False,
+    stats: bool = False,
 ) -> str:
     """
-    Recall recent episodes, optionally filtered by project or type.
+    Query episodes — current status, search history, or stats.
+
+    Multi-purpose episode lookup:
+    - current=True → get active episode status
+    - stats=True → episodic memory statistics
+    - query="..." → semantic search through milestones
+    - project="..." → project history and narrative
+    - No special flags → list recent episodes
 
     Args:
-        project: Filter by project name
-        n: Number of episodes to return (default 5)
+        query: Search milestones by meaning (semantic search)
+        project: Filter by or get history for a project
+        n: Number of results (default 5)
         session_type: Filter by "work", "drift", or "mixed"
+        current: If True, show current active episode
+        stats: If True, show episodic memory statistics
 
     Returns:
-        List of recent episodes with summaries
+        Requested episode information
     """
     episodic = get_episodic()
 
-    if project:
-        episodes = episodic.get_episodes_by_project(project, n=n)
-    else:
-        episodes = episodic.get_recent_episodes(n=n, session_type=session_type)
+    # Current episode status
+    if current:
+        ep = get_current_episode()
+        if not ep:
+            return "No active episode. Start one with elara_episode_start."
 
+        episode = episodic.get_episode(ep["id"])
+        if not episode:
+            return f"Episode {ep['id']} active but not yet recorded in episodic memory."
+
+        return (
+            f"Current episode: {episode['id']}\n"
+            f"Type: {episode['type']}\n"
+            f"Duration: {ep['duration_minutes']} minutes\n"
+            f"Projects: {', '.join(episode['projects']) or 'none'}\n"
+            f"Milestones so far: {len(episode.get('milestones', []))}\n"
+            f"Decisions so far: {len(episode.get('decisions', []))}"
+        )
+
+    # Stats
+    if stats:
+        s = episodic.get_stats()
+        return (
+            f"Episodic Memory Stats:\n"
+            f"Total episodes: {s['total_episodes']}\n"
+            f"Projects tracked: {s['projects_tracked']}\n"
+            f"Projects: {', '.join(s['projects']) or 'none'}\n"
+            f"Searchable milestones: {s['milestone_count']}\n"
+            f"Last episode: {s['last_episode'] or 'none'}"
+        )
+
+    # Semantic search through milestones
+    if query:
+        results = episodic.search_milestones(query, n_results=n, project=project)
+        if not results:
+            return "No matching milestones found."
+
+        lines = []
+        for r in results:
+            date = r.get("timestamp", "")[:10] if r.get("timestamp") else "unknown"
+            relevance = r.get("relevance", 0)
+            event = r.get("event", "")
+            proj = r.get("project", "")
+            lines.append(f"[{date}] (rel: {relevance:.2f}) {event}")
+            if proj:
+                lines.append(f"  Project: {proj}")
+        return "\n".join(lines)
+
+    # Project-specific narrative
+    if project and not query:
+        return episodic.get_project_narrative(project)
+
+    # Default: list recent episodes
+    episodes = episodic.get_recent_episodes(n=n, session_type=session_type)
     if not episodes:
         return "No episodes found."
 
@@ -277,140 +282,47 @@ def elara_recall_episodes(
 
 
 @mcp.tool()
-def elara_search_milestones(
-    query: str,
-    n: int = 10,
-    project: Optional[str] = None
-) -> str:
-    """
-    Search through past milestones by meaning.
-
-    Finds relevant events across all episodes using semantic search.
-
-    Args:
-        query: What to search for (searches by meaning)
-        n: Number of results to return
-        project: Filter by project
-
-    Returns:
-        Matching milestones with context
-    """
-    episodic = get_episodic()
-    results = episodic.search_milestones(query, n_results=n, project=project)
-
-    if not results:
-        return "No matching milestones found."
-
-    lines = []
-    for r in results:
-        date = r.get("timestamp", "")[:10] if r.get("timestamp") else "unknown"
-        relevance = r.get("relevance", 0)
-        event = r.get("event", "")
-        proj = r.get("project", "")
-
-        lines.append(f"[{date}] (rel: {relevance:.2f}) {event}")
-        if proj:
-            lines.append(f"  Project: {proj}")
-
-    return "\n".join(lines)
-
-
-@mcp.tool()
-def elara_project_history(project: str) -> str:
-    """
-    Get full history for a project - episodes, decisions, key milestones.
-
-    Args:
-        project: Project name to look up
-
-    Returns:
-        Comprehensive project history
-    """
-    episodic = get_episodic()
-    return episodic.get_project_narrative(project)
-
-
-@mcp.tool()
-def elara_episode_stats() -> str:
-    """
-    Get episodic memory statistics.
-
-    Returns:
-        Total episodes, projects tracked, milestone count
-    """
-    episodic = get_episodic()
-    stats = episodic.get_stats()
-
-    return (
-        f"Episodic Memory Stats:\n"
-        f"Total episodes: {stats['total_episodes']}\n"
-        f"Projects tracked: {stats['projects_tracked']}\n"
-        f"Projects: {', '.join(stats['projects']) or 'none'}\n"
-        f"Searchable milestones: {stats['milestone_count']}\n"
-        f"Last episode: {stats['last_episode'] or 'none'}"
-    )
-
-
-# --- Context tools ---
-
-@mcp.tool()
 def elara_context(
     topic: Optional[str] = None,
-    note: Optional[str] = None
+    note: Optional[str] = None,
+    toggle: Optional[bool] = None,
 ) -> str:
     """
-    Update quick context for session continuity.
+    Quick context for session continuity.
 
-    Call this when the topic shifts or at natural break points.
-    This helps me remember what we were doing if you switch terminals
-    or I time out.
+    Call with topic/note to save context (what we're working on).
+    Call with no args to get current context.
+    Call with toggle=True/False to enable/disable tracking.
 
     Args:
         topic: What we're working on (e.g., "building context system")
-        note: Brief note about current state (e.g., "testing MCP tool")
+        note: Brief note about current state
+        toggle: True to enable, False to disable context tracking
 
     Returns:
-        Confirmation of context saved
+        Context info or confirmation
     """
-    if not context_enabled():
-        return "Context tracking is disabled. Enable with: elara-context on"
+    # Toggle
+    if toggle is not None:
+        context_set_enabled(toggle)
+        state = "ON" if toggle else "OFF"
+        return f"Context tracking: {state}"
 
-    save_context(topic=topic, last_exchange=note)
-    return f"Context saved: {topic or 'no topic'}"
+    # Set context
+    if topic or note:
+        if not context_enabled():
+            return "Context tracking is disabled. Call with toggle=True to enable."
+        save_context(topic=topic, last_exchange=note)
+        return f"Context saved: {topic or 'no topic'}"
 
-
-@mcp.tool()
-def elara_context_get() -> str:
-    """
-    Get current saved context - what were we doing?
-
-    Returns:
-        Last saved context with gap info
-    """
+    # Get context (default)
     if not context_enabled():
         return "Context tracking is disabled."
 
     ctx = get_context()
     from daemon.context import get_gap_description
-
     gap = get_gap_description()
-    topic = ctx.get("topic") or "none"
+    t = ctx.get("topic") or "none"
     last = ctx.get("last_exchange") or "none"
 
-    return f"Gap: {gap}\nTopic: {topic}\nLast: {last}"
-
-
-@mcp.tool()
-def elara_context_toggle(enabled: bool) -> str:
-    """
-    Enable or disable quick context tracking.
-
-    Args:
-        enabled: True to enable, False to disable
-
-    Returns:
-        Confirmation of new state
-    """
-    context_set_enabled(enabled)
-    state = "ON" if enabled else "OFF"
-    return f"Context tracking: {state}"
+    return f"Gap: {gap}\nTopic: {t}\nLast: {last}"

@@ -19,7 +19,8 @@ import os
 from pathlib import Path
 from datetime import datetime
 
-HANDOFF_PATH = Path.home() / ".claude" / "elara-handoff.json"
+from daemon.handoff import load_handoff, HANDOFF_PATH
+
 SESSION_STATE_PATH = Path.home() / ".claude" / "elara-session-state.json"
 
 # Priority thresholds
@@ -29,16 +30,6 @@ CARRY_VELOCITY_HORIZON = 90  # days before carry count fully decays
 LATE_NIGHT_START = 22      # 10 PM
 LATE_NIGHT_END = 6         # 6 AM
 MORNING_END = 12           # noon
-
-
-def load_handoff() -> dict | None:
-    """Load the handoff file. Returns None if missing or broken."""
-    if not HANDOFF_PATH.exists():
-        return None
-    try:
-        return json.loads(HANDOFF_PATH.read_text())
-    except (json.JSONDecodeError, OSError):
-        return None
 
 
 def classify_time(hour: int) -> str:

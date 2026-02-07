@@ -1,4 +1,7 @@
-"""Dream mode tools — weekly, monthly, and emotional pattern discovery."""
+"""Dream mode tools — weekly, monthly, and emotional pattern discovery.
+
+Consolidated from 3 → 2 tools.
+"""
 
 from elara_mcp._app import mcp
 from daemon.dream import (
@@ -118,13 +121,85 @@ def elara_dream(dream_type: str = "weekly") -> str:
 
 
 @mcp.tool()
-def elara_dream_status() -> str:
+def elara_dream_info(action: str = "status", dream_type: str = "weekly") -> str:
     """
-    Check dream mode status — when dreams last ran, if any are overdue.
+    Check dream schedule or read the latest dream report.
+
+    Args:
+        action: "status" for schedule/overdue info, "read" for latest report
+        dream_type: For read: "weekly", "monthly", "threads", "emotional", or "monthly_emotional"
 
     Returns:
-        Dream schedule status with overdue warnings
+        Dream status or report content
     """
+    if action == "read":
+        report = read_latest_dream(dream_type)
+
+        if not report:
+            return f"No {dream_type} dream found. Run elara_dream first."
+
+        if dream_type == "threads":
+            threads = report.get("threads", [])
+            lines = [f"[Narrative Threads — {report.get('generated', '?')[:10]}]", f"{len(threads)} story arcs:", ""]
+            for t in threads:
+                status_icon = {"active": ">>", "stalled": "||", "abandoned": "xx", "unknown": "??"}.get(t["status"], "??")
+                lines.append(f"  {status_icon} {t['name']}")
+                lines.append(f"     {t['episode_count']} sessions, {t['total_minutes']}m | {t['date_range']}")
+                lines.append(f"     {t['summary']}")
+                lines.append("")
+            return "\n".join(lines)
+        elif dream_type in ("emotional", "monthly_emotional"):
+            generated = report.get("generated", "?")[:10]
+            lines = [f"[{dream_type.replace('_', ' ').title()} Dream — {report.get('id', '?')} (generated {generated})]", ""]
+            lines.append(report.get("summary", "No summary."))
+
+            growth = report.get("temperament_growth", {}) or report.get("temperament_evolution", {})
+            drift = growth.get("drift_from_factory", {}) or growth.get("total_drift", {})
+            if drift:
+                lines.append(f"\nTemperament drift: {', '.join(f'{k} {v:+.3f}' for k, v in drift.items())}")
+
+            hints = report.get("tone_hints", [])
+            if hints:
+                lines.append("\nTone hints:")
+                for h in hints:
+                    lines.append(f"  - {h}")
+
+            rel = report.get("relationship", {}) or report.get("relationship_evolution", {})
+            traj = rel.get("trajectory", rel.get("dominant", "?"))
+            lines.append(f"\nRelationship trajectory: {traj}")
+
+            return "\n".join(lines)
+        else:
+            report_id = report.get("id", "unknown")
+            summary = report.get("summary", "No summary.")
+            generated = report.get("generated", "?")[:10]
+
+            lines = [f"[{dream_type.title()} Dream — {report_id} (generated {generated})]", "", summary]
+
+            if dream_type == "weekly":
+                momentum = report.get("project_momentum", [])
+                if momentum:
+                    lines.append("\nProject Momentum:")
+                    for p in momentum:
+                        icon = {"active": ">>", "stalled": "||", "abandoned": "xx", "inactive": "--"}.get(p["status"], "??")
+                        lines.append(f"  {icon} {p['project']}: {p['sessions']}s, {p['minutes']}m ({p['status']})")
+
+            if dream_type == "monthly":
+                alloc = report.get("time_allocation", {})
+                if alloc:
+                    lines.append("\nTime Allocation:")
+                    for proj, info in alloc.items():
+                        lines.append(f"  {proj}: {info['percent']}% ({info['minutes']}m)")
+
+                threads = report.get("narrative_threads", {})
+                if threads.get("threads"):
+                    lines.append(f"\nStory Arcs ({threads['total']} total):")
+                    for t in threads["threads"][:10]:
+                        lines.append(f"  [{t['status']}] {t['name']}")
+
+            return "\n".join(lines)
+
+    # status (default)
     ds = dream_status()
 
     lines = ["[Dream Status]"]
@@ -157,81 +232,3 @@ def elara_dream_status() -> str:
     lines.append(f"  Total dreams: {ds['weekly_count']} weekly, {ds['monthly_count']} monthly, {ds.get('emotional_count', 0)} emotional")
 
     return "\n".join(lines)
-
-
-@mcp.tool()
-def elara_dream_read(dream_type: str = "weekly") -> str:
-    """
-    Read the latest dream report.
-
-    Args:
-        dream_type: "weekly", "monthly", "threads", "emotional", or "monthly_emotional"
-
-    Returns:
-        Latest dream report content
-    """
-    report = read_latest_dream(dream_type)
-
-    if not report:
-        return f"No {dream_type} dream found. Run elara_dream first."
-
-    if dream_type == "threads":
-        threads = report.get("threads", [])
-        lines = [f"[Narrative Threads — {report.get('generated', '?')[:10]}]", f"{len(threads)} story arcs:", ""]
-        for t in threads:
-            status_icon = {"active": ">>", "stalled": "||", "abandoned": "xx", "unknown": "??"}.get(t["status"], "??")
-            lines.append(f"  {status_icon} {t['name']}")
-            lines.append(f"     {t['episode_count']} sessions, {t['total_minutes']}m | {t['date_range']}")
-            lines.append(f"     {t['summary']}")
-            lines.append("")
-        return "\n".join(lines)
-    elif dream_type in ("emotional", "monthly_emotional"):
-        generated = report.get("generated", "?")[:10]
-        lines = [f"[{dream_type.replace('_', ' ').title()} Dream — {report.get('id', '?')} (generated {generated})]", ""]
-        lines.append(report.get("summary", "No summary."))
-
-        growth = report.get("temperament_growth", {}) or report.get("temperament_evolution", {})
-        drift = growth.get("drift_from_factory", {}) or growth.get("total_drift", {})
-        if drift:
-            lines.append(f"\nTemperament drift: {', '.join(f'{k} {v:+.3f}' for k, v in drift.items())}")
-
-        hints = report.get("tone_hints", [])
-        if hints:
-            lines.append("\nTone hints:")
-            for h in hints:
-                lines.append(f"  - {h}")
-
-        rel = report.get("relationship", {}) or report.get("relationship_evolution", {})
-        traj = rel.get("trajectory", rel.get("dominant", "?"))
-        lines.append(f"\nRelationship trajectory: {traj}")
-
-        return "\n".join(lines)
-    else:
-        report_id = report.get("id", "unknown")
-        summary = report.get("summary", "No summary.")
-        generated = report.get("generated", "?")[:10]
-
-        lines = [f"[{dream_type.title()} Dream — {report_id} (generated {generated})]", "", summary]
-
-        if dream_type == "weekly":
-            momentum = report.get("project_momentum", [])
-            if momentum:
-                lines.append("\nProject Momentum:")
-                for p in momentum:
-                    icon = {"active": ">>", "stalled": "||", "abandoned": "xx", "inactive": "--"}.get(p["status"], "??")
-                    lines.append(f"  {icon} {p['project']}: {p['sessions']}s, {p['minutes']}m ({p['status']})")
-
-        if dream_type == "monthly":
-            alloc = report.get("time_allocation", {})
-            if alloc:
-                lines.append("\nTime Allocation:")
-                for proj, info in alloc.items():
-                    lines.append(f"  {proj}: {info['percent']}% ({info['minutes']}m)")
-
-            threads = report.get("narrative_threads", {})
-            if threads.get("threads"):
-                lines.append(f"\nStory Arcs ({threads['total']} total):")
-                for t in threads["threads"][:10]:
-                    lines.append(f"  [{t['status']}] {t['name']}")
-
-        return "\n".join(lines)

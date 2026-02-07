@@ -1,9 +1,12 @@
 """
 Elara Web Interface
 A simple dashboard accessible from mobile.
+Secured with ELARA_SECRET env var — all API requests must authenticate.
 """
 
 from flask import Flask, render_template_string, jsonify, request, send_from_directory
+from functools import wraps
+import os
 import sys
 from pathlib import Path
 from datetime import datetime
@@ -22,6 +25,29 @@ from interface.storage import (
 )
 
 app = Flask(__name__, static_folder='static')
+
+# Auth secret from env var
+ELARA_SECRET = os.environ.get("ELARA_SECRET", "")
+
+
+def require_auth(f):
+    """Decorator: require valid secret on API endpoints."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not ELARA_SECRET:
+            # No secret configured = deny all (fail secure)
+            return jsonify({"error": "ELARA_SECRET not configured"}), 503
+
+        # Check header first, then query param
+        provided = request.headers.get("X-Elara-Secret", "")
+        if not provided:
+            provided = request.args.get("secret", "")
+
+        if provided != ELARA_SECRET:
+            return jsonify({"error": "unauthorized"}), 401
+
+        return f(*args, **kwargs)
+    return decorated
 
 # HTML Template - Chat interface
 DASHBOARD_HTML = '''
@@ -312,6 +338,8 @@ DASHBOARD_HTML = '''
     <div id="debug" style="font-size:10px;color:#484f58;text-align:center;padding:4px;">Loading...</div>
 
     <script>
+        const ELARA_SECRET = '{{ secret }}';
+        const authHeaders = {'X-Elara-Secret': ELARA_SECRET};
         let lastMessageHash = '';
 
         function toggleStatus() {
@@ -337,7 +365,7 @@ DASHBOARD_HTML = '''
             try {
                 const response = await fetch('/api/note', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {'Content-Type': 'application/json', ...authHeaders},
                     body: JSON.stringify({note: text})
                 });
 
@@ -359,7 +387,7 @@ DASHBOARD_HTML = '''
 
         async function loadConversation(forceUpdate = false) {
             try {
-                const response = await fetch('/api/conversation');
+                const response = await fetch('/api/conversation', {headers: authHeaders});
                 const data = await response.json();
                 const container = document.getElementById('chatContainer');
                 const debug = document.getElementById('debug');
@@ -483,7 +511,14 @@ def add_header(response):
 
 @app.route('/')
 def dashboard():
-    """Main dashboard."""
+    """Main dashboard. Requires ?secret= query param."""
+    if not ELARA_SECRET:
+        return "ELARA_SECRET not configured on server", 503
+
+    provided = request.args.get("secret", "")
+    if provided != ELARA_SECRET:
+        return "Unauthorized. Use ?secret=YOUR_SECRET", 401
+
     elara = get_elara()
     status = elara.status()
 
@@ -505,11 +540,13 @@ def dashboard():
         system=get_system_info(),
         memory_count=status["memory_count"],
         ambient=describe_ambient(),
-        timestamp=datetime.now().strftime("%H:%M:%S")
+        timestamp=datetime.now().strftime("%H:%M:%S"),
+        secret=ELARA_SECRET,
     )
 
 
 @app.route('/api/status')
+@require_auth
 def api_status():
     """API endpoint for status."""
     elara = get_elara()
@@ -525,6 +562,7 @@ def api_status():
 
 
 @app.route('/api/note', methods=['POST'])
+@require_auth
 def api_add_note():
     """Save a note for later."""
     data = request.get_json()
@@ -548,12 +586,14 @@ def api_add_note():
 
 
 @app.route('/api/notes')
+@require_auth
 def api_get_notes():
     """Get recent notes."""
     return jsonify({"notes": get_recent_notes(10)})
 
 
 @app.route('/api/elara/send', methods=['POST'])
+@require_auth
 def api_elara_send():
     """Elara sends a message to the user's phone."""
     data = request.get_json()
@@ -566,6 +606,7 @@ def api_elara_send():
 
 
 @app.route('/api/elara/messages')
+@require_auth
 def api_elara_messages():
     """Get messages from Elara."""
     # Mark as read when fetched
@@ -574,6 +615,7 @@ def api_elara_messages():
 
 
 @app.route('/api/elara/unread')
+@require_auth
 def api_elara_unread():
     """Check for unread messages from Elara."""
     unread = get_unread_messages()
@@ -581,6 +623,7 @@ def api_elara_unread():
 
 
 @app.route('/api/conversation')
+@require_auth
 def api_conversation():
     """Get merged conversation (notes + messages) sorted by time."""
     from datetime import datetime
@@ -640,9 +683,14 @@ def _format_date(timestamp_str):
 
 def run_server(host='100.76.193.34', port=5000, debug=False):
     """Run the web server."""
-    # Bound to Tailscale IP only - not accessible from local WiFi
+    if not ELARA_SECRET:
+        print("ERROR: ELARA_SECRET env var not set. Refusing to start.")
+        print("Set it: export ELARA_SECRET=$(python3 -c \"import secrets; print(secrets.token_urlsafe(32))\")")
+        sys.exit(1)
+
     print(f"Elara web interface starting on http://{host}:{port}")
-    print(f"Access via Tailscale only (secure)")
+    print(f"Access: http://{host}:{port}/?secret=<ELARA_SECRET>")
+    print(f"Auth: all API endpoints require X-Elara-Secret header")
     app.run(host=host, port=port, debug=debug, threaded=True)
 
 
