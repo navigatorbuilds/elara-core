@@ -449,6 +449,40 @@ def blind_spots() -> dict:
                     except (ValueError, TypeError):
                         pass
 
+    # --- Recurring problem areas (from reasoning trails) ---
+    try:
+        from daemon.reasoning import get_recurring_problem_tags
+        recurring = get_recurring_problem_tags(min_count=3)
+        for r in recurring:
+            spots.append({
+                "type": "recurring_problem",
+                "detail": f"Tag '{r['tag']}' appears in {r['count']} reasoning trails. Systemic issue?",
+                "severity": "high" if r["count"] >= 5 else "medium",
+            })
+    except Exception:
+        pass
+
+    # --- Outcome loss patterns ---
+    try:
+        from daemon.outcomes import get_loss_patterns, get_unchecked_outcomes
+        loss_patterns = get_loss_patterns(min_losses=2)
+        for p in loss_patterns:
+            spots.append({
+                "type": "outcome_loss_pattern",
+                "detail": f"Tag '{p['tag']}' has {p['loss_count']} losses. Overestimating this area?",
+                "severity": "high" if p["loss_count"] >= 3 else "medium",
+            })
+
+        forgotten = get_unchecked_outcomes(days_old=7)
+        if len(forgotten) >= 3:
+            spots.append({
+                "type": "forgotten_decisions",
+                "detail": f"{len(forgotten)} decisions recorded but never checked (7+ days). Close the loop.",
+                "severity": "medium",
+            })
+    except Exception:
+        pass
+
     result = {
         "timestamp": datetime.now().isoformat(),
         "spots": spots,
