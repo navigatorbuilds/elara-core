@@ -1,7 +1,7 @@
 #!/bin/bash
 # Check Overwatch daemon status.
 
-PID_FILE="/tmp/elara-overwatch.pid"
+PID_FILE="$HOME/.claude/elara-overwatch.pid"
 LOG_FILE="$HOME/.claude/elara-overwatch.log"
 
 if [ -f "$PID_FILE" ]; then

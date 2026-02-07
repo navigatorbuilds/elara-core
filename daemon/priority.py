@@ -82,10 +82,37 @@ def _effective_carry(item: dict) -> float:
     try:
         first_dt = datetime.fromisoformat(first_seen)
         days_old = (datetime.now() - first_dt).days
-        velocity_decay = max(0.0, 1.0 - days_old / CARRY_VELOCITY_HORIZON)
+        velocity_decay = max(0.3, 1.0 - days_old / CARRY_VELOCITY_HORIZON)
         return carried * velocity_decay
     except (ValueError, TypeError):
         return float(carried)
+
+
+def _expiry_info(item: dict) -> dict:
+    """Check if item has an expiry and compute time remaining."""
+    expires = item.get("expires")
+    if not expires:
+        return {"has_expiry": False}
+
+    try:
+        expires_dt = datetime.fromisoformat(expires)
+        now = datetime.now()
+        remaining = expires_dt - now
+        hours_left = remaining.total_seconds() / 3600
+
+        if hours_left < 0:
+            days_ago = abs(remaining.days)
+            return {"has_expiry": True, "expired": True, "hours_left": hours_left, "label": f"{days_ago}d ago"}
+        elif hours_left < 24:
+            return {"has_expiry": True, "expired": False, "hours_left": hours_left, "label": f"{hours_left:.0f}h left"}
+        elif hours_left < 72:
+            days = hours_left / 24
+            return {"has_expiry": True, "expired": False, "hours_left": hours_left, "label": f"{days:.0f}d left"}
+        else:
+            days = hours_left / 24
+            return {"has_expiry": True, "expired": False, "hours_left": hours_left, "label": f"{days:.0f}d left"}
+    except (ValueError, TypeError):
+        return {"has_expiry": False}
 
 
 def compute_priority(item: dict, time_class: str) -> dict:
@@ -108,25 +135,45 @@ def compute_priority(item: dict, time_class: str) -> dict:
         urgency = "fresh"
         score = 30
 
-    # Time-of-day adjustments
+    # Expiry — use max(expiry_score, carry_score), not additive
+    exp = _expiry_info(item)
+    expiry_label = None
+    has_hard_deadline = False
+    if exp["has_expiry"]:
+        if exp.get("expired"):
+            urgency = "EXPIRED"
+            score = max(score, 120)
+            expiry_label = exp["label"]
+            has_hard_deadline = True
+        elif exp["hours_left"] < 24:
+            urgency = "URGENT"
+            score = max(score, 90 + 30)  # at least 120, or carry score if higher
+            expiry_label = exp["label"]
+            has_hard_deadline = True
+        elif exp["hours_left"] < 72:
+            score = max(score, 75)  # at least 75, or carry score if higher
+            expiry_label = exp["label"]
+
+    # Time-of-day adjustments — EXPIRED/URGENT bypass this entirely
     work = is_work_item(text)
     personal = is_personal_item(text)
 
-    if time_class == "late_night":
-        if work:
-            score -= 20  # deprioritize work late at night
-        if personal:
-            score += 15  # boost personal/drift
-    elif time_class == "morning":
-        if work:
-            score += 10  # morning = good for work
-        if personal:
-            score -= 5
-    elif time_class == "afternoon":
-        if work:
-            score += 5
+    if not has_hard_deadline:
+        if time_class == "late_night":
+            if work:
+                score -= 20  # deprioritize work late at night
+            if personal:
+                score += 15  # boost personal/drift
+        elif time_class == "morning":
+            if work:
+                score += 10  # morning = good for work
+            if personal:
+                score -= 5
+        elif time_class == "afternoon":
+            if work:
+                score += 5
 
-    return {
+    result = {
         "text": text,
         "carried": carried,
         "urgency": urgency,
@@ -134,6 +181,9 @@ def compute_priority(item: dict, time_class: str) -> dict:
         "is_work": work,
         "is_personal": personal,
     }
+    if expiry_label:
+        result["expiry_label"] = expiry_label
+    return result
 
 
 def generate_brief(handoff: dict, now: datetime = None) -> dict:
@@ -222,9 +272,9 @@ def generate_brief(handoff: dict, now: datetime = None) -> dict:
     # Sort all items by score descending
     all_items.sort(key=lambda x: x["score"], reverse=True)
 
-    # Split into overdue vs rest
-    overdue = [i for i in all_items if i["urgency"] == "OVERDUE"]
-    rest = [i for i in all_items if i["urgency"] != "OVERDUE"]
+    # Split into overdue/expired vs rest
+    overdue = [i for i in all_items if i["urgency"] in ("OVERDUE", "EXPIRED")]
+    rest = [i for i in all_items if i["urgency"] not in ("OVERDUE", "EXPIRED")]
 
     # Top items = highest scored non-overdue (max 3)
     top_items = rest[:3]
@@ -266,10 +316,25 @@ def _format_brief(
         first_sentence = mood.split(".")[0].strip()
         lines.append(f"[Priority] Last mood: {first_sentence}")
 
+    # EXPIRED — missed deadlines
+    expired = [i for i in overdue if i.get("urgency") == "EXPIRED"]
+    urgent = [i for i in top_items if i.get("urgency") == "URGENT"]
+    non_expired_overdue = [i for i in overdue if i.get("urgency") != "EXPIRED"]
+
+    if expired:
+        lines.append("[Priority] ⚠ EXPIRED:")
+        for item in expired:
+            lines.append(f"[Priority]   → {item['text']} ({item.get('expiry_label', 'expired')})")
+
+    if urgent:
+        lines.append("[Priority] ⏰ EXPIRING SOON:")
+        for item in urgent:
+            lines.append(f"[Priority]   → {item['text']} ({item.get('expiry_label', '<24h')})")
+
     # OVERDUE — these MUST be mentioned in greeting
-    if overdue:
+    if non_expired_overdue:
         lines.append("[Priority] ⚠ OVERDUE:")
-        for item in overdue:
+        for item in non_expired_overdue:
             lines.append(f"[Priority]   → {item['text']} (carried {item['carried']} sessions)")
 
     # PROMISES — non-negotiable

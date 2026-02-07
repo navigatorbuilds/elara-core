@@ -207,7 +207,16 @@ def elara_mode(mode: str) -> str:
         reason=f"Mode switch: {mode_lower}"
     )
 
-    return f"Switched to {mode_lower} mode. {preset['description']}. {describe_mood()}"
+    # Track active mode in state (decays naturally via mood decay toward temperament)
+    from daemon.state_core import _load_state, _save_state
+    state = _load_state()
+    state["active_mode"] = {
+        "mode": mode_lower,
+        "set_at": __import__("datetime").datetime.now().isoformat(),
+    }
+    _save_state(state)
+
+    return f"Switched to {mode_lower} mode (session-scoped, decays naturally). {preset['description']}. {describe_mood()}"
 
 
 @mcp.tool()

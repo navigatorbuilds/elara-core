@@ -58,6 +58,17 @@ def _validate_item(item: dict, field_name: str) -> List[str]:
         except ValueError:
             errors.append(f"{field_name}: first_seen is not valid ISO format: {first_seen}")
 
+    # Validate optional expires field (ISO timestamp)
+    expires = item.get("expires")
+    if expires is not None:
+        if not isinstance(expires, str):
+            errors.append(f"{field_name}: expires must be an ISO timestamp string")
+        else:
+            try:
+                datetime.fromisoformat(expires)
+            except ValueError:
+                errors.append(f"{field_name}: expires is not valid ISO format: {expires}")
+
     return errors
 
 

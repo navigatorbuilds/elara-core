@@ -29,9 +29,9 @@ from daemon.injector import format_injection, format_event_injection
 
 # Paths
 PROJECTS_DIR = Path.home() / ".claude" / "projects"
-INJECT_PATH = Path("/tmp/elara-overwatch-inject.md")
+INJECT_PATH = Path.home() / ".claude" / "elara-overwatch-inject.md"
 INJECT_TMP_PATH = INJECT_PATH.with_suffix(".tmp")
-PID_PATH = Path("/tmp/elara-overwatch.pid")
+PID_PATH = Path.home() / ".claude" / "elara-overwatch.pid"
 LOG_PATH = Path.home() / ".claude" / "elara-overwatch.log"
 SESSION_STATE_PATH = Path.home() / ".claude" / "elara-session-state.json"
 

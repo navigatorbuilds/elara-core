@@ -2,7 +2,7 @@
 # Start the Elara Overwatch daemon in background.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-PID_FILE="/tmp/elara-overwatch.pid"
+PID_FILE="$HOME/.claude/elara-overwatch.pid"
 
 # Check if already running
 if [ -f "$PID_FILE" ]; then

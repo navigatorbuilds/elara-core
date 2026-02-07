@@ -205,6 +205,114 @@ def get_outcome_stats() -> Dict:
     }
 
 
+# ============================================================================
+# Pitch tracking (business partner layer)
+# ============================================================================
+
+def record_pitch(
+    idea_id: str,
+    channel: str,
+    audience: str,
+    framing: str,
+    predicted: str,
+    tags: Optional[List[str]] = None,
+) -> Dict:
+    """
+    Record a pitch attempt as an outcome with business metadata.
+    Convenience wrapper around record_outcome().
+    """
+    decision = f"Pitch {idea_id} on {channel}"
+    context = f"Audience: {audience}, Framing: {framing}"
+
+    outcome = record_outcome(
+        decision=decision,
+        context=context,
+        predicted=predicted,
+        tags=(tags or []) + [idea_id, "pitch", channel],
+    )
+
+    outcome["pitch_metadata"] = {
+        "idea_id": idea_id,
+        "channel": channel,
+        "audience": audience,
+        "framing": framing,
+        "response_metric": None,
+    }
+    _save_outcome(outcome)
+    return outcome
+
+
+def get_pitch_stats(idea_id: str) -> Dict:
+    """Win rate by channel and by framing for a specific idea's pitches."""
+    outcomes = _load_all_outcomes()
+    pitches = [
+        o for o in outcomes
+        if o.get("pitch_metadata", {}).get("idea_id") == idea_id
+    ]
+
+    if not pitches:
+        return {"idea_id": idea_id, "total_pitches": 0, "by_channel": {}, "by_framing": {}}
+
+    by_channel = {}
+    by_framing = {}
+
+    for p in pitches:
+        meta = p["pitch_metadata"]
+        assessment = p.get("assessment", "too_early")
+
+        # Channel stats
+        ch = meta.get("channel", "unknown")
+        if ch not in by_channel:
+            by_channel[ch] = {"total": 0, "wins": 0, "losses": 0}
+        by_channel[ch]["total"] += 1
+        if assessment == "win":
+            by_channel[ch]["wins"] += 1
+        elif assessment == "loss":
+            by_channel[ch]["losses"] += 1
+
+        # Framing stats
+        fr = meta.get("framing", "unknown")
+        if fr not in by_framing:
+            by_framing[fr] = {"total": 0, "wins": 0, "losses": 0}
+        by_framing[fr]["total"] += 1
+        if assessment == "win":
+            by_framing[fr]["wins"] += 1
+        elif assessment == "loss":
+            by_framing[fr]["losses"] += 1
+
+    # Compute win rates
+    for stats in list(by_channel.values()) + list(by_framing.values()):
+        checked = stats["wins"] + stats["losses"]
+        stats["win_rate"] = round(stats["wins"] / checked, 2) if checked > 0 else None
+
+    return {
+        "idea_id": idea_id,
+        "total_pitches": len(pitches),
+        "by_channel": by_channel,
+        "by_framing": by_framing,
+    }
+
+
+def get_pitch_lessons(idea_id: str) -> List[Dict]:
+    """Get lessons from checked pitches for this idea."""
+    outcomes = _load_all_outcomes()
+    pitches = [
+        o for o in outcomes
+        if o.get("pitch_metadata", {}).get("idea_id") == idea_id
+        and o.get("lesson")
+    ]
+
+    return [
+        {
+            "channel": o["pitch_metadata"].get("channel"),
+            "framing": o["pitch_metadata"].get("framing"),
+            "assessment": o.get("assessment"),
+            "lesson": o["lesson"],
+        }
+        for o in pitches
+    ]
+
+
 def get_loss_patterns(min_losses: int = 2) -> List[Dict]:
     """
     Find tags that appear in multiple losses — overestimation patterns.

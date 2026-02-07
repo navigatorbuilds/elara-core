@@ -171,10 +171,18 @@ def _apply_time_decay(state: dict) -> dict:
 
     temperament = state.get("temperament", TEMPERAMENT)
     decay_factor = 1 - math.exp(-DECAY_RATE * hours_passed)
+    load = state.get("allostatic_load", 0)
 
     for key in ["valence", "energy", "openness"]:
         current = state["mood"][key]
         baseline = temperament.get(key, 0.5)
+
+        # Allostatic load suppresses energy and openness baselines
+        # High stress → mood decays toward a lower target
+        if load > 0 and key in ("energy", "openness"):
+            baseline = baseline - (load * 0.15)  # max load 1.0 → -0.15 from baseline
+            baseline = max(0.1, baseline)
+
         drift = (baseline - current) * decay_factor
         noise = random.gauss(0, NOISE_SCALE) if hours_passed > 0.1 else 0
         new_val = current + drift + noise
@@ -184,18 +192,38 @@ def _apply_time_decay(state: dict) -> dict:
         else:
             state["mood"][key] = max(0, min(1, new_val))
 
+    # Allostatic load naturally recovers over time (slow: ~0.02/hour)
+    if load > 0:
+        recovery = min(load, 0.02 * hours_passed)
+        state["allostatic_load"] = max(0, load - recovery)
+
     state["imprints"] = _decay_imprints(state.get("imprints", []), hours_passed)
     return state
 
 
 def _decay_imprints(imprints: List[dict], hours: float) -> List[dict]:
-    """Decay emotional imprints, archive dead ones."""
-    decay_factor = 1 - math.exp(-RESIDUE_DECAY_RATE * hours)
+    """Decay emotional imprints, archive dead ones.
+
+    Type-specific decay: connection imprints linger longer than moments.
+    - connection: 0.5x decay rate, archive at 0.05
+    - episode: 0.8x decay rate, archive at 0.08
+    - moment: 1.0x decay rate, archive at 0.1 (default)
+    """
+    base_decay = 1 - math.exp(-RESIDUE_DECAY_RATE * hours)
+
+    DECAY_MULTIPLIERS = {"connection": 0.5, "episode": 0.8, "moment": 1.0}
+    ARCHIVE_THRESHOLDS = {"connection": 0.05, "episode": 0.08, "moment": 0.1}
 
     surviving = []
     for imp in imprints:
-        new_strength = imp.get("strength", 0.5) * (1 - decay_factor)
-        if new_strength > 0.1:
+        imp_type = imp.get("type", "moment")
+        multiplier = DECAY_MULTIPLIERS.get(imp_type, 1.0)
+        threshold = ARCHIVE_THRESHOLDS.get(imp_type, 0.1)
+
+        effective_decay = base_decay * multiplier
+        new_strength = imp.get("strength", 0.5) * (1 - effective_decay)
+
+        if new_strength > threshold:
             imp["strength"] = new_strength
             surviving.append(imp)
         else:
