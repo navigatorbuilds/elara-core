@@ -1,7 +1,7 @@
 #!/bin/bash
 # Stop the Elara Overwatch daemon.
 
-PID_FILE="/tmp/elara-overwatch.pid"
+PID_FILE="$HOME/.claude/elara-overwatch.pid"
 
 if [ -f "$PID_FILE" ]; then
     PID=$(cat "$PID_FILE")
@@ -17,4 +17,4 @@ else
 fi
 
 # Clean up inject file
-rm -f /tmp/elara-overwatch-inject.md
+rm -f "$HOME/.claude/elara-overwatch-inject.md"

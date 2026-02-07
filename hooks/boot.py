@@ -44,6 +44,12 @@ try:
 except ImportError:
     PRIORITY_AVAILABLE = False
 
+try:
+    from daemon.business import boot_summary as business_boot_summary
+    BUSINESS_AVAILABLE = True
+except ImportError:
+    BUSINESS_AVAILABLE = False
+
 
 def boot():
     """Run boot sequence and output context."""
@@ -122,6 +128,15 @@ def boot():
                 print(brief)
         except Exception:
             pass  # Don't break boot if priority engine fails
+
+    # Business summary — active ideas, stale ideas
+    if BUSINESS_AVAILABLE:
+        try:
+            biz = business_boot_summary()
+            if biz:
+                print(biz)
+        except Exception:
+            pass
 
     # Start Overwatch daemon if not already running
     _start_overwatch()

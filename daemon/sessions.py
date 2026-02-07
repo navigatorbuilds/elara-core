@@ -83,6 +83,11 @@ def end_session(session_summary: Optional[str] = None, was_deep: bool = False) -
             state["allostatic_load"] = max(0, state["allostatic_load"] - 0.05)
 
     state["session_mood_start"] = None
+
+    # Clear active mode — modes are session-scoped, mood decays naturally to temperament
+    if "active_mode" in state:
+        del state["active_mode"]
+
     _save_state(state)
     return state
 

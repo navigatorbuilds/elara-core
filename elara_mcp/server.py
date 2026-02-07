@@ -5,7 +5,7 @@ Elara MCP Server
 Tools are organized into domain modules under elara_mcp/tools/.
 Importing each module registers its tools with the shared mcp instance.
 
-29 tools across 7 modules:
+30 tools across 8 modules:
 - memory:    elara_remember, elara_recall, elara_recall_conversation, elara_conversations (4)
 - mood:      elara_mood, elara_mood_adjust, elara_imprint, elara_mode, elara_status (5)
 - episodes:  elara_episode_start, elara_episode_note, elara_episode_end, elara_episode_query, elara_context (5)
@@ -13,6 +13,7 @@ Importing each module registers its tools with the shared mcp instance.
 - awareness: elara_reflect, elara_insight, elara_intention, elara_observe, elara_temperament (5)
 - dreams:    elara_dream, elara_dream_info (2)
 - cognitive: elara_reasoning, elara_outcome, elara_synthesis (3)
+- business:  elara_business (1)
 """
 
 from elara_mcp._app import mcp
@@ -25,6 +26,7 @@ import elara_mcp.tools.goals
 import elara_mcp.tools.awareness
 import elara_mcp.tools.dreams
 import elara_mcp.tools.cognitive
+import elara_mcp.tools.business
 
 
 if __name__ == "__main__":

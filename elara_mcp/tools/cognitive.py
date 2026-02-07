@@ -15,6 +15,7 @@ from daemon.outcomes import (
     record_outcome, check_outcome, get_outcome,
     list_outcomes, search_outcomes_by_tags,
     get_outcome_stats, get_unchecked_outcomes,
+    record_pitch, get_pitch_stats, get_pitch_lessons,
 )
 from daemon.synthesis import (
     create_synthesis, add_seed, update_status,
@@ -203,6 +204,10 @@ def elara_outcome(
     lesson: Optional[str] = None,
     reasoning_trail: Optional[str] = None,
     tags: Optional[str] = None,
+    idea_id: Optional[str] = None,
+    channel: Optional[str] = None,
+    audience: Optional[str] = None,
+    framing: Optional[str] = None,
 ) -> str:
     """
     Outcome tracking — link decisions to results, close the learning loop.
@@ -214,15 +219,22 @@ def elara_outcome(
             "list"    — List recent outcomes
             "stats"   — Win rate and patterns
             "search"  — Search by tags before making similar decisions
+            "pitch"   — Record a pitch attempt (needs idea_id, channel, audience, framing, predicted)
+            "pitch_stats" — Win rate by channel/framing for an idea (needs idea_id)
+            "pitch_lessons" — Lessons from past pitches (needs idea_id)
         outcome_id: Outcome ID (for check)
         decision: What we decided (for record)
         context: Why we decided it (for record)
-        predicted: What we expected (for record)
+        predicted: What we expected (for record/pitch)
         actual: What actually happened (for check)
         assessment: "win", "partial_win", "loss", "too_early" (for check)
         lesson: One-line takeaway (for check)
         reasoning_trail: Link to a reasoning trail ID (for record)
         tags: Comma-separated tags
+        idea_id: Business idea ID (for pitch actions)
+        channel: Where we pitched: reddit, twitter, etc. (for pitch)
+        audience: Who we pitched to (for pitch)
+        framing: How we framed it: problem-story, feature-list, etc. (for pitch)
 
     Returns:
         Outcome info, list, or stats
@@ -322,7 +334,48 @@ def elara_outcome(
                 lines.append(f"    lesson: {o['lesson']}")
         return "\n".join(lines)
 
-    return f"Unknown action: {action}. Use: record, check, list, stats, search"
+    if action == "pitch":
+        if not all([idea_id, channel, audience, framing, predicted]):
+            return "Error: idea_id, channel, audience, framing, and predicted are all required."
+        result = record_pitch(idea_id, channel, audience, framing, predicted, tag_list)
+        return (
+            f"Pitch recorded: {result['outcome_id']}\n"
+            f"Idea: {idea_id} | Channel: {channel} | Audience: {audience}\n"
+            f"Framing: {framing}\n"
+            f"Predicted: {predicted}"
+        )
+
+    if action == "pitch_stats":
+        if not idea_id:
+            return "Error: idea_id is required."
+        stats = get_pitch_stats(idea_id)
+        if stats["total_pitches"] == 0:
+            return f"No pitches recorded for {idea_id}."
+        lines = [f"Pitch stats for {idea_id}: {stats['total_pitches']} total"]
+        if stats["by_channel"]:
+            lines.append("By channel:")
+            for ch, s in stats["by_channel"].items():
+                wr = f" (win rate: {s['win_rate']:.0%})" if s["win_rate"] is not None else ""
+                lines.append(f"  {ch}: {s['total']} pitches, {s['wins']}W/{s['losses']}L{wr}")
+        if stats["by_framing"]:
+            lines.append("By framing:")
+            for fr, s in stats["by_framing"].items():
+                wr = f" (win rate: {s['win_rate']:.0%})" if s["win_rate"] is not None else ""
+                lines.append(f"  {fr}: {s['total']} pitches, {s['wins']}W/{s['losses']}L{wr}")
+        return "\n".join(lines)
+
+    if action == "pitch_lessons":
+        if not idea_id:
+            return "Error: idea_id is required."
+        lessons = get_pitch_lessons(idea_id)
+        if not lessons:
+            return f"No pitch lessons for {idea_id} yet."
+        lines = [f"Pitch lessons for {idea_id}:"]
+        for l in lessons:
+            lines.append(f"  [{l['assessment']}] {l['channel']}/{l['framing']}: {l['lesson']}")
+        return "\n".join(lines)
+
+    return f"Unknown action: {action}. Use: record, check, list, stats, search, pitch, pitch_stats, pitch_lessons"
 
 
 @mcp.tool()
