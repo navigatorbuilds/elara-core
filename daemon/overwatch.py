@@ -454,9 +454,10 @@ class Overwatch:
     def _build_snapshot(self) -> None:
         """Build a session snapshot — one file, always overwritten.
 
-        Two fields for boot:
-        - continuation: for quick reboots (<30 min) — what we were just doing
-        - greeting_hint: for fresh sessions (hours later) — summary of what happened
+        Three fields for boot:
+        - continuation: for quick reboots (<30 min) — what we were just doing (Ollama)
+        - greeting_hint: for fresh sessions (hours later) — casual summary (Ollama)
+        - last_exchanges: raw transcript of last 5 exchanges — the actual words, no interpretation
         """
         if not self.recent_exchanges:
             return
@@ -469,6 +470,14 @@ class Overwatch:
             assistant_short = ex["assistant_text"][:150]
             context_parts.append(f"User: {user_short}\nAssistant: {assistant_short}")
         context = "\n---\n".join(context_parts)
+
+        # Raw exchanges — the actual words, no LLM interpretation
+        raw_exchanges = []
+        for ex in recent:
+            raw_exchanges.append({
+                "user": ex["user_text"][:300],
+                "assistant": ex["assistant_text"][:300],
+            })
 
         # Ask Ollama for continuation (what we were mid-thought on)
         continuation = llm.query(
@@ -497,6 +506,7 @@ class Overwatch:
             "exchange_count": self.exchange_counter,
             "continuation": continuation or self._fallback_continuation(),
             "greeting_hint": greeting_hint or self._fallback_greeting(),
+            "last_exchanges": raw_exchanges,
         }
 
         try:

@@ -163,10 +163,21 @@ def _show_snapshot(gap_seconds=None):
         return
 
     if gap_seconds is not None and gap_seconds < 1800:
-        # Quick reboot — show continuation
+        # Quick reboot — show continuation + raw exchanges
         continuation = snapshot.get("continuation", "")
         if continuation:
             print(f"[Snapshot] {continuation}")
+        # Show raw exchanges so next-me can actually execute, not just know the topic
+        exchanges = snapshot.get("last_exchanges", [])
+        if exchanges:
+            print(f"[Snapshot] Last {len(exchanges)} exchanges (raw):")
+            for ex in exchanges[-3:]:  # Last 3 most relevant
+                user_text = ex.get("user", "")[:120]
+                assistant_text = ex.get("assistant", "")[:120]
+                if user_text:
+                    print(f"  User: {user_text}")
+                if assistant_text:
+                    print(f"  Elara: {assistant_text}")
     else:
         # Fresh session — show greeting hint
         hint = snapshot.get("greeting_hint", "")
