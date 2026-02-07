@@ -154,9 +154,10 @@ class Overwatch:
                 triage = llm.triage_memory(ex["user_text"], ex["assistant_text"])
                 if triage:
                     triaged += 1
-                    # Skip low-importance exchanges (greetings, confirmations)
-                    if not triage.get("worth_keeping", True):
-                        log.debug(f"Triage skip: {ex['user_text'][:50]}...")
+                    # Use importance score (1.5B model's worth_keeping is unreliable)
+                    importance = triage.get("importance", 0.5)
+                    if isinstance(importance, (int, float)) and importance < 0.25:
+                        log.debug(f"Triage skip (importance {importance}): {ex['user_text'][:50]}...")
                         continue
 
                 ok = self.conv.ingest_exchange(
@@ -551,28 +552,14 @@ class Overwatch:
                 "assistant": ex["assistant_text"][:300],
             })
 
-        # Ask LLM for continuation (what we were mid-thought on)
-        continuation = llm.query(
-            "What were they working on? 1-2 sentences, no greeting.\n\n"
-            f"{context}",
-            temperature=0.3,
-            max_tokens=50,
-        )
-
-        # Ask LLM for greeting hint (session summary for fresh boots)
-        greeting_hint = llm.query(
-            "One casual sentence: what got done this session?\n\n"
-            f"{context}",
-            temperature=0.4,
-            max_tokens=30,
-        )
-
+        # Skip LLM for summaries — 1.5B hallucinated on open-ended prompts.
+        # Raw exchanges are what boot.py actually reads. Keep it simple.
         snapshot = {
             "timestamp": datetime.now().isoformat(),
             "session_id": self.current_session_id,
             "exchange_count": self.exchange_counter,
-            "continuation": continuation or self._fallback_continuation(),
-            "greeting_hint": greeting_hint or self._fallback_greeting(),
+            "continuation": self._fallback_continuation(),
+            "greeting_hint": self._fallback_greeting(),
             "last_exchanges": raw_exchanges,
         }
 
