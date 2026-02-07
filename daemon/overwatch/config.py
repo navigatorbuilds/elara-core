@@ -18,7 +18,7 @@ SNAPSHOT_PATH = Path.home() / ".claude" / "elara-session-snapshot.json"
 
 # Tuning
 POLL_INTERVAL = 2.0          # seconds between file checks
-RELEVANCE_THRESHOLD = 0.65   # minimum combined score to inject (0-1, higher = stricter)
+RELEVANCE_THRESHOLD = 0.58   # minimum combined score to inject (cosine on conversations clusters 0.5-0.7)
 COOLDOWN_SECONDS = 600       # 10 min cooldown per topic cluster
 MAX_INJECTIONS_PER_CHECK = 3 # max results per injection
 EVENT_THRESHOLD = 0.55       # lower threshold for event-triggered searches
