@@ -33,6 +33,17 @@ class ElaraModel(BaseModel):
 
 
 # ============================================================================
+# Custom exceptions — standardized error handling across daemon layer
+# ============================================================================
+
+class ElaraNotFoundError(Exception):
+    """Raised when a requested item (trail, idea, goal, etc.) doesn't exist."""
+
+class ElaraValidationError(Exception):
+    """Raised when input fails validation (bad status, out-of-range index, etc.)."""
+
+
+# ============================================================================
 # MOOD & STATE
 # ============================================================================
 

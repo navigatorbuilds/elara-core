@@ -9,6 +9,7 @@ Now with: discrete emotion tagging, emotion-similarity matching,
 and emotional coloring on recall.
 """
 
+import logging
 import json
 import math
 from pathlib import Path
@@ -38,6 +39,8 @@ try:
     EMOTIONS_AVAILABLE = True
 except ImportError:
     EMOTIONS_AVAILABLE = False
+
+logger = logging.getLogger("elara.memory.vector")
 
 MEMORY_DIR = Path.home() / ".claude" / "elara-memory-db"
 

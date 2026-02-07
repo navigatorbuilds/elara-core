@@ -5,6 +5,7 @@
 
 from typing import Optional
 from elara_mcp._app import mcp
+from daemon.schemas import ElaraNotFoundError, ElaraValidationError
 from daemon.business import (
     create_idea, add_competitor, score_idea, update_idea,
     get_idea, list_ideas, link_to_reasoning, link_to_outcome,
@@ -79,9 +80,10 @@ def elara_business(
     if action == "idea":
         if not name or not description:
             return "Error: name and description are required to create an idea."
-        result = create_idea(name, description, target_audience or "", your_angle or "", tag_list)
-        if "error" in result:
-            return result["error"]
+        try:
+            result = create_idea(name, description, target_audience or "", your_angle or "", tag_list)
+        except ElaraValidationError as e:
+            return str(e)
         lines = [
             f"Idea created: {result['idea_id']}",
             f"Name: {result['name']}",
@@ -96,9 +98,10 @@ def elara_business(
     if action == "compete":
         if not idea_id or not competitor_name:
             return "Error: idea_id and competitor_name are required."
-        result = add_competitor(idea_id, competitor_name, strengths or "", weaknesses or "", url or "")
-        if "error" in result:
-            return result["error"]
+        try:
+            result = add_competitor(idea_id, competitor_name, strengths or "", weaknesses or "", url or "")
+        except ElaraNotFoundError as e:
+            return str(e)
         n = len(result["competitors"])
         return f"Competitor '{competitor_name}' added to {idea_id} ({n} total)"
 
@@ -107,9 +110,10 @@ def elara_business(
             return "Error: idea_id is required."
         if any(v is None for v in [problem, market, effort, monetization, fit]):
             return "Error: all 5 scores required (problem, market, effort, monetization, fit). Each 1-5."
-        result = score_idea(idea_id, problem, market, effort, monetization, fit)
-        if "error" in result:
-            return result["error"]
+        try:
+            result = score_idea(idea_id, problem, market, effort, monetization, fit)
+        except ElaraNotFoundError as e:
+            return str(e)
         s = result["score"]
         return (
             f"Scored {idea_id}: {s['total']}/25\n"
@@ -120,9 +124,10 @@ def elara_business(
     if action == "update":
         if not idea_id:
             return "Error: idea_id is required."
-        result = update_idea(idea_id, status=status, notes=notes)
-        if "error" in result:
-            return result["error"]
+        try:
+            result = update_idea(idea_id, status=status, notes=notes)
+        except (ElaraNotFoundError, ElaraValidationError) as e:
+            return str(e)
         parts = [f"Updated {idea_id}"]
         if status:
             parts.append(f"status → {status}")
@@ -152,16 +157,15 @@ def elara_business(
     if action == "link":
         if not idea_id:
             return "Error: idea_id is required."
-        if trail_id:
-            result = link_to_reasoning(idea_id, trail_id)
-            if "error" in result:
-                return result["error"]
-            return f"Linked reasoning trail {trail_id} to {idea_id}"
-        if outcome_id:
-            result = link_to_outcome(idea_id, outcome_id)
-            if "error" in result:
-                return result["error"]
-            return f"Linked outcome {outcome_id} to {idea_id}"
+        try:
+            if trail_id:
+                link_to_reasoning(idea_id, trail_id)
+                return f"Linked reasoning trail {trail_id} to {idea_id}"
+            if outcome_id:
+                link_to_outcome(idea_id, outcome_id)
+                return f"Linked outcome {outcome_id} to {idea_id}"
+        except ElaraNotFoundError as e:
+            return str(e)
         return "Error: provide trail_id or outcome_id to link."
 
     if action == "stats":

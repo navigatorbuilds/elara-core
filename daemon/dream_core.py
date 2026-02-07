@@ -4,12 +4,15 @@ Elara Dream Core — shared constants, data gathering, status, and utilities.
 All dream types depend on this. External code imports from daemon.dream (re-export layer).
 """
 
+import logging
 import json
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Any
 
 from daemon.schemas import DreamStatus, load_validated, save_validated
+
+logger = logging.getLogger("elara.dream_core")
 
 # Storage
 DREAMS_DIR = Path.home() / ".claude" / "elara-dreams"
@@ -28,6 +31,7 @@ def _ensure_dirs():
 
 def _load_status() -> dict:
     """Load dream status (last run timestamps)."""
+    logger.debug("Loading dream status from %s", DREAM_STATUS_FILE)
     model = load_validated(DREAM_STATUS_FILE, DreamStatus)
     return model.model_dump()
 
@@ -35,6 +39,7 @@ def _load_status() -> dict:
 def _save_status(status: dict):
     """Save dream status."""
     _ensure_dirs()
+    logger.debug("Saving dream status to %s", DREAM_STATUS_FILE)
     model = DreamStatus.model_validate(status)
     save_validated(DREAM_STATUS_FILE, model)
 
@@ -211,6 +216,7 @@ def dream_boot_check() -> Optional[str]:
 
 def read_latest_dream(dream_type: str = "weekly") -> Optional[dict]:
     """Read the latest dream report."""
+    logger.debug("Reading latest %s dream report", dream_type)
     if dream_type == "weekly":
         latest = WEEKLY_DIR / "latest.json"
     elif dream_type == "monthly":

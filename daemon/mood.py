@@ -4,6 +4,7 @@ Elara Mood — get, set, adjust mood; imprints; descriptions; emotional context.
 External code imports from daemon.state (re-export layer), not directly from here.
 """
 
+import logging
 import json
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -18,6 +19,8 @@ from daemon.state_core import (
 )
 from daemon.events import bus, Events
 
+
+logger = logging.getLogger("elara.mood")
 
 def get_mood() -> dict:
     """Get current mood state (with decay applied)."""
@@ -42,6 +45,7 @@ def set_mood(
     state = _load_state()
     state = _apply_time_decay(state)
 
+    logger.info("Setting mood: v=%s e=%s o=%s reason=%s", valence, energy, openness, reason)
     if valence is not None:
         state["mood"]["valence"] = max(-1, min(1, valence))
     if energy is not None:
@@ -77,6 +81,7 @@ def adjust_mood(
     imprint_strength: float = 0.5
 ) -> dict:
     """Adjust mood by deltas. Optionally create imprint."""
+    logger.debug("Adjusting mood: dv=%s de=%s do=%s reason=%s", valence_delta, energy_delta, openness_delta, reason)
     state = _load_state()
     state = _apply_time_decay(state)
 
@@ -123,6 +128,7 @@ def adjust_mood(
 
 def create_imprint(feeling: str, strength: float = 0.7, imprint_type: str = "moment") -> dict:
     """Create an emotional imprint — the feeling persists after details fade."""
+    logger.info("Creating imprint: %s (strength=%.2f, type=%s)", feeling[:60], strength, imprint_type)
     state = _load_state()
     state = _apply_time_decay(state)
 

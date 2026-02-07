@@ -8,12 +8,15 @@ We make decisions but never check if they were right.
 That's calibrated intuition.
 """
 
+import logging
 import hashlib
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict
 
-from daemon.schemas import Outcome, load_validated, save_validated
+from daemon.schemas import Outcome, load_validated, save_validated, ElaraNotFoundError, ElaraValidationError
+
+logger = logging.getLogger("elara.outcomes")
 
 OUTCOMES_DIR = Path.home() / ".claude" / "elara-outcomes"
 
@@ -78,6 +81,7 @@ def record_outcome(
     Record a decision and what we expected to happen.
     Assessment and lesson come later via check_outcome().
     """
+    logger.info("Recording outcome: %s", decision[:80])
     outcome_id = _generate_id(decision)
     outcome = Outcome(
         outcome_id=outcome_id,
@@ -109,10 +113,11 @@ def check_outcome(
     """
     outcome = _load_outcome(outcome_id)
     if not outcome:
-        return {"error": f"Outcome {outcome_id} not found."}
+        raise ElaraNotFoundError(f"Outcome {outcome_id} not found.")
 
+    logger.info("Checking outcome %s: assessment=%s", outcome_id, assessment)
     if assessment not in ("win", "partial_win", "loss", "too_early"):
-        return {"error": "assessment must be 'win', 'partial_win', 'loss', or 'too_early'."}
+        raise ElaraValidationError("assessment must be 'win', 'partial_win', 'loss', or 'too_early'.")
 
     outcome["actual"] = actual
     outcome["assessment"] = assessment
@@ -168,6 +173,7 @@ def search_outcomes_by_tags(tags: List[str], n: int = 10) -> List[Dict]:
 
 def get_outcome_stats() -> Dict:
     """Overall stats: win rate, common loss tags, unchecked count."""
+    logger.debug("Computing outcome stats")
     outcomes = _load_all_outcomes()
     if not outcomes:
         return {

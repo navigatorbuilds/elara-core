@@ -8,6 +8,7 @@ When the same idea keeps surfacing across sessions — even in different words �
 this system notices and says: "You keep coming back to this. Ready to build?"
 """
 
+import logging
 import hashlib
 from datetime import datetime
 from pathlib import Path
@@ -20,7 +21,9 @@ try:
 except ImportError:
     CHROMA_AVAILABLE = False
 
-from daemon.schemas import Synthesis, SynthesisSeed, load_validated, save_validated
+from daemon.schemas import Synthesis, SynthesisSeed, load_validated, save_validated, ElaraNotFoundError, ElaraValidationError
+
+logger = logging.getLogger("elara.synthesis")
 
 SYNTHESIS_DIR = Path.home() / ".claude" / "elara-synthesis"
 SYNTHESIS_DB_DIR = Path.home() / ".claude" / "elara-synthesis-db"
@@ -90,7 +93,8 @@ def _get_collection():
             name="elara_synthesis",
             metadata={"hnsw:space": "cosine"},
         )
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to get synthesis ChromaDB collection: %s", e)
         return None
 
 
@@ -152,6 +156,7 @@ def create_synthesis(
     seed_source_id: Optional[str] = None,
 ) -> Dict:
     """Manually create a synthesis from a recurring idea we've noticed."""
+    logger.info("Creating synthesis: %s", concept)
     synthesis_id = _generate_id(concept)
     now = datetime.now().isoformat()
 
@@ -188,8 +193,9 @@ def add_seed(
     """Add a new seed to an existing synthesis — reinforces the idea."""
     synth = _load_synthesis(synthesis_id)
     if not synth:
-        return {"error": f"Synthesis {synthesis_id} not found."}
+        raise ElaraNotFoundError(f"Synthesis {synthesis_id} not found.")
 
+    logger.debug("Adding seed to synthesis %s (now %d seeds)", synthesis_id, len(synth.get("seeds", [])) + 1)
     now = datetime.now().isoformat()
     seed = SynthesisSeed(
         source=source,
@@ -214,10 +220,10 @@ def update_status(synthesis_id: str, status: str) -> Dict:
     """Change synthesis status: dormant, activated, implemented, abandoned."""
     synth = _load_synthesis(synthesis_id)
     if not synth:
-        return {"error": f"Synthesis {synthesis_id} not found."}
+        raise ElaraNotFoundError(f"Synthesis {synthesis_id} not found.")
 
     if status not in ("dormant", "activated", "implemented", "abandoned"):
-        return {"error": "status must be 'dormant', 'activated', 'implemented', or 'abandoned'."}
+        raise ElaraValidationError("status must be 'dormant', 'activated', 'implemented', or 'abandoned'.")
 
     synth["status"] = status
     if status == "activated":
@@ -301,14 +307,16 @@ def check_for_recurring_ideas(exchanges: List[Dict], min_matches: int = 3) -> Li
                     if synth_id:
                         synth = _load_synthesis(synth_id)
                         if synth and synth.get("status") not in ("implemented", "abandoned"):
-                            result = add_seed(
-                                synth_id,
-                                quote=text[:200],
-                                source="conversation",
-                                source_id=exchange.get("session_id"),
-                            )
-                            if "error" not in result:
+                            try:
+                                result = add_seed(
+                                    synth_id,
+                                    quote=text[:200],
+                                    source="conversation",
+                                    source_id=exchange.get("session_id"),
+                                )
                                 reinforced.append(result)
+                            except ElaraNotFoundError:
+                                pass
 
         except Exception:
             continue

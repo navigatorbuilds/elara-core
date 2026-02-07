@@ -4,6 +4,7 @@ Elara Temperament — emotional growth system, shaped by experience.
 External code imports from daemon.state (re-export layer), not directly from here.
 """
 
+import logging
 import json
 from datetime import datetime
 from typing import Dict
@@ -13,6 +14,8 @@ from daemon.state_core import (
     TEMPERAMENT, FACTORY_TEMPERAMENT, TEMPERAMENT_MAX_DRIFT, TEMPERAMENT_LOG_FILE,
 )
 
+
+logger = logging.getLogger("elara.temperament")
 
 def _clamp_temperament(temperament: dict) -> dict:
     """Enforce bounds: temperament can't drift more than MAX_DRIFT from factory."""

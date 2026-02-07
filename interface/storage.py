@@ -3,10 +3,13 @@ Elara Message Storage
 Persistent storage for notes and messages so they survive restarts.
 """
 
+import logging
 import json
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any
+
+logger = logging.getLogger("elara.interface.storage")
 
 STORAGE_DIR = Path.home() / ".claude" / "elara-messages"
 NOTES_FILE = STORAGE_DIR / "notes.json"

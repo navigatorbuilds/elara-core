@@ -11,6 +11,7 @@ Next time a similar problem shows up, search trails before wasting an hour
 re-discovering the same thing.
 """
 
+import logging
 import hashlib
 import json
 from datetime import datetime
@@ -26,7 +27,10 @@ except ImportError:
 
 from daemon.schemas import (
     ReasoningTrail, Hypothesis, load_validated, save_validated,
+    ElaraNotFoundError, ElaraValidationError,
 )
+
+logger = logging.getLogger("elara.reasoning")
 
 REASONING_DIR = Path.home() / ".claude" / "elara-reasoning"
 REASONING_DB_DIR = Path.home() / ".claude" / "elara-reasoning-db"
@@ -149,6 +153,7 @@ def _remove_from_index(trail_id: str):
 
 def start_trail(context: str, tags: Optional[List[str]] = None) -> Dict:
     """Start a new reasoning trail for a problem we're investigating."""
+    logger.info("Starting reasoning trail: %s", context[:80])
     trail_id = _generate_id(context)
     trail = ReasoningTrail(
         trail_id=trail_id,
@@ -170,8 +175,9 @@ def add_hypothesis(
     """Add a hypothesis to an existing trail."""
     trail = _load_trail(trail_id)
     if not trail:
-        return {"error": f"Trail {trail_id} not found."}
+        raise ElaraNotFoundError(f"Trail {trail_id} not found.")
 
+    logger.debug("Adding hypothesis to trail %s: %s", trail_id, hypothesis[:60])
     h = Hypothesis(
         h=hypothesis,
         evidence=evidence or [],
@@ -195,16 +201,16 @@ def update_hypothesis(
     """Update a hypothesis outcome or add evidence."""
     trail = _load_trail(trail_id)
     if not trail:
-        return {"error": f"Trail {trail_id} not found."}
+        raise ElaraNotFoundError(f"Trail {trail_id} not found.")
 
     hypotheses = trail.get("hypotheses", [])
     if hypothesis_index < 0 or hypothesis_index >= len(hypotheses):
-        return {"error": f"Hypothesis index {hypothesis_index} out of range (0-{len(hypotheses)-1})."}
+        raise ElaraValidationError(f"Hypothesis index {hypothesis_index} out of range (0-{len(hypotheses)-1}).")
 
     h = hypotheses[hypothesis_index]
     if outcome:
         if outcome not in ("true", "false", "partial"):
-            return {"error": "outcome must be 'true', 'false', or 'partial'."}
+            raise ElaraValidationError("outcome must be 'true', 'false', or 'partial'.")
         h["outcome"] = outcome
     if evidence:
         h["evidence"].extend(evidence)
@@ -220,7 +226,7 @@ def abandon_approach(trail_id: str, approach: str) -> Dict:
     """Record an approach we tried and dropped."""
     trail = _load_trail(trail_id)
     if not trail:
-        return {"error": f"Trail {trail_id} not found."}
+        raise ElaraNotFoundError(f"Trail {trail_id} not found.")
 
     trail["abandoned_approaches"].append(approach)
     _save_trail(trail)
@@ -237,8 +243,9 @@ def solve_trail(
     """Mark a trail as solved."""
     trail = _load_trail(trail_id)
     if not trail:
-        return {"error": f"Trail {trail_id} not found."}
+        raise ElaraNotFoundError(f"Trail {trail_id} not found.")
 
+    logger.info("Solving trail %s: %s", trail_id, solution[:80])
     trail["final_solution"] = solution
     trail["resolved"] = True
     trail["resolved_at"] = datetime.now().isoformat()
@@ -257,6 +264,7 @@ def search_trails(query: str, n: int = 5) -> List[Dict]:
     collection = _get_collection()
     if not collection:
         # Fallback: keyword search
+        logger.warning("ChromaDB not available for reasoning, falling back to keyword search")
         return _keyword_search(query, n)
 
     try:

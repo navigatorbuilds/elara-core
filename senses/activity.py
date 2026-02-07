@@ -4,12 +4,15 @@ Detects user activity - idle time, active processes, current work.
 Uses PowerShell for Windows-specific info since we're in WSL.
 """
 
+import logging
 import subprocess
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any, Optional
 
+
+logger = logging.getLogger("elara.senses.activity")
 
 def get_windows_idle_time() -> Optional[int]:
     """

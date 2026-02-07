@@ -11,6 +11,7 @@ This file re-exports everything so existing imports keep working unchanged.
 """
 
 # --- Core (constants + internals used by submodules) ---
+import logging
 from daemon.state_core import (  # noqa: F401
     STATE_FILE, MOOD_JOURNAL_FILE, IMPRINT_ARCHIVE_FILE, TEMPERAMENT_LOG_FILE,
     TEMPERAMENT, FACTORY_TEMPERAMENT, TEMPERAMENT_MAX_DRIFT,
@@ -43,3 +44,5 @@ from daemon.temperament import (  # noqa: F401
     decay_temperament_toward_factory, reset_temperament,
     get_temperament_status,
 )
+
+logger = logging.getLogger("elara.state")

@@ -2,6 +2,7 @@
 Overwatch micro-ingestion — triage and ChromaDB ingestion.
 """
 
+import logging
 import time
 from typing import List, Dict
 
@@ -17,6 +18,8 @@ try:
 except ImportError:
     SYNTHESIS_AVAILABLE = False
 
+
+logger = logging.getLogger("elara.overwatch.ingest")
 
 class IngestMixin:
     """Mixin for micro-ingestion and triage."""

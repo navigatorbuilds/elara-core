@@ -4,11 +4,14 @@ Send desktop notifications to get the user's attention.
 Works on both native Linux and WSL (via PowerShell).
 """
 
+import logging
 import subprocess
 import os
 from pathlib import Path
 from typing import Optional
 
+
+logger = logging.getLogger("elara.interface.notify")
 
 def is_wsl() -> bool:
     """Check if running in WSL."""
@@ -42,7 +45,7 @@ def notify_wsl(title: str, message: str, duration: int = 5000) -> bool:
         )
         return True
     except (OSError, subprocess.SubprocessError) as e:
-        print(f"WSL notification failed: {e}")
+        logger.error("WSL notification failed: %s", e)
         return False
 
 
@@ -56,10 +59,10 @@ def notify_linux(title: str, message: str, duration: int = 5000) -> bool:
         )
         return result.returncode == 0
     except FileNotFoundError:
-        print("notify-send not found. Install libnotify-bin.")
+        logger.warning("notify-send not found. Install libnotify-bin.")
         return False
     except (OSError, subprocess.SubprocessError) as e:
-        print(f"Linux notification failed: {e}")
+        logger.error("Linux notification failed: %s", e)
         return False
 
 

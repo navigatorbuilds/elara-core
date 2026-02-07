@@ -4,10 +4,13 @@ Elara Self-Awareness — Blind Spots lens.
 "What am I missing?" — contrarian: stale goals, repeating mistakes, avoidance.
 """
 
+import logging
 import json
 from pathlib import Path
 from datetime import datetime
 from typing import List
+
+logger = logging.getLogger("elara.awareness.blind_spots")
 
 BLIND_SPOTS_FILE = Path.home() / ".claude" / "elara-blind-spots.json"
 

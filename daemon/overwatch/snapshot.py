@@ -2,6 +2,7 @@
 Overwatch snapshot — session state snapshots for boot continuity.
 """
 
+import logging
 import json
 import time
 from datetime import datetime
@@ -12,6 +13,8 @@ from daemon.overwatch.config import (
 )
 from daemon.schemas import atomic_write_json
 
+
+logger = logging.getLogger("elara.overwatch.snapshot")
 
 class SnapshotMixin:
     """Mixin for session snapshots."""

@@ -12,6 +12,7 @@ v2 upgrades:
 - Dormant detection: corrections that never fire (for blind_spots)
 """
 
+import logging
 import hashlib
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -26,6 +27,8 @@ except ImportError:
 
 from daemon.events import bus, Events
 from daemon.schemas import Correction, load_validated_list, save_validated_list
+
+logger = logging.getLogger("elara.corrections")
 
 CORRECTIONS_FILE = Path.home() / ".claude" / "elara-corrections.json"
 CORRECTIONS_DB_DIR = Path.home() / ".claude" / "elara-corrections-db"
@@ -102,6 +105,7 @@ def _sync_to_chroma(corrections: List[Dict]):
     collection = _get_collection()
     if not collection:
         return
+    logger.debug("Syncing %d corrections to ChromaDB", len(corrections))
 
     ids = []
     documents = []
@@ -145,6 +149,7 @@ def add_correction(
         fails_when: Condition when this mistake applies
         fine_when: Condition when this pattern is actually correct
     """
+    logger.info("Adding %s correction: %s", correction_type, mistake[:80])
     corrections = _load()
 
     entry = Correction(
@@ -221,6 +226,7 @@ def check_corrections(task_description: str, n_results: int = 3) -> List[Dict]:
 
     if not collection or collection.count() == 0:
         # Fall back to keyword search
+        logger.warning("ChromaDB not available for corrections, falling back to keyword search")
         return search_corrections(task_description)
 
     # Ensure index is current
@@ -234,6 +240,7 @@ def check_corrections(task_description: str, n_results: int = 3) -> List[Dict]:
         )
     except Exception as e:
         # LOUD failure — return a warning entry so caller sees the problem
+        logger.error("ChromaDB correction search failed: %s", e)
         return [{
             "id": -1,
             "mistake": "[CORRECTIONS SEARCH FAILED]",
@@ -372,6 +379,6 @@ def ensure_index() -> str:
         _sync_to_chroma(corrections)
         return f"Corrections indexed: {len(corrections)} entries."
     except Exception as e:
-        msg = f"[WARNING] Corrections ChromaDB sync FAILED: {e}. Keyword search still works."
-        print(msg, file=__import__('sys').stderr)
+        msg = f"Corrections ChromaDB sync FAILED: {e}. Keyword search still works."
+        logger.warning(msg)
         return msg

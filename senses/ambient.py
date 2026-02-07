@@ -3,11 +3,14 @@ Elara Ambient Senses
 External context - weather, time of day vibes, etc.
 """
 
+import logging
 import subprocess
 from datetime import datetime
 from typing import Dict, Any, Optional
 import json
 
+
+logger = logging.getLogger("elara.senses.ambient")
 
 def get_time_context() -> Dict[str, Any]:
     """Get time-based context."""

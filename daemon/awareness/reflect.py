@@ -4,10 +4,13 @@ Elara Self-Awareness — Reflect lens.
 "Who have I been?" — self-portrait from mood + behavior data.
 """
 
+import logging
 import json
 from pathlib import Path
 from datetime import datetime
 from typing import List
+
+logger = logging.getLogger("elara.awareness.reflect")
 
 REFLECTIONS_DIR = Path.home() / ".claude" / "elara-reflections"
 

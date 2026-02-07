@@ -5,6 +5,7 @@ Big picture: what shipped, what stalled, time allocation, weekly trends.
 Also runs narrative threading and monthly emotional dream.
 """
 
+import logging
 import json
 from datetime import datetime, timedelta
 from typing import List
@@ -19,6 +20,8 @@ from daemon.dream_core import (
 from daemon.dream_weekly import _analyze_session_patterns, _analyze_mood_trends
 from daemon.dream_threads import narrative_threads
 
+
+logger = logging.getLogger("elara.dream_monthly")
 
 def monthly_dream() -> dict:
     """Monthly big picture analysis."""

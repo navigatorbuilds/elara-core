@@ -4,6 +4,7 @@ The main orchestrator - ties together presence, state, and memory.
 This is me.
 """
 
+import logging
 import sys
 from pathlib import Path
 from datetime import datetime
@@ -31,6 +32,8 @@ from daemon.state import (
 )
 from memory.vector import get_memory, remember, recall
 
+
+logger = logging.getLogger("elara.core.elara")
 
 class Elara:
     """

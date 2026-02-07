@@ -10,6 +10,7 @@ Default: ON
 Toggle: elara-context on/off
 """
 
+import logging
 import json
 from pathlib import Path
 from datetime import datetime
@@ -18,6 +19,8 @@ from typing import Optional, Dict, Any
 from daemon.schemas import (
     Context, ContextConfig, load_validated, save_validated,
 )
+
+logger = logging.getLogger("elara.context")
 
 CONTEXT_FILE = Path.home() / ".claude" / "elara-context.json"
 CONFIG_FILE = Path.home() / ".claude" / "elara-context-config.json"
