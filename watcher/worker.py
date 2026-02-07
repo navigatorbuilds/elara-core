@@ -3,8 +3,14 @@
 Elara Autonomous Worker
 Watches for phone messages, executes tasks via Claude, sends responses back.
 
+SECURITY: Uses --dangerously-skip-permissions by design — the worker
+executes arbitrary tasks from phone messages. The web interface that
+writes those messages is protected by ELARA_SECRET auth. If someone
+bypasses that auth, they get full code execution here. This is the
+accepted risk model: auth at the edge (web), trust internally.
+
 Flow:
-1. You send task from phone
+1. You send task from phone (authenticated via ELARA_SECRET)
 2. Worker pipes to: echo "task" | claude -p --continue
 3. Claude executes, output captured
 4. Worker sends output summary to phone

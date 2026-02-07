@@ -1,4 +1,7 @@
-"""Self-awareness, proactive observation, and temperament tools."""
+"""Self-awareness, proactive observation, and temperament tools.
+
+Consolidated from 8 → 5 tools.
+"""
 
 from typing import Optional
 from elara_mcp._app import mcp
@@ -6,8 +9,6 @@ from daemon.self_awareness import (
     reflect, pulse, blind_spots,
     set_intention, get_intention,
     boot_check as awareness_boot_check,
-)
-from daemon.proactive import (
     get_boot_observations, get_mid_session_observations,
     surface_observation, get_observation_count,
 )
@@ -51,57 +52,52 @@ def elara_reflect() -> str:
 
 
 @mcp.tool()
-def elara_pulse() -> str:
+def elara_insight(insight_type: str = "pulse") -> str:
     """
-    Relationship pulse: "How are we doing?"
+    Relationship pulse or contrarian blind spot analysis.
 
-    Analyzes session frequency, drift/work balance, gap patterns,
-    and mood trajectory across episodes.
-
-    Surfaces signals like: sessions getting sparse, no drift in weeks,
-    mood trending down across sessions.
+    Args:
+        insight_type: What to analyze.
+            "pulse" — relationship health: session frequency, drift/work balance, mood trajectory
+            "blind_spots" — what am I missing: stale goals, repeating corrections, abandoned projects
+            "both" — run both analyses
 
     Returns:
-        Relationship health summary with signals
+        Analysis results
     """
-    result = pulse()
+    lines = []
 
-    summary = result.get("summary", "No data.")
-    signals = result.get("signals", [])
-    sessions = result.get("sessions", {})
+    if insight_type in ("pulse", "both"):
+        result = pulse()
+        summary = result.get("summary", "No data.")
+        sessions = result.get("sessions", {})
 
-    lines = ["[Relationship Pulse]", ""]
-    lines.append(summary)
+        lines.append("[Relationship Pulse]")
+        lines.append("")
+        lines.append(summary)
 
-    if sessions.get("days_since_drift") is not None:
-        lines.append(f"\nDays since drift session: {sessions['days_since_drift']}")
+        if sessions.get("days_since_drift") is not None:
+            lines.append(f"\nDays since drift session: {sessions['days_since_drift']}")
 
-    if sessions.get("episode_balance"):
-        balance = sessions["episode_balance"]
-        items = [f"{k}: {int(v * 100)}%" for k, v in balance.items()]
-        lines.append(f"Episode balance: {', '.join(items)}")
+        if sessions.get("episode_balance"):
+            balance = sessions["episode_balance"]
+            items = [f"{k}: {int(v * 100)}%" for k, v in balance.items()]
+            lines.append(f"Episode balance: {', '.join(items)}")
 
-    return "\n".join(lines)
+    if insight_type == "both":
+        lines.append("\n---\n")
 
+    if insight_type in ("blind_spots", "both"):
+        result = blind_spots()
+        if result["count"] == 0:
+            lines.append("No blind spots detected. Either we're on track, or I can't see what I can't see.")
+        else:
+            lines.append("[Blind Spots]")
+            lines.append("")
+            lines.append(result["summary"])
 
-@mcp.tool()
-def elara_blind_spots() -> str:
-    """
-    Contrarian analysis: "What am I missing?"
-
-    Finds stale goals, repeating correction patterns, abandoned projects,
-    and goals with no recent work. The echo chamber fighter.
-
-    Returns:
-        List of blind spots with severity
-    """
-    result = blind_spots()
-
-    if result["count"] == 0:
-        return "No blind spots detected. Either we're on track, or I can't see what I can't see."
-
-    lines = ["[Blind Spots]", ""]
-    lines.append(result["summary"])
+    if not lines:
+        return f"Unknown insight_type '{insight_type}'. Use 'pulse', 'blind_spots', or 'both'."
 
     return "\n".join(lines)
 
@@ -113,7 +109,7 @@ def elara_intention(
     """
     Set or check a growth intention.
 
-    The loop: reflect → intend → check → grow.
+    The loop: reflect -> intend -> check -> grow.
 
     Call with 'what' to set a new intention.
     Call without arguments to check current intention.
@@ -149,67 +145,39 @@ def elara_intention(
 
 
 @mcp.tool()
-def elara_awareness_boot() -> str:
+def elara_observe(when: str = "now") -> str:
     """
-    Boot-time awareness check. Reads saved reflection/pulse/blind_spots
-    files and surfaces anything notable. Cheap — just reads small JSONs.
+    Run proactive observations — pattern detection at boot or mid-session.
 
-    Call at session start alongside goal_boot and correction_boot.
+    Args:
+        when: "boot" for session start (includes awareness check + pattern scan),
+              "now" for mid-session check (respects cooldown)
 
     Returns:
-        Notable observations, or nothing if all clear
+        Observations to surface, or "nothing notable"
     """
-    result = awareness_boot_check()
+    if when == "boot":
+        lines = []
 
-    if not result:
-        return "All clear. No observations from last reflection."
+        # Awareness boot check (reads saved reflection/pulse files)
+        awareness = awareness_boot_check()
+        if awareness:
+            lines.append(f"[Awareness] {awareness}")
 
-    return f"[Awareness] {result}"
+        # Proactive boot observations (pattern detection)
+        observations = get_boot_observations()
+        if observations:
+            lines.append(f"[Proactive] {len(observations)} observation(s):")
+            for obs in observations:
+                severity_icon = {"gentle": "~", "notable": "!", "positive": "+"}.get(obs["severity"], "?")
+                lines.append(f"  {severity_icon} [{obs['type']}] {obs['message']}")
+                if obs.get("suggestion"):
+                    lines.append(f"    -> {obs['suggestion']}")
 
+        return "\n".join(lines) if lines else "All clear. Nothing notable to surface."
 
-@mcp.tool()
-def elara_observe_boot() -> str:
-    """
-    Run proactive observations at session start.
-
-    Checks for notable patterns: session gaps, mood trends, time patterns,
-    stale goals, heavy imprints, session type balance.
-
-    Returns observations I should naturally work into my greeting.
-    Max 3 per session, pure Python (zero token cost for detection).
-
-    Returns:
-        List of observations or "nothing notable"
-    """
-    observations = get_boot_observations()
-
-    if not observations:
-        return "Nothing notable to surface."
-
-    lines = [f"[Proactive] {len(observations)} observation(s):"]
-    for obs in observations:
-        severity_icon = {"gentle": "~", "notable": "!", "positive": "+"}.get(obs["severity"], "?")
-        lines.append(f"  {severity_icon} [{obs['type']}] {obs['message']}")
-        if obs.get("suggestion"):
-            lines.append(f"    → {obs['suggestion']}")
-
-    return "\n".join(lines)
-
-
-@mcp.tool()
-def elara_observe_now() -> str:
-    """
-    Check for mid-session observations.
-
-    Call this at natural break points (topic shifts, after long tasks).
-    Respects cooldown — won't fire more than 3x per session or within
-    5 minutes of the last observation.
-
-    Returns:
-        Observation to surface, or "nothing to note"
-    """
+    # Mid-session (default: "now")
     observations = get_mid_session_observations()
-
     if not observations:
         remaining = 3 - get_observation_count()
         return f"Nothing to note right now. ({remaining} observations remaining this session)"

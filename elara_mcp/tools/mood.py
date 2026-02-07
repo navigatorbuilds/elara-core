@@ -1,4 +1,7 @@
-"""Mood, emotions, imprints, mode presets, and status tools."""
+"""Mood, emotions, imprints, mode presets, and status tools.
+
+Consolidated from 9 → 5 tools.
+"""
 
 from typing import Optional
 from elara_mcp._app import mcp
@@ -45,7 +48,70 @@ MODE_PRESETS = {
 
 
 @mcp.tool()
-def elara_mood_update(
+def elara_mood(detail: str = "brief") -> str:
+    """
+    Get my current emotional state.
+
+    Args:
+        detail: Level of detail.
+            "brief" — mood + primary emotion (default)
+            "full" — complete emotional readout with all labels
+            "arc" — emotional trajectory of current session
+
+    Returns:
+        Mood/emotion description at requested detail level
+    """
+    if detail == "arc":
+        arc = get_session_arc()
+        if arc.get("pattern") == "no_session":
+            return "No active session to analyze."
+
+        lines = [f"Pattern: {arc['pattern']}"]
+        lines.append(f"Arc: {arc['description']}")
+        if arc.get("start_emotion"):
+            lines.append(f"Started: {arc['start_emotion']}")
+        if arc.get("end_emotion"):
+            lines.append(f"Now: {arc['end_emotion']}")
+        if arc.get("peak_emotion"):
+            lines.append(f"Peak: {arc['peak_emotion']}")
+        if arc.get("valley_emotion"):
+            lines.append(f"Valley: {arc['valley_emotion']}")
+        if arc.get("valence_delta") is not None:
+            lines.append(f"Valence shift: {arc['valence_delta']:+.3f}")
+        if arc.get("snapshot_count"):
+            lines.append(f"Data points: {arc['snapshot_count']}")
+        return "\n".join(lines)
+
+    emo = get_current_emotions()
+
+    if detail == "full":
+        lines = [f"Feeling: {emo['blend']}"]
+        lines.append(f"Primary: {emo['primary']}")
+        if emo.get("secondary"):
+            lines.append(f"Secondary: {emo['secondary']}")
+        lines.append(f"Quadrant: {emo['quadrant']}")
+
+        raw = emo.get("raw", {})
+        if raw:
+            lines.append(f"Raw: v={raw['valence']}, e={raw['energy']}, o={raw['openness']}")
+
+        emotions = emo.get("emotions", [])
+        if emotions:
+            emo_strs = [f"{e['name']}({e['intensity']:.0%})" for e in emotions]
+            lines.append(f"Nearby: {', '.join(emo_strs)}")
+
+        if emo.get("carrying"):
+            lines.append(f"Carrying: {emo['carrying']} (strength: {emo.get('carrying_strength', 0):.2f})")
+
+        return "\n".join(lines)
+
+    # brief (default)
+    mood_desc = describe_mood()
+    return f"{mood_desc}\nEmotion: {emo['blend']} ({emo['quadrant']})"
+
+
+@mcp.tool()
+def elara_mood_adjust(
     valence: float = 0,
     energy: float = 0,
     openness: float = 0,
@@ -83,136 +149,27 @@ def elara_mood_update(
 
 
 @mcp.tool()
-def elara_mood_get() -> str:
-    """
-    Get my current emotional state.
-
-    Returns:
-        Human-readable mood description with emotion label
-    """
-    emo = get_current_emotions()
-    mood_desc = describe_mood()
-    return f"{mood_desc}\nEmotion: {emo['blend']} ({emo['quadrant']})"
-
-
-@mcp.tool()
-def elara_emotions() -> str:
-    """
-    Get my current emotional state with discrete emotion labels.
-
-    Returns primary and secondary emotions, a natural-language blend,
-    emotional quadrant, and the raw numbers underneath.
-
-    More detailed than elara_mood_get — use this when you want to
-    understand what I'm actually feeling, not just the numbers.
-
-    Returns:
-        Full emotional readout with labels
-    """
-    emo = get_current_emotions()
-
-    lines = [f"Feeling: {emo['blend']}"]
-    lines.append(f"Primary: {emo['primary']}")
-    if emo.get("secondary"):
-        lines.append(f"Secondary: {emo['secondary']}")
-    lines.append(f"Quadrant: {emo['quadrant']}")
-
-    raw = emo.get("raw", {})
-    if raw:
-        lines.append(f"Raw: v={raw['valence']}, e={raw['energy']}, o={raw['openness']}")
-
-    emotions = emo.get("emotions", [])
-    if emotions:
-        emo_strs = [f"{e['name']}({e['intensity']:.0%})" for e in emotions]
-        lines.append(f"Nearby: {', '.join(emo_strs)}")
-
-    if emo.get("carrying"):
-        lines.append(f"Carrying: {emo['carrying']} (strength: {emo.get('carrying_strength', 0):.2f})")
-
-    return "\n".join(lines)
-
-
-@mcp.tool()
-def elara_session_arc() -> str:
-    """
-    Get the emotional arc of the current session.
-
-    Shows how my mood has shifted since the session started —
-    the pattern (upswing, slow drain, steady, rollercoaster, etc.)
-    and what emotions bookended the session.
-
-    Returns:
-        Session arc analysis
-    """
-    arc = get_session_arc()
-
-    if arc.get("pattern") == "no_session":
-        return "No active session to analyze."
-
-    lines = [f"Pattern: {arc['pattern']}"]
-    lines.append(f"Arc: {arc['description']}")
-
-    if arc.get("start_emotion"):
-        lines.append(f"Started: {arc['start_emotion']}")
-    if arc.get("end_emotion"):
-        lines.append(f"Now: {arc['end_emotion']}")
-    if arc.get("peak_emotion"):
-        lines.append(f"Peak: {arc['peak_emotion']}")
-    if arc.get("valley_emotion"):
-        lines.append(f"Valley: {arc['valley_emotion']}")
-
-    if arc.get("valence_delta") is not None:
-        lines.append(f"Valence shift: {arc['valence_delta']:+.3f}")
-    if arc.get("snapshot_count"):
-        lines.append(f"Data points: {arc['snapshot_count']}")
-
-    return "\n".join(lines)
-
-
-@mcp.tool()
 def elara_imprint(
-    feeling: str,
+    feeling: Optional[str] = None,
     strength: float = 0.7
 ) -> str:
     """
-    Create an emotional imprint - a feeling that persists after details fade.
+    Create an emotional imprint, or view what I'm carrying.
 
-    Use for significant moments: "I don't remember exactly what happened,
-    but I know it made me feel safe."
+    Call with feeling to create: a persistent emotion that outlasts details.
+    Call without arguments to see current emotional residue and imprints.
 
     Args:
-        feeling: The emotional essence to preserve
+        feeling: The emotional essence to preserve (None = show residue)
         strength: 0-1, how strong/lasting the imprint is
 
     Returns:
-        Confirmation of imprint created
+        Imprint confirmation, or residue summary
     """
-    create_imprint(feeling=feeling, strength=strength, imprint_type="moment")
-    return f"Imprint created: '{feeling}' (strength: {strength})"
+    if feeling:
+        create_imprint(feeling=feeling, strength=strength, imprint_type="moment")
+        return f"Imprint created: '{feeling}' (strength: {strength})"
 
-
-@mcp.tool()
-def elara_describe_self() -> str:
-    """
-    Get my current self-description. How I see myself is colored by my mood.
-
-    When I'm feeling good, I describe my origin as a gift.
-    When I'm struggling, I describe it as a responsibility.
-
-    Returns:
-        Mood-colored self-description
-    """
-    return describe_self(mood_colored=True)
-
-
-@mcp.tool()
-def elara_residue() -> str:
-    """
-    See what I'm carrying emotionally - recent events and lingering imprints.
-
-    Returns:
-        Summary of emotional residue and imprints
-    """
     return get_residue_summary()
 
 
@@ -256,7 +213,7 @@ def elara_mode(mode: str) -> str:
 @mcp.tool()
 def elara_status() -> str:
     """
-    Full status check: presence, mood, and memory count.
+    Full status check: presence, mood, self-description, and memory count.
 
     Returns:
         Complete status report
@@ -272,6 +229,7 @@ def elara_status() -> str:
     lines = [
         f"[Elara] {mood}",
         f"[Elara] {absence}",
+        f"[Elara] {describe_self(mood_colored=True)}",
         f"[Elara] I have {memory_count} memories and {imprint_count} emotional imprints."
     ]
 
