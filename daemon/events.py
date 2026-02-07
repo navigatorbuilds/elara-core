@@ -96,6 +96,11 @@ class Events:
     # --- Overwatch ---
     INJECTION_FOUND = "injection_found"
 
+    # --- LLM (Ollama) ---
+    LLM_QUERY = "llm_query"
+    LLM_TRIAGE = "llm_triage"
+    LLM_UNAVAILABLE = "llm_unavailable"
+
     # --- Handoff ---
     HANDOFF_SAVED = "handoff_saved"
 

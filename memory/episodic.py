@@ -31,6 +31,12 @@ try:
 except ImportError:
     STATE_AVAILABLE = False
 
+try:
+    from daemon import llm
+    LLM_AVAILABLE = True
+except ImportError:
+    LLM_AVAILABLE = False
+
 EPISODES_DIR = Path.home() / ".claude" / "elara-episodes"
 EPISODES_INDEX = EPISODES_DIR / "index.json"
 CHROMA_DIR = Path.home() / ".claude" / "elara-episodes-db"
@@ -394,33 +400,42 @@ class EpisodicMemory:
         return episode
 
     def _generate_narrative(self, episode: dict) -> str:
-        """Generate a narrative summary from episode data."""
+        """Generate a narrative summary from episode data. Tries Ollama first, falls back to template."""
+        # Try LLM-powered narrative
+        if LLM_AVAILABLE:
+            try:
+                narrative = llm.generate_narrative(episode)
+                if narrative:
+                    return narrative
+            except Exception:
+                pass
+
+        # Fallback: template-based narrative
+        return self._generate_narrative_template(episode)
+
+    def _generate_narrative_template(self, episode: dict) -> str:
+        """Template-based narrative (fallback when Ollama unavailable)."""
         parts = []
 
-        # Session type and duration
         duration = episode.get("duration_minutes", 0)
         session_type = episode.get("type", "mixed")
         parts.append(f"{session_type.title()} session, {duration} minutes.")
 
-        # Projects
         projects = episode.get("projects", [])
         if projects:
             parts.append(f"Worked on: {', '.join(projects)}.")
 
-        # Key milestones
         milestones = episode.get("milestones", [])
         important = [m for m in milestones if m.get("importance", 0) >= 0.7]
         if important:
             events = [m["event"] for m in important[:3]]
             parts.append(f"Key moments: {'; '.join(events)}.")
 
-        # Decisions
         decisions = episode.get("decisions", [])
         if decisions:
             decision_summaries = [d["what"] for d in decisions[:2]]
             parts.append(f"Decided: {'; '.join(decision_summaries)}.")
 
-        # Mood trajectory
         if episode.get("mood_delta"):
             delta = episode["mood_delta"]
             if delta > 0.2:
@@ -690,14 +705,26 @@ class EpisodicMemory:
     def _compress_episode(self, episode: dict) -> dict:
         """
         Strip heavy fields, keep essential metadata.
-
-        Keeps: id, type, started, ended, duration_minutes, projects, tags,
-               mood_start, mood_end, mood_delta, summary, compressed flag,
-               key_metrics (milestone count, decision count).
-        Strips: milestones, decisions, mood_samples, narrative, related_episodes.
+        Uses Ollama for a richer compressed summary if available.
         """
         milestone_count = len(episode.get("milestones", []))
         decision_count = len(episode.get("decisions", []))
+
+        # Try LLM-generated compression summary
+        summary = episode.get("summary")
+        if LLM_AVAILABLE and milestone_count > 0:
+            try:
+                events = "; ".join(m["event"] for m in episode.get("milestones", [])[:5])
+                llm_summary = llm.summarize(
+                    f"Session ({episode.get('type', 'work')}, {episode.get('duration_minutes', 0)} min, "
+                    f"projects: {', '.join(episode.get('projects', []))}). "
+                    f"Events: {events}",
+                    max_sentences=2,
+                )
+                if llm_summary:
+                    summary = llm_summary
+            except Exception:
+                pass
 
         return {
             "id": episode["id"],
@@ -710,7 +737,7 @@ class EpisodicMemory:
             "mood_start": episode.get("mood_start"),
             "mood_end": episode.get("mood_end"),
             "mood_delta": episode.get("mood_delta"),
-            "summary": episode.get("summary"),
+            "summary": summary,
             "continues_from": episode.get("continues_from"),
             "continued_by": episode.get("continued_by"),
             "compressed": True,

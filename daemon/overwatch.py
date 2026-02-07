@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from memory.conversations import get_conversations, ConversationMemory
 from daemon.injector import format_injection, format_event_injection
+from daemon import llm
 
 # Paths
 PROJECTS_DIR = Path.home() / ".claude" / "projects"
@@ -120,12 +121,23 @@ class Overwatch:
         return {}
 
     def _micro_ingest(self):
-        """Ingest pending exchanges into ChromaDB for same-session searchability."""
+        """Ingest pending exchanges into ChromaDB for same-session searchability.
+        Uses Ollama for triage when available — classifies and scores importance."""
         if not self.pending_exchanges:
             return
         try:
             ingested = 0
+            triaged = 0
             for ex in self.pending_exchanges:
+                # Try LLM triage — classify and score importance
+                triage = llm.triage_memory(ex["user_text"], ex["assistant_text"])
+                if triage:
+                    triaged += 1
+                    # Skip low-importance exchanges (greetings, confirmations)
+                    if not triage.get("worth_keeping", True):
+                        log.debug(f"Triage skip: {ex['user_text'][:50]}...")
+                        continue
+
                 ok = self.conv.ingest_exchange(
                     user_text=ex["user_text"],
                     assistant_text=ex["assistant_text"],
@@ -135,7 +147,8 @@ class Overwatch:
                 )
                 if ok:
                     ingested += 1
-            log.info(f"Micro-ingested {ingested}/{len(self.pending_exchanges)} exchanges into ChromaDB")
+            triage_msg = f", {triaged} triaged by LLM" if triaged else ""
+            log.info(f"Micro-ingested {ingested}/{len(self.pending_exchanges)} exchanges{triage_msg}")
         except Exception as e:
             log.error(f"Micro-ingest error: {e}")
         self.pending_exchanges = []
@@ -322,28 +335,37 @@ class Overwatch:
         return relevant[:MAX_INJECTIONS_PER_CHECK]
 
     def _search_for_events(self, events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Run broader searches triggered by events."""
+        """Run broader searches triggered by events. Uses Ollama for smarter queries."""
         all_results = []
 
         for event in events:
             if event["type"] == "task_complete":
-                results = self._search_history(
-                    event["query"],
-                    threshold=EVENT_THRESHOLD,
-                    n_results=5,
-                )
-                for r in results:
-                    r["_event"] = "task_complete"
-                all_results.extend(results)
+                # Try Ollama for smarter search queries
+                llm_queries = llm.generate_search_queries(event["query"], n_queries=3)
+                if llm_queries:
+                    log.info(f"LLM generated {len(llm_queries)} queries for task_complete")
+                    for q in llm_queries:
+                        results = self._search_history(q, threshold=EVENT_THRESHOLD, n_results=3)
+                        for r in results:
+                            r["_event"] = "task_complete"
+                        all_results.extend(results)
+                else:
+                    # Fallback: use raw text
+                    results = self._search_history(
+                        event["query"],
+                        threshold=EVENT_THRESHOLD,
+                        n_results=5,
+                    )
+                    for r in results:
+                        r["_event"] = "task_complete"
+                    all_results.extend(results)
 
             elif event["type"] == "winding_down":
                 # Pull queries from session state (overdue items, reminders)
-                # instead of hardcoded generic queries
                 overdue = self.session_state.get("overdue_items", [])
                 reminders = self.session_state.get("reminders", [])
                 intention_queries = overdue + reminders
                 if not intention_queries:
-                    # Fallback if no session state
                     intention_queries = [
                         "plans for next session tomorrow",
                         "promises I made to him",
