@@ -324,6 +324,71 @@ def detect_conflicts(
     return None
 
 
+def judge_relevance(
+    current_text: str,
+    historical_text: str,
+    model: str = DEFAULT_MODEL,
+) -> Optional[Dict[str, Any]]:
+    """
+    Judge whether a historical cross-reference is actually relevant
+    to the current conversation, beyond just semantic similarity.
+
+    Returns dict with:
+        - relevant: bool
+        - reason: str (1 sentence)
+        - importance: float (0-1)
+    Or None if unavailable.
+    """
+    prompt = (
+        f"Current: \"{current_text[:200]}\"\n"
+        f"Old context: \"{historical_text[:200]}\"\n\n"
+        "Is the old context useful for the current discussion? "
+        "Answer JSON only: {\"relevant\": true/false, \"reason\": \"...\", \"importance\": 0.0-1.0}"
+    )
+    result = query(prompt, model=model, temperature=0.1, max_tokens=96, timeout=45)
+    if result:
+        try:
+            cleaned = result.strip().strip("`").strip()
+            if cleaned.startswith("json"):
+                cleaned = cleaned[4:].strip()
+            return json.loads(cleaned)
+        except json.JSONDecodeError:
+            # Try line-by-line extraction
+            for line in result.split("\n"):
+                line = line.strip()
+                if line.startswith("{"):
+                    try:
+                        return json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+    return None
+
+
+def extract_recurring_themes(
+    exchanges_text: str,
+    model: str = DEFAULT_MODEL,
+) -> Optional[List[str]]:
+    """
+    Extract recurring themes/ideas from a batch of conversation exchanges.
+
+    Used by synthesis auto-detection. Returns list of concept phrases,
+    or None if unavailable.
+    """
+    prompt = (
+        "Extract recurring themes from these exchanges. "
+        "Return 1-5 short phrases, one per line. If none, say 'none'.\n\n"
+        f"{exchanges_text[:800]}"
+    )
+    result = query(prompt, model=model, temperature=0.3, max_tokens=96, timeout=45)
+    if result:
+        lower = result.lower().strip()
+        if lower == "none" or lower.startswith("none"):
+            return []
+        lines = [l.strip().lstrip("0123456789.-) ") for l in result.split("\n") if l.strip()]
+        return [l for l in lines if 3 < len(l) < 80][:5]
+    return None
+
+
 def status() -> Dict[str, Any]:
     """Get Ollama status info."""
     available = is_available()
