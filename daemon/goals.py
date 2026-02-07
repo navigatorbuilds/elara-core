@@ -5,28 +5,24 @@ Storage: ~/.claude/elara-goals.json
 Simple JSON, no database. Checked at boot, updated during sessions.
 """
 
-import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict
 
 from daemon.events import bus, Events
+from daemon.schemas import Goal, load_validated_list, save_validated_list
 
 GOALS_FILE = Path.home() / ".claude" / "elara-goals.json"
 
 
 def _load() -> List[Dict]:
-    if not GOALS_FILE.exists():
-        return []
-    with open(GOALS_FILE, "r") as f:
-        return json.load(f)
+    models = load_validated_list(GOALS_FILE, Goal)
+    return [m.model_dump() for m in models]
 
 
 def _save(goals: List[Dict]):
-    GOALS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(GOALS_FILE, "w") as f:
-        json.dump(goals, f, indent=2)
+    models = [Goal.model_validate(g) for g in goals]
+    save_validated_list(GOALS_FILE, models)
 
 
 def _next_id(goals: List[Dict]) -> int:
@@ -42,16 +38,17 @@ def add_goal(
     priority: str = "medium",
 ) -> Dict:
     goals = _load()
-    goal = {
-        "id": _next_id(goals),
-        "title": title,
-        "project": project,
-        "status": "active",
-        "priority": priority,
-        "created": datetime.now().isoformat(),
-        "last_touched": datetime.now().isoformat(),
-        "notes": notes,
-    }
+    now = datetime.now().isoformat()
+    goal = Goal(
+        id=_next_id(goals),
+        title=title,
+        project=project,
+        status="active",
+        priority=priority,
+        created=now,
+        last_touched=now,
+        notes=notes,
+    ).model_dump()
     goals.append(goal)
     _save(goals)
     bus.emit(Events.GOAL_ADDED, {

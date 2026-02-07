@@ -8,12 +8,12 @@ We make decisions but never check if they were right.
 That's calibrated intuition.
 """
 
-import json
 import hashlib
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
+
+from daemon.schemas import Outcome, load_validated, save_validated
 
 OUTCOMES_DIR = Path.home() / ".claude" / "elara-outcomes"
 
@@ -39,17 +39,15 @@ def _load_outcome(outcome_id: str) -> Optional[Dict]:
     path = _outcome_path(outcome_id)
     if not path.exists():
         return None
-    with open(path, "r") as f:
-        return json.load(f)
+    model = load_validated(path, Outcome)
+    return model.model_dump()
 
 
 def _save_outcome(outcome: Dict):
     _ensure_dirs()
+    model = Outcome.model_validate(outcome)
     path = _outcome_path(outcome["outcome_id"])
-    tmp = path.with_suffix(".json.tmp")
-    with open(tmp, "w") as f:
-        json.dump(outcome, f, indent=2)
-    os.rename(str(tmp), str(path))
+    save_validated(path, model)
 
 
 def _load_all_outcomes() -> List[Dict]:
@@ -58,9 +56,9 @@ def _load_all_outcomes() -> List[Dict]:
     for p in sorted(OUTCOMES_DIR.glob("*.json")):
         if p.suffix == ".json" and not p.name.endswith(".tmp"):
             try:
-                with open(p) as f:
-                    outcomes.append(json.load(f))
-            except (json.JSONDecodeError, OSError):
+                model = load_validated(p, Outcome)
+                outcomes.append(model.model_dump())
+            except Exception:
                 pass
     return outcomes
 
@@ -81,19 +79,19 @@ def record_outcome(
     Assessment and lesson come later via check_outcome().
     """
     outcome_id = _generate_id(decision)
-    outcome = {
-        "outcome_id": outcome_id,
-        "decision": decision,
-        "context": context,
-        "reasoning_trail": reasoning_trail,
-        "predicted": predicted,
-        "actual": None,
-        "assessment": "too_early",
-        "lesson": None,
-        "tags": tags or [],
-        "recorded": datetime.now().isoformat(),
-        "checked": None,
-    }
+    outcome = Outcome(
+        outcome_id=outcome_id,
+        decision=decision,
+        context=context,
+        reasoning_trail=reasoning_trail,
+        predicted=predicted,
+        actual=None,
+        assessment="too_early",
+        lesson=None,
+        tags=tags or [],
+        recorded=datetime.now().isoformat(),
+        checked=None,
+    ).model_dump()
     _save_outcome(outcome)
     return outcome
 

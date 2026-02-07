@@ -248,6 +248,7 @@ class IdeaScore(ElaraModel):
     effort: int = 0
     monetization: int = 0
     fit: int = 0
+    total: int = 0
     scored_at: Optional[str] = None
 
 
@@ -284,11 +285,17 @@ class Synthesis(ElaraModel):
     """Idea synthesis: ~/.claude/elara-synthesis/{synthesis_id}.json"""
     synthesis_id: str
     concept: str
-    status: str = "emerging"
+    status: str = "dormant"
     seeds: List[SynthesisSeed] = Field(default_factory=list)
     created: Optional[str] = None
     last_seed: Optional[str] = None
     confidence: float = 0.0
+    times_surfaced: int = 0
+    first_seen: Optional[str] = None
+    last_reinforced: Optional[str] = None
+    activated_at: Optional[str] = None
+    implemented_at: Optional[str] = None
+    abandoned_at: Optional[str] = None
 
 
 # ============================================================================

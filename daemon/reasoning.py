@@ -11,12 +11,11 @@ Next time a similar problem shows up, search trails before wasting an hour
 re-discovering the same thing.
 """
 
-import json
 import hashlib
-import os
+import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
 
 try:
     import chromadb
@@ -24,6 +23,10 @@ try:
     CHROMA_AVAILABLE = True
 except ImportError:
     CHROMA_AVAILABLE = False
+
+from daemon.schemas import (
+    ReasoningTrail, Hypothesis, load_validated, save_validated,
+)
 
 REASONING_DIR = Path.home() / ".claude" / "elara-reasoning"
 REASONING_DB_DIR = Path.home() / ".claude" / "elara-reasoning-db"
@@ -50,17 +53,15 @@ def _load_trail(trail_id: str) -> Optional[Dict]:
     path = _trail_path(trail_id)
     if not path.exists():
         return None
-    with open(path, "r") as f:
-        return json.load(f)
+    model = load_validated(path, ReasoningTrail)
+    return model.model_dump()
 
 
 def _save_trail(trail: Dict):
     _ensure_dirs()
+    model = ReasoningTrail.model_validate(trail)
     path = _trail_path(trail["trail_id"])
-    tmp = path.with_suffix(".json.tmp")
-    with open(tmp, "w") as f:
-        json.dump(trail, f, indent=2)
-    os.rename(str(tmp), str(path))
+    save_validated(path, model)
 
 
 def _load_all_trails() -> List[Dict]:
@@ -69,9 +70,9 @@ def _load_all_trails() -> List[Dict]:
     for p in sorted(REASONING_DIR.glob("*.json")):
         if p.suffix == ".json" and not p.name.endswith(".tmp"):
             try:
-                with open(p) as f:
-                    trails.append(json.load(f))
-            except (json.JSONDecodeError, OSError):
+                model = load_validated(p, ReasoningTrail)
+                trails.append(model.model_dump())
+            except Exception:
                 pass
     return trails
 
@@ -149,17 +150,12 @@ def _remove_from_index(trail_id: str):
 def start_trail(context: str, tags: Optional[List[str]] = None) -> Dict:
     """Start a new reasoning trail for a problem we're investigating."""
     trail_id = _generate_id(context)
-    trail = {
-        "trail_id": trail_id,
-        "started": datetime.now().isoformat(),
-        "context": context,
-        "hypotheses": [],
-        "abandoned_approaches": [],
-        "final_solution": None,
-        "breakthrough_trigger": None,
-        "resolved": False,
-        "tags": tags or [],
-    }
+    trail = ReasoningTrail(
+        trail_id=trail_id,
+        started=datetime.now().isoformat(),
+        context=context,
+        tags=tags or [],
+    ).model_dump()
     _save_trail(trail)
     _index_trail(trail)
     return trail
@@ -176,13 +172,13 @@ def add_hypothesis(
     if not trail:
         return {"error": f"Trail {trail_id} not found."}
 
-    h = {
-        "h": hypothesis,
-        "evidence": evidence or [],
-        "confidence": round(confidence, 2),
-        "outcome": None,
-        "added": datetime.now().isoformat(),
-    }
+    h = Hypothesis(
+        h=hypothesis,
+        evidence=evidence or [],
+        confidence=round(confidence, 2),
+        outcome=None,
+        added=datetime.now().isoformat(),
+    ).model_dump()
     trail["hypotheses"].append(h)
     _save_trail(trail)
     _index_trail(trail)
@@ -276,7 +272,6 @@ def search_trails(query: str, n: int = 5) -> List[Dict]:
         trails = []
         ids = results.get("ids", [[]])[0]
         distances = results.get("distances", [[]])[0]
-        metadatas = results.get("metadatas", [[]])[0]
 
         for i, trail_id in enumerate(ids):
             trail = _load_trail(trail_id)

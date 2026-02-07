@@ -7,12 +7,14 @@ No ChromaDB needed (small dataset, direct JSON lookup).
 Storage: ~/.claude/elara-business/ (one JSON per idea)
 """
 
-import json
 import hashlib
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
+
+from daemon.schemas import (
+    BusinessIdea, Competitor, IdeaScore, load_validated, save_validated,
+)
 
 BUSINESS_DIR = Path.home() / ".claude" / "elara-business"
 
@@ -49,19 +51,17 @@ def _load_idea(idea_id: str) -> Optional[Dict]:
     if not path.exists():
         return None
     try:
-        with open(path) as f:
-            return json.load(f)
-    except (json.JSONDecodeError, OSError):
+        model = load_validated(path, BusinessIdea)
+        return model.model_dump()
+    except Exception:
         return None
 
 
 def _save_idea(idea: Dict):
     _ensure_dirs()
+    model = BusinessIdea.model_validate(idea)
     path = _idea_path(idea["idea_id"])
-    tmp = path.with_suffix(".json.tmp")
-    with open(tmp, "w") as f:
-        json.dump(idea, f, indent=2)
-    os.rename(str(tmp), str(path))
+    save_validated(path, model)
 
 
 def _load_all_ideas() -> List[Dict]:
@@ -70,9 +70,9 @@ def _load_all_ideas() -> List[Dict]:
     for p in sorted(BUSINESS_DIR.glob("*.json")):
         if not p.name.endswith(".tmp"):
             try:
-                with open(p) as f:
-                    ideas.append(json.load(f))
-            except (json.JSONDecodeError, OSError):
+                model = load_validated(p, BusinessIdea)
+                ideas.append(model.model_dump())
+            except Exception:
                 pass
     return ideas
 
@@ -96,22 +96,16 @@ def create_idea(
         return {"error": f"Idea '{idea_id}' already exists. Use update_idea() to modify."}
 
     now = datetime.now().isoformat()
-    idea = {
-        "idea_id": idea_id,
-        "name": name,
-        "description": description,
-        "target_audience": target_audience,
-        "your_angle": your_angle,
-        "competitors": [],
-        "score": None,
-        "status": "exploring",
-        "tags": tags or [],
-        "reasoning_trails": [],
-        "outcomes": [],
-        "notes": [],
-        "created": now,
-        "last_touched": now,
-    }
+    idea = BusinessIdea(
+        idea_id=idea_id,
+        name=name,
+        description=description,
+        target_audience=target_audience,
+        your_angle=your_angle,
+        tags=tags or [],
+        created=now,
+        last_touched=now,
+    ).model_dump()
     _save_idea(idea)
     return idea
 
@@ -128,13 +122,13 @@ def add_competitor(
     if not idea:
         return {"error": f"Idea '{idea_id}' not found."}
 
-    competitor = {
-        "name": name,
-        "strengths": strengths,
-        "weaknesses": weaknesses,
-        "url": url,
-        "added": datetime.now().isoformat(),
-    }
+    competitor = Competitor(
+        name=name,
+        strengths=strengths,
+        weaknesses=weaknesses,
+        url=url,
+        added=datetime.now().isoformat(),
+    ).model_dump()
     idea["competitors"].append(competitor)
     idea["last_touched"] = datetime.now().isoformat()
     _save_idea(idea)
@@ -160,8 +154,13 @@ def score_idea(
     for k, v in axes.items():
         axes[k] = max(1, min(5, v))
 
-    axes["total"] = sum(axes.values())
-    idea["score"] = axes
+    total = sum(axes.values())
+    score = IdeaScore(
+        **axes,
+        total=total,
+        scored_at=datetime.now().isoformat(),
+    ).model_dump()
+    idea["score"] = score
     idea["last_touched"] = datetime.now().isoformat()
     _save_idea(idea)
     return idea

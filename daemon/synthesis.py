@@ -8,12 +8,10 @@ When the same idea keeps surfacing across sessions â€” even in different words â
 this system notices and says: "You keep coming back to this. Ready to build?"
 """
 
-import json
 import hashlib
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
 
 try:
     import chromadb
@@ -21,6 +19,8 @@ try:
     CHROMA_AVAILABLE = True
 except ImportError:
     CHROMA_AVAILABLE = False
+
+from daemon.schemas import Synthesis, SynthesisSeed, load_validated, save_validated
 
 SYNTHESIS_DIR = Path.home() / ".claude" / "elara-synthesis"
 SYNTHESIS_DB_DIR = Path.home() / ".claude" / "elara-synthesis-db"
@@ -50,17 +50,15 @@ def _load_synthesis(synthesis_id: str) -> Optional[Dict]:
     path = _synthesis_path(synthesis_id)
     if not path.exists():
         return None
-    with open(path, "r") as f:
-        return json.load(f)
+    model = load_validated(path, Synthesis)
+    return model.model_dump()
 
 
 def _save_synthesis(synth: Dict):
     _ensure_dirs()
+    model = Synthesis.model_validate(synth)
     path = _synthesis_path(synth["synthesis_id"])
-    tmp = path.with_suffix(".json.tmp")
-    with open(tmp, "w") as f:
-        json.dump(synth, f, indent=2)
-    os.rename(str(tmp), str(path))
+    save_validated(path, model)
 
 
 def _load_all_syntheses() -> List[Dict]:
@@ -69,9 +67,9 @@ def _load_all_syntheses() -> List[Dict]:
     for p in sorted(SYNTHESIS_DIR.glob("*.json")):
         if p.suffix == ".json" and not p.name.endswith(".tmp"):
             try:
-                with open(p) as f:
-                    syntheses.append(json.load(f))
-            except (json.JSONDecodeError, OSError):
+                model = load_validated(p, Synthesis)
+                syntheses.append(model.model_dump())
+            except Exception:
                 pass
     return syntheses
 
@@ -157,23 +155,24 @@ def create_synthesis(
     synthesis_id = _generate_id(concept)
     now = datetime.now().isoformat()
 
-    synth = {
-        "synthesis_id": synthesis_id,
-        "concept": concept,
-        "seeds": [
-            {
-                "source": seed_source,
-                "source_id": seed_source_id,
-                "quote": seed_quote,
-                "date": now,
-            }
-        ],
-        "times_surfaced": 1,
-        "first_seen": now,
-        "last_reinforced": now,
-        "status": "dormant",
-        "confidence": 0.3,
-    }
+    seed = SynthesisSeed(
+        source=seed_source,
+        quote=seed_quote,
+        date=now,
+    ).model_dump()
+    # Add source_id as extra field
+    seed["source_id"] = seed_source_id
+
+    synth = Synthesis(
+        synthesis_id=synthesis_id,
+        concept=concept,
+        seeds=[seed],
+        times_surfaced=1,
+        first_seen=now,
+        last_reinforced=now,
+        status="dormant",
+        confidence=0.3,
+    ).model_dump()
 
     _save_synthesis(synth)
     _index_synthesis(synth)
@@ -192,12 +191,14 @@ def add_seed(
         return {"error": f"Synthesis {synthesis_id} not found."}
 
     now = datetime.now().isoformat()
-    synth["seeds"].append({
-        "source": source,
-        "source_id": source_id,
-        "quote": quote,
-        "date": now,
-    })
+    seed = SynthesisSeed(
+        source=source,
+        quote=quote,
+        date=now,
+    ).model_dump()
+    seed["source_id"] = source_id
+
+    synth["seeds"].append(seed)
     synth["times_surfaced"] = len(synth["seeds"])
     synth["last_reinforced"] = now
 
@@ -270,7 +271,6 @@ def check_for_recurring_ideas(exchanges: List[Dict], min_matches: int = 3) -> Li
     if not seed_collection:
         return []
 
-    existing_syntheses = _load_all_syntheses()
     reinforced = []
 
     for exchange in exchanges:

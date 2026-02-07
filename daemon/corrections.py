@@ -12,12 +12,10 @@ v2 upgrades:
 - Dormant detection: corrections that never fire (for blind_spots)
 """
 
-import json
 import hashlib
-import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
 
 try:
     import chromadb
@@ -27,6 +25,7 @@ except ImportError:
     CHROMA_AVAILABLE = False
 
 from daemon.events import bus, Events
+from daemon.schemas import Correction, load_validated_list, save_validated_list
 
 CORRECTIONS_FILE = Path.home() / ".claude" / "elara-corrections.json"
 CORRECTIONS_DB_DIR = Path.home() / ".claude" / "elara-corrections-db"
@@ -38,45 +37,13 @@ MAX_CORRECTIONS = 50
 # ============================================================================
 
 def _load() -> List[Dict]:
-    if not CORRECTIONS_FILE.exists():
-        return []
-    with open(CORRECTIONS_FILE, "r") as f:
-        return json.load(f)
+    models = load_validated_list(CORRECTIONS_FILE, Correction)
+    return [m.model_dump() for m in models]
 
 
 def _save(corrections: List[Dict]):
-    CORRECTIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    tmp_file = CORRECTIONS_FILE.with_suffix(".json.tmp")
-    with open(tmp_file, "w") as f:
-        json.dump(corrections, f, indent=2)
-    os.rename(str(tmp_file), str(CORRECTIONS_FILE))
-
-
-def _ensure_v2_fields(entry: Dict) -> Dict:
-    """Ensure a correction has all v2 fields. Non-destructive."""
-    defaults = {
-        "correction_type": "tendency",
-        "fails_when": None,
-        "fine_when": None,
-        "last_activated": None,
-        "times_surfaced": 0,
-        "times_dismissed": 0,
-    }
-    for key, default in defaults.items():
-        if key not in entry:
-            entry[key] = default
-    return entry
-
-
-def _migrate_if_needed(corrections: List[Dict]) -> bool:
-    """Migrate v1 corrections to v2 schema. Returns True if any changed."""
-    changed = False
-    for entry in corrections:
-        before = set(entry.keys())
-        _ensure_v2_fields(entry)
-        if set(entry.keys()) != before:
-            changed = True
-    return changed
+    models = [Correction.model_validate(c) for c in corrections]
+    save_validated_list(CORRECTIONS_FILE, models)
 
 
 # ============================================================================
@@ -141,7 +108,6 @@ def _sync_to_chroma(corrections: List[Dict]):
     metadatas = []
 
     for entry in corrections:
-        entry = _ensure_v2_fields(entry)
         cid = _correction_id(entry)
         ids.append(cid)
         documents.append(_index_text(entry))
@@ -181,23 +147,19 @@ def add_correction(
     """
     corrections = _load()
 
-    # Migrate existing entries if needed
-    if _migrate_if_needed(corrections):
-        _save(corrections)
-
-    entry = {
-        "id": len(corrections) + 1,
-        "mistake": mistake,
-        "correction": correction,
-        "context": context,
-        "correction_type": correction_type,
-        "fails_when": fails_when,
-        "fine_when": fine_when,
-        "date": datetime.now().isoformat(),
-        "last_activated": None,
-        "times_surfaced": 0,
-        "times_dismissed": 0,
-    }
+    entry = Correction(
+        id=len(corrections) + 1,
+        mistake=mistake,
+        correction=correction,
+        context=context,
+        correction_type=correction_type,
+        fails_when=fails_when,
+        fine_when=fine_when,
+        date=datetime.now().isoformat(),
+        last_activated=None,
+        times_surfaced=0,
+        times_dismissed=0,
+    ).model_dump()
     corrections.append(entry)
 
     # Cap at MAX_CORRECTIONS, remove oldest
@@ -300,7 +262,7 @@ def check_corrections(task_description: str, n_results: int = 3) -> List[Dict]:
         full_entry = None
         for c in corrections:
             if c["id"] == correction_id:
-                full_entry = _ensure_v2_fields(c.copy())
+                full_entry = c.copy()
                 break
 
         if not full_entry:
@@ -321,7 +283,6 @@ def record_activation(correction_id: int, was_relevant: bool = True):
         was_relevant: True if it was useful, False if dismissed
     """
     corrections = _load()
-    _migrate_if_needed(corrections)
 
     for entry in corrections:
         if entry["id"] == correction_id:
@@ -340,13 +301,11 @@ def get_dormant_corrections(days: int = 14) -> List[Dict]:
     been activated in `days` days. Used by blind_spots().
     """
     corrections = _load()
-    _migrate_if_needed(corrections)
 
     dormant = []
     cutoff = datetime.now() - timedelta(days=days)
 
     for entry in corrections:
-        entry = _ensure_v2_fields(entry)
         last = entry.get("last_activated")
 
         if last is None:
@@ -373,7 +332,6 @@ def boot_corrections(n: int = 10) -> str:
     Tendencies always show. Technical only if recently active.
     """
     corrections = _load()
-    _migrate_if_needed(corrections)
 
     # Always show tendencies (behavioral habits)
     tendencies = [c for c in corrections if c.get("correction_type") != "technical"]
@@ -409,9 +367,6 @@ def ensure_index() -> str:
     corrections = _load()
     if not corrections:
         return "No corrections to index."
-
-    if _migrate_if_needed(corrections):
-        _save(corrections)
 
     try:
         _sync_to_chroma(corrections)

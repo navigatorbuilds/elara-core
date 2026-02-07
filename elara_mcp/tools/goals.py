@@ -15,7 +15,7 @@ from daemon.corrections import (
     check_corrections, record_activation,
 )
 from daemon.handoff import (
-    save_handoff, load_handoff, get_carry_forward, validate_handoff,
+    save_handoff, load_handoff, get_carry_forward,
 )
 
 
