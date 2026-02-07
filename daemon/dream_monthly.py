@@ -9,6 +9,8 @@ import json
 from datetime import datetime, timedelta
 from typing import List
 
+from daemon.schemas import atomic_write_json
+
 from daemon.dream_core import (
     _ensure_dirs, _load_status, _save_status, _is_late,
     _gather_episodes, _gather_goals, _gather_mood_journal,
@@ -107,9 +109,9 @@ def monthly_dream() -> dict:
         report["emotional"] = {"error": str(e)}
 
     filepath = MONTHLY_DIR / f"{month_id}.json"
-    filepath.write_text(json.dumps(report, indent=2))
+    atomic_write_json(filepath, report)
     latest = MONTHLY_DIR / "latest.json"
-    latest.write_text(json.dumps(report, indent=2))
+    atomic_write_json(latest, report)
 
     status = _load_status()
     status["last_monthly"] = now.isoformat()

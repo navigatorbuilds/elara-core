@@ -10,7 +10,6 @@ Previously written freeform by the LLM; now validated by Pydantic models.
 """
 
 import json
-import os
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional

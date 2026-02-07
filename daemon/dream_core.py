@@ -9,6 +9,8 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Any
 
+from daemon.schemas import DreamStatus, load_validated, save_validated
+
 # Storage
 DREAMS_DIR = Path.home() / ".claude" / "elara-dreams"
 WEEKLY_DIR = DREAMS_DIR / "weekly"
@@ -26,24 +28,15 @@ def _ensure_dirs():
 
 def _load_status() -> dict:
     """Load dream status (last run timestamps)."""
-    if DREAM_STATUS_FILE.exists():
-        try:
-            return json.loads(DREAM_STATUS_FILE.read_text())
-        except (json.JSONDecodeError, Exception):
-            pass
-    return {
-        "last_weekly": None,
-        "last_monthly": None,
-        "last_threads": None,
-        "weekly_count": 0,
-        "monthly_count": 0,
-    }
+    model = load_validated(DREAM_STATUS_FILE, DreamStatus)
+    return model.model_dump()
 
 
 def _save_status(status: dict):
     """Save dream status."""
     _ensure_dirs()
-    DREAM_STATUS_FILE.write_text(json.dumps(status, indent=2))
+    model = DreamStatus.model_validate(status)
+    save_validated(DREAM_STATUS_FILE, model)
 
 
 # ============================================================================
@@ -234,6 +227,6 @@ def read_latest_dream(dream_type: str = "weekly") -> Optional[dict]:
     if latest.exists():
         try:
             return json.loads(latest.read_text())
-        except (json.JSONDecodeError, Exception):
+        except (json.JSONDecodeError, OSError):
             pass
     return None

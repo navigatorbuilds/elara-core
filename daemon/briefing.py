@@ -14,10 +14,11 @@ Storage:
 import json
 import hashlib
 import logging
-import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, List, Dict, Any
+
+from daemon.schemas import atomic_write_json
 
 try:
     import chromadb
@@ -54,11 +55,7 @@ def _load_feeds() -> List[Dict]:
 
 
 def _save_feeds(feeds: List[Dict]):
-    FEEDS_CONFIG.parent.mkdir(parents=True, exist_ok=True)
-    tmp = FEEDS_CONFIG.with_suffix(".json.tmp")
-    with open(tmp, "w") as f:
-        json.dump(feeds, f, indent=2)
-    os.rename(str(tmp), str(FEEDS_CONFIG))
+    atomic_write_json(FEEDS_CONFIG, feeds)
 
 
 def add_feed(
@@ -395,12 +392,7 @@ def generate_daily_briefing(n: int = 10) -> Dict:
         "items": items,
     }
 
-    # Save atomically
-    BRIEFING_FILE.parent.mkdir(parents=True, exist_ok=True)
-    tmp = BRIEFING_FILE.with_suffix(".json.tmp")
-    with open(tmp, "w") as f:
-        json.dump(briefing, f, indent=2)
-    os.rename(str(tmp), str(BRIEFING_FILE))
+    atomic_write_json(BRIEFING_FILE, briefing)
 
     return briefing
 

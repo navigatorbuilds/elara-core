@@ -2,13 +2,13 @@
 Overwatch search — history search, event detection, LLM filtering, injection writing.
 """
 
-import os
 import json
 import time
 import hashlib
 from typing import List, Dict, Any, Optional
 
 from daemon import llm
+from daemon.schemas import atomic_write_json
 from daemon.injector import format_injection, format_event_injection
 from daemon.overwatch.config import (
     RELEVANCE_THRESHOLD, COOLDOWN_SECONDS, MAX_INJECTIONS_PER_CHECK,
@@ -203,8 +203,6 @@ class SearchMixin:
                 if preview and preview not in topics:
                     topics.append(preview)
             state["injected_topics"] = topics[-50:]
-            tmp = SESSION_STATE_PATH.with_suffix('.tmp')
-            tmp.write_text(json.dumps(state, indent=2))
-            os.rename(str(tmp), str(SESSION_STATE_PATH))
+            atomic_write_json(SESSION_STATE_PATH, state)
         except (json.JSONDecodeError, OSError) as e:
             log.error(f"Session state update error: {e}")

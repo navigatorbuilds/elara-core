@@ -2,7 +2,6 @@
 Overwatch snapshot — session state snapshots for boot continuity.
 """
 
-import os
 import json
 import time
 from datetime import datetime
@@ -11,6 +10,7 @@ from typing import Dict
 from daemon.overwatch.config import (
     SNAPSHOT_PATH, SNAPSHOT_INTERVAL, SNAPSHOT_MIN_EXCHANGES, log,
 )
+from daemon.schemas import atomic_write_json
 
 
 class SnapshotMixin:
@@ -46,9 +46,7 @@ class SnapshotMixin:
         }
 
         try:
-            tmp = SNAPSHOT_PATH.with_suffix(".tmp")
-            tmp.write_text(json.dumps(snapshot, indent=2))
-            os.rename(str(tmp), str(SNAPSHOT_PATH))
+            atomic_write_json(SNAPSHOT_PATH, snapshot)
             log.info(f"Snapshot written ({self.exchange_counter} exchanges)")
         except OSError as e:
             log.error(f"Snapshot write error: {e}")

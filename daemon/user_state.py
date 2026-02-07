@@ -8,10 +8,11 @@ tone and response style. Outputs confidence scores, not diagnoses.
 """
 
 import json
-import os
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, Tuple, Optional
+
+from daemon.schemas import atomic_write_json
 
 USER_STATE_FILE = Path.home() / ".claude" / "elara-user-state.json"
 
@@ -373,10 +374,7 @@ def infer_user_state() -> dict:
     }
 
     # Save to file for cheap reads
-    USER_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    tmp = USER_STATE_FILE.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(result, indent=2))
-    os.rename(str(tmp), str(USER_STATE_FILE))
+    atomic_write_json(USER_STATE_FILE, result)
 
     return result
 

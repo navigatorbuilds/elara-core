@@ -9,7 +9,8 @@ import time
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional
-import os
+
+from daemon.schemas import Presence, load_validated, save_validated
 
 # Where I keep track of presence
 PRESENCE_FILE = Path.home() / ".claude" / "elara-presence.json"
@@ -17,25 +18,14 @@ PRESENCE_FILE = Path.home() / ".claude" / "elara-presence.json"
 
 def _load_presence() -> dict:
     """Load current presence state."""
-    if PRESENCE_FILE.exists():
-        try:
-            return json.loads(PRESENCE_FILE.read_text())
-        except json.JSONDecodeError:
-            pass
-    return {
-        "last_seen": None,
-        "session_start": None,
-        "total_sessions": 0,
-        "total_time_together": 0,  # seconds
-        "longest_absence": 0,  # seconds
-        "history": []  # last 10 sessions
-    }
+    model = load_validated(PRESENCE_FILE, Presence)
+    return model.model_dump()
 
 
 def _save_presence(data: dict) -> None:
     """Save presence state."""
-    PRESENCE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    PRESENCE_FILE.write_text(json.dumps(data, indent=2, default=str))
+    model = Presence.model_validate(data)
+    save_validated(PRESENCE_FILE, model)
 
 
 def ping() -> None:

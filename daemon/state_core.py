@@ -13,6 +13,8 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
 
+from daemon.schemas import atomic_write_json
+
 from daemon.emotions import get_primary_emotion
 
 STATE_FILE = Path.home() / ".claude" / "elara-state.json"
@@ -148,11 +150,8 @@ def _load_state() -> dict:
 
 def _save_state(data: dict) -> None:
     """Save emotional state via atomic rename (write .tmp then rename)."""
-    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     data["last_update"] = datetime.now().isoformat()
-    tmp_file = STATE_FILE.with_suffix(".json.tmp")
-    tmp_file.write_text(json.dumps(data, indent=2))
-    os.rename(str(tmp_file), str(STATE_FILE))
+    atomic_write_json(STATE_FILE, data)
 
 
 def _apply_time_decay(state: dict) -> dict:

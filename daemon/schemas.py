@@ -304,13 +304,12 @@ class Synthesis(ElaraModel):
 
 class Presence(ElaraModel):
     """Presence state: ~/.claude/elara-presence.json"""
-    is_present: bool = False
-    last_ping: Optional[str] = None
-    mode: str = "unknown"
-    idle_seconds: int = 0
+    last_seen: Optional[str] = None
     session_start: Optional[str] = None
     total_sessions: int = 0
-    total_minutes: float = 0
+    total_time_together: float = 0
+    longest_absence: float = 0
+    history: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class ContextConfig(ElaraModel):
@@ -321,9 +320,10 @@ class ContextConfig(ElaraModel):
 class Context(ElaraModel):
     """Quick context: ~/.claude/elara-context.json"""
     topic: Optional[str] = None
-    note: Optional[str] = None
+    last_exchange: Optional[str] = None
+    task_in_progress: Optional[str] = None
+    updated: Optional[str] = None
     updated_ts: Optional[int] = None
-    cwd: Optional[str] = None
 
 
 # ============================================================================
@@ -366,6 +366,7 @@ class DreamStatus(ElaraModel):
     last_emotional: Optional[str] = None
     weekly_count: int = 0
     monthly_count: int = 0
+    emotional_count: int = 0
 
 
 # ============================================================================
@@ -496,3 +497,15 @@ def save_validated_list(path: Path, items: List[ElaraModel], atomic: bool = True
         os.rename(str(tmp), str(path))
     else:
         path.write_text(content)
+
+
+def atomic_write_json(path: Path, data: Any, indent: int = 2):
+    """Atomically write a dict/list as JSON (write .tmp, then rename).
+
+    For raw dicts that don't have matching Pydantic schemas.
+    For schema-validated data, use save_validated() instead.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, indent=indent))
+    os.rename(str(tmp), str(path))
