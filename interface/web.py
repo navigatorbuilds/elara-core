@@ -8,12 +8,8 @@ import logging
 from flask import Flask, render_template, jsonify, request, send_from_directory
 from functools import wraps
 import os
-import sys
 from pathlib import Path
 from datetime import datetime
-
-# Add parent to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.elara import get_elara
 from senses.system import get_system_info

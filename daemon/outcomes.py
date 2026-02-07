@@ -14,11 +14,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict
 
+from core.paths import get_paths
 from daemon.schemas import Outcome, load_validated, save_validated, ElaraNotFoundError, ElaraValidationError
 
 logger = logging.getLogger("elara.outcomes")
 
-OUTCOMES_DIR = Path.home() / ".claude" / "elara-outcomes"
+OUTCOMES_DIR = get_paths().outcomes_dir
 
 
 # ============================================================================

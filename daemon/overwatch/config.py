@@ -7,14 +7,17 @@ import re
 import logging
 from pathlib import Path
 
+from core.paths import get_paths
+
 # Paths
-PROJECTS_DIR = Path.home() / ".claude" / "projects"
-INJECT_PATH = Path.home() / ".claude" / "elara-overwatch-inject.md"
+_p = get_paths()
+PROJECTS_DIR = _p.claude_projects
+INJECT_PATH = _p.overwatch_inject
 INJECT_TMP_PATH = INJECT_PATH.with_suffix(".tmp")
-PID_PATH = Path.home() / ".claude" / "elara-overwatch.pid"
-LOG_PATH = Path.home() / ".claude" / "elara-overwatch.log"
-SESSION_STATE_PATH = Path.home() / ".claude" / "elara-session-state.json"
-SNAPSHOT_PATH = Path.home() / ".claude" / "elara-session-snapshot.json"
+PID_PATH = _p.overwatch_pid
+LOG_PATH = _p.overwatch_log
+SESSION_STATE_PATH = _p.session_state
+SNAPSHOT_PATH = _p.session_snapshot
 
 # Tuning
 POLL_INTERVAL = 2.0          # seconds between file checks
@@ -47,6 +50,7 @@ OVERWATCH_CONTEXT_RE = re.compile(r'<overwatch-context>.*?</overwatch-context>',
 log = logging.getLogger("overwatch")
 log.setLevel(logging.INFO)
 _fmt = logging.Formatter('%(asctime)s [Overwatch] %(message)s')
+LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
 _fh = logging.FileHandler(LOG_PATH)
 _fh.setFormatter(_fmt)
 log.addHandler(_fh)

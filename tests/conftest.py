@@ -1,9 +1,15 @@
-"""Test configuration — ensure project root is on sys.path."""
+"""Test configuration — paths isolation for tests."""
 
-import sys
+import pytest
 from pathlib import Path
 
-# Add project root to sys.path so `from daemon.X import Y` works
-PROJECT_ROOT = Path(__file__).parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+from core.paths import configure, reset
+
+
+@pytest.fixture(autouse=True)
+def isolated_paths(tmp_path):
+    """Route all Elara data to a temp directory for test isolation."""
+    paths = configure(tmp_path)
+    paths.ensure_dirs()
+    yield paths
+    reset()

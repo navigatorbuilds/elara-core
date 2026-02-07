@@ -10,9 +10,11 @@ from pathlib import Path
 from datetime import datetime
 from typing import List
 
+from core.paths import get_paths
+
 logger = logging.getLogger("elara.awareness.blind_spots")
 
-BLIND_SPOTS_FILE = Path.home() / ".claude" / "elara-blind-spots.json"
+BLIND_SPOTS_FILE = get_paths().blind_spots_file
 
 
 def blind_spots() -> dict:

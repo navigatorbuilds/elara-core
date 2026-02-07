@@ -5,13 +5,9 @@ This is me.
 """
 
 import logging
-import sys
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any
-
-# Add parent to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from daemon.presence import (
     ping as presence_ping,

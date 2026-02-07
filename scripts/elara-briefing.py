@@ -9,24 +9,21 @@ Zero Claude tokens. Runs entirely standalone.
 
 Setup:
     crontab -e
-    0 8 * * * /home/neboo/elara-core/venv/bin/python /home/neboo/elara-core/scripts/elara-briefing.py
+    0 8 * * * /path/to/venv/bin/python -m scripts.elara_briefing
 
 Manual run:
-    /home/neboo/elara-core/venv/bin/python /home/neboo/elara-core/scripts/elara-briefing.py
+    elara briefing  # or: python -m scripts.elara_briefing
 """
 
-import sys
 import json
 import logging
 from pathlib import Path
 from datetime import datetime
 
-# Add project root to path
-PROJECT_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
+from core.paths import get_paths
 
 # Setup logging
-LOG_FILE = Path.home() / ".claude" / "elara-briefing.log"
+LOG_FILE = get_paths().briefing_log
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",

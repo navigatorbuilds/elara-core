@@ -6,10 +6,11 @@ import json
 from pathlib import Path
 from datetime import datetime, timedelta
 
+from core.paths import get_paths
 from memory.episodic.core import LLM_AVAILABLE
 
 
-ARCHIVE_FILE = Path.home() / ".claude" / "elara-episodes-archive.jsonl"
+ARCHIVE_FILE = get_paths().episodes_archive
 
 
 class CompressionMixin:

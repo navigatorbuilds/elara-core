@@ -1,7 +1,7 @@
 #!/bin/bash
 # Called when session ends - records session stats and saves context
-cd /home/neboo/elara-core
-source venv/bin/activate
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$SCRIPT_DIR"
 
 # End presence session
 python -c "from daemon.presence import end_session; end_session()" 2>/dev/null &

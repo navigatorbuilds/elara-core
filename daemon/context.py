@@ -16,14 +16,16 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any
 
+from core.paths import get_paths
 from daemon.schemas import (
     Context, ContextConfig, load_validated, save_validated,
 )
 
 logger = logging.getLogger("elara.context")
 
-CONTEXT_FILE = Path.home() / ".claude" / "elara-context.json"
-CONFIG_FILE = Path.home() / ".claude" / "elara-context-config.json"
+_p = get_paths()
+CONTEXT_FILE = _p.context_file
+CONFIG_FILE = _p.context_config
 
 
 def is_enabled() -> bool:

@@ -10,9 +10,11 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional
 
+from core.paths import get_paths
+
 logger = logging.getLogger("elara.awareness.intention")
 
-INTENTION_FILE = Path.home() / ".claude" / "elara-intention.json"
+INTENTION_FILE = get_paths().intention_file
 
 
 def set_intention(what: str, check_previous: bool = True) -> dict:

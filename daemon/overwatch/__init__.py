@@ -14,13 +14,10 @@ Split into mixins:
 
 import os
 import json
-import sys
 import time
 import signal
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from memory.conversations import get_conversations, ConversationMemory
 from daemon.overwatch.config import (

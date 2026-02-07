@@ -1,14 +1,13 @@
 """Shared FastMCP application instance."""
 
 import logging
-import sys
 from pathlib import Path
 
-# Add elara-core to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+from core.paths import get_paths
 
 # Central logging config — all elara.* loggers route here
-_log_path = Path.home() / ".claude" / "elara-daemon.log"
+_log_path = get_paths().daemon_log
+_log_path.parent.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s %(name)s %(levelname)s %(message)s",

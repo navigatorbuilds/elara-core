@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
+from core.paths import get_paths
 from daemon.schemas import atomic_write_json
 
 try:
@@ -30,9 +31,10 @@ except ImportError:
 logger = logging.getLogger("elara.briefing")
 
 # Paths
-FEEDS_CONFIG = Path.home() / ".claude" / "elara-feeds.json"
-BRIEFING_DB_DIR = Path.home() / ".claude" / "elara-briefing-db"
-BRIEFING_FILE = Path.home() / ".claude" / "elara-briefing.json"
+_p = get_paths()
+FEEDS_CONFIG = _p.feeds_config
+BRIEFING_DB_DIR = _p.briefing_db
+BRIEFING_FILE = _p.briefing_file
 
 # Defaults
 MAX_ITEMS_PER_FEED = 20

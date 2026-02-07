@@ -40,9 +40,11 @@ try:
 except ImportError:
     EMOTIONS_AVAILABLE = False
 
+from core.paths import get_paths
+
 logger = logging.getLogger("elara.memory.vector")
 
-MEMORY_DIR = Path.home() / ".claude" / "elara-memory-db"
+MEMORY_DIR = get_paths().memory_db
 
 
 class VectorMemory:

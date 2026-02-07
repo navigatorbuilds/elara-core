@@ -27,9 +27,12 @@ try:
 except ImportError:
     LLM_AVAILABLE = False
 
-EPISODES_DIR = Path.home() / ".claude" / "elara-episodes"
+from core.paths import get_paths
+
+_p = get_paths()
+EPISODES_DIR = _p.episodes_dir
 EPISODES_INDEX = EPISODES_DIR / "index.json"
-CHROMA_DIR = Path.home() / ".claude" / "elara-episodes-db"
+CHROMA_DIR = _p.episodes_db
 
 
 class CoreMixin:

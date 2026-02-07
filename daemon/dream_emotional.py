@@ -56,7 +56,8 @@ def _gather_imprint_data() -> dict:
 
 def _read_us_md() -> dict:
     """Parse us.md for emotional analysis."""
-    us_file = Path.home() / ".claude" / "us.md"
+    from core.paths import get_paths
+    us_file = get_paths().us_file
     if not us_file.exists():
         return {"exists": False, "entries": 0}
 

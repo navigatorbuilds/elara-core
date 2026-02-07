@@ -5,10 +5,11 @@ __pycache__/
 *.pyo
 *.egg-info/
 .eggs/
+dist/
+build/
 
 # Environment
 .env
-*.log
 
 # IDE
 .vscode/
@@ -18,5 +19,15 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Elara state (lives in ~/.claude/, not repo)
+# Elara data (lives in ~/.elara/ or ~/.claude/, not repo)
 *.json
+*.jsonl
+!pyproject.toml
+
+# Logs
+*.log
+
+# Personal (do not ship)
+claude-config/
+windows/
+docs/

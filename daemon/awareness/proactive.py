@@ -11,9 +11,11 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, List
 
+from core.paths import get_paths
+
 logger = logging.getLogger("elara.awareness.proactive")
 
-PROACTIVE_SESSION_FILE = Path.home() / ".claude" / "elara-proactive-session.json"
+PROACTIVE_SESSION_FILE = get_paths().proactive_session
 
 
 def _load_proactive_session() -> dict:
