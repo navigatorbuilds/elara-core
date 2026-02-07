@@ -551,25 +551,20 @@ class Overwatch:
                 "assistant": ex["assistant_text"][:300],
             })
 
-        # Ask Ollama for continuation (what we were mid-thought on)
+        # Ask LLM for continuation (what we were mid-thought on)
         continuation = llm.query(
-            "You are reading the last few exchanges of a work session between a developer "
-            "and his AI partner. What were they working on and what was the next step? "
-            "Write 1-2 sentences as if you're picking up the conversation. Start with "
-            "what they were doing, end with what's next. No greetings, no fluff.\n\n"
+            "What were they working on? 1-2 sentences, no greeting.\n\n"
             f"{context}",
             temperature=0.3,
-            max_tokens=128,
+            max_tokens=50,
         )
 
-        # Ask Ollama for greeting hint (session summary for fresh boots)
+        # Ask LLM for greeting hint (session summary for fresh boots)
         greeting_hint = llm.query(
-            "Summarize this work session in one casual sentence. What got done? "
-            "Write it like a colleague catching someone up, not a report. "
-            "Example: 'Shipped the Ollama integration, all reviewer items done now.'\n\n"
+            "One casual sentence: what got done this session?\n\n"
             f"{context}",
             temperature=0.4,
-            max_tokens=64,
+            max_tokens=30,
         )
 
         snapshot = {
