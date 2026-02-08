@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // BOOT</title>
+    <meta name="description" content="Elara Core boot sequence. Persistent memory for AI assistants.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* CRT scanline overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.1) 4px
+            );
+        }
+
+        /* CRT vignette */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9998;
+            background: radial-gradient(
+                ellipse at center,
+                transparent 50%,
+                rgba(0, 0, 0, 0.4) 100%
+            );
+        }
+
+        /* CRT flicker */
+        @keyframes flicker {
+            0%   { opacity: 1; }
+            3%   { opacity: 0.95; }
+            6%   { opacity: 1; }
+            7%   { opacity: 0.9; }
+            8%   { opacity: 1; }
+            50%  { opacity: 1; }
+            51%  { opacity: 0.92; }
+            52%  { opacity: 1; }
+            89%  { opacity: 1; }
+            90%  { opacity: 0.96; }
+            91%  { opacity: 1; }
+            92%  { opacity: 0.88; }
+            93%  { opacity: 1; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes blink-cursor {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(0, 255, 65, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(0, 255, 65, 0.5), 0 0 50px rgba(0, 255, 65, 0.15); }
+        }
+
+        @keyframes glitch-in {
+            0%   { text-shadow: 2px 0 var(--red), -2px 0 var(--cyan); transform: skew(-1deg); }
+            20%  { text-shadow: -2px 0 var(--red), 2px 0 var(--cyan); transform: skew(0.5deg); }
+            40%  { text-shadow: 2px 1px var(--red), -2px -1px var(--cyan); transform: skew(-0.5deg); }
+            60%  { text-shadow: -1px 0 var(--red), 1px 0 var(--cyan); transform: skew(0.3deg); }
+            80%  { text-shadow: 1px 0 var(--red), -1px 0 var(--cyan); transform: skew(0deg); }
+            100% { text-shadow: 0 0 var(--red), 0 0 var(--cyan); transform: skew(0deg); }
+        }
+
+        @keyframes fade-in-up {
+            0%   { opacity: 0; transform: translateY(12px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes glow-breathe {
+            0%, 100% { text-shadow: 0 0 10px rgba(0, 255, 65, 0.4); }
+            50% { text-shadow: 0 0 25px rgba(0, 255, 65, 0.7), 0 0 50px rgba(0, 255, 65, 0.2); }
+        }
+
+        .terminal-wrapper {
+            animation: flicker 6s infinite;
+            width: 100%;
+            max-width: 680px;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .terminal-output {
+            font-size: 15px;
+            line-height: 1.7;
+            white-space: pre;
+            min-height: 460px;
+        }
+
+        .line {
+            opacity: 0;
+            display: block;
+        }
+
+        .line.visible {
+            opacity: 1;
+        }
+
+        .line.typing {
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid var(--green);
+            animation: blink-cursor 0.7s step-end infinite;
+        }
+
+        .line.done {
+            border-right: none;
+        }
+
+        .prompt { color: var(--text); }
+        .cmd { color: var(--amber); }
+        .ok { color: var(--green); }
+        .label { color: var(--text-dim); }
+        .status { color: var(--green-dim); }
+        .box { color: var(--green); }
+        .box-title {
+            color: var(--green);
+            text-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
+        }
+        .boot { color: var(--cyan); }
+        .val { color: var(--amber); }
+        .ready { color: var(--green); font-weight: bold; }
+        .dim { color: var(--text-dim); }
+        .accent { color: var(--red); }
+
+        /* Progress bar container */
+        .progress-wrap {
+            opacity: 0;
+            display: block;
+            height: 1.7em;
+        }
+
+        .progress-wrap.visible {
+            opacity: 1;
+        }
+
+        .progress-bar-track {
+            display: inline;
+            color: var(--green-dim);
+        }
+
+        .progress-pct {
+            color: var(--green);
+        }
+
+        /* Enter button */
+        .enter-area {
+            text-align: center;
+            margin-top: 40px;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .enter-area.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .btn-enter {
+            display: inline-block;
+            padding: 14px 48px;
+            background: transparent;
+            color: var(--green);
+            border: 2px solid var(--green);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            animation: pulse-glow 2.5s infinite;
+        }
+
+        .btn-enter:hover {
+            background: var(--green);
+            color: var(--bg);
+            box-shadow: 0 0 40px rgba(0, 255, 65, 0.5), inset 0 0 30px rgba(0, 255, 65, 0.1);
+            letter-spacing: 10px;
+        }
+
+        .enter-hint {
+            margin-top: 12px;
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+        }
+
+        /* Skip link */
+        .skip-link {
+            position: fixed;
+            top: 20px;
+            right: 24px;
+            z-index: 100;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.4;
+            transition: all 0.2s;
+        }
+
+        .skip-link:hover {
+            opacity: 1;
+            color: var(--green-dim);
+            text-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+        }
+
+        /* Screen power-on effect */
+        @keyframes power-on {
+            0%   { filter: brightness(0); transform: scaleY(0.005) scaleX(0.3); }
+            20%  { filter: brightness(0.5); transform: scaleY(0.005) scaleX(1); }
+            40%  { filter: brightness(1); transform: scaleY(1) scaleX(1); }
+            60%  { filter: brightness(1.2); }
+            80%  { filter: brightness(1); }
+            100% { filter: brightness(1); }
+        }
+
+        .power-on {
+            animation: power-on 0.8s ease-out forwards;
+        }
+
+        /* Audio click (visual feedback) */
+        @keyframes scanline-pass {
+            0%   { top: -4px; }
+            100% { top: 100%; }
+        }
+
+        .scanline-sweep {
+            position: fixed;
+            top: -4px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(
+                180deg,
+                transparent,
+                rgba(0, 255, 65, 0.15),
+                transparent
+            );
+            z-index: 9997;
+            pointer-events: none;
+            animation: scanline-pass 4s linear infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .terminal-output {
+                font-size: 11px;
+                line-height: 1.5;
+            }
+            .terminal-wrapper {
+                padding: 16px;
+            }
+            .btn-enter {
+                padding: 12px 32px;
+                font-size: 12px;
+                letter-spacing: 4px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .terminal-output {
+                font-size: 9.5px;
+                line-height: 1.4;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scanline-sweep"></div>
+
+    <a href="/" class="skip-link">skip >></a>
+
+    <div class="terminal-wrapper power-on">
+        <div class="terminal-output" id="terminal"></div>
+        <div class="enter-area" id="enterArea">
+            <a href="/" class="btn-enter">ENTER</a>
+            <div class="enter-hint">press enter or click to proceed</div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        const terminal = document.getElementById('terminal');
+        const enterArea = document.getElementById('enterArea');
+
+        // Sequence definition
+        // type: 'type' = typewriter, 'instant' = appear instantly, 'progress' = animated bar, 'pause' = delay only
+        const sequence = [
+            { type: 'type',    text: '$ elara serve',                                         style: 'prompt-cmd', speed: 60,  delay: 600 },
+            { type: 'progress', delay: 200 },
+            { type: 'pause',   delay: 300 },
+            { type: 'instant', text: '',                                                      delay: 100 },
+            { type: 'instant', text: '  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557', style: 'box', delay: 40 },
+            { type: 'instant', text: '  \u2551          E L A R A   C O R E          \u2551', style: 'box-title', delay: 40, glitch: true },
+            { type: 'instant', text: '  \u2551       Persistent AI Presence          \u2551', style: 'box', delay: 40 },
+            { type: 'instant', text: '  \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d', style: 'box', delay: 300 },
+            { type: 'instant', text: '',                                                      delay: 200 },
+            { type: 'type',    text: '[BOOT] Loading state.................. OK',              style: 'boot-line', speed: 20, delay: 150 },
+            { type: 'type',    text: '[BOOT] ChromaDB connected (7 collections)',              style: 'boot-line', speed: 18, delay: 120 },
+            { type: 'type',    text: '[BOOT] 70 memories indexed',                            style: 'boot-line', speed: 22, delay: 100 },
+            { type: 'type',    text: '[BOOT] 1,080 conversations tracked',                    style: 'boot-line', speed: 20, delay: 100 },
+            { type: 'type',    text: '[BOOT] Mood: neutral-warm (valence: 0.6)',               style: 'boot-line', speed: 18, delay: 100 },
+            { type: 'type',    text: '[BOOT] 3 corrections loaded',                           style: 'boot-line', speed: 25, delay: 100 },
+            { type: 'type',    text: '[BOOT] Overwatch daemon: ACTIVE',                       style: 'boot-line', speed: 22, delay: 400 },
+            { type: 'instant', text: '',                                                      delay: 300 },
+            { type: 'type',    text: '> Ready. 34 tools across 11 modules.',                  style: 'ready-line', speed: 30, delay: 200 },
+            { type: 'type',    text: '> Type something. I\'ll remember.',                     style: 'ready-line', speed: 35, delay: 0 },
+        ];
+
+        // Render helpers
+        function createLine(text, style) {
+            const span = document.createElement('span');
+            span.className = 'line';
+
+            if (style === 'prompt-cmd') {
+                span.innerHTML = '<span class="prompt">$ </span><span class="cmd">elara serve</span>';
+            } else if (style === 'boot-line') {
+                // Color the [BOOT] cyan, dots dim, OK/value green
+                const colored = text
+                    .replace(/^\[BOOT\]/, '<span class="boot">[BOOT]</span>')
+                    .replace(/\.{2,}/g, '<span class="dim">$&</span>')
+                    .replace(/OK$/, '<span class="ok">OK</span>')
+                    .replace(/ACTIVE$/, '<span class="accent">ACTIVE</span>')
+                    .replace(/\(([^)]+)\)/g, '(<span class="val">$1</span>)')
+                    ;
+                span.innerHTML = colored;
+            } else if (style === 'ready-line') {
+                const colored = text
+                    .replace(/^>/, '<span class="accent">></span>')
+                    .replace(/34 tools across 11 modules\./, '<span class="ready">34 tools across 11 modules.</span>')
+                    .replace(/I'll remember\./, '<span class="ready">I\'ll remember.</span>')
+                    ;
+                span.innerHTML = colored;
+            } else if (style === 'box-title') {
+                span.className = 'line box-title';
+                span.textContent = text;
+            } else if (style === 'box') {
+                span.className = 'line box';
+                span.textContent = text;
+            } else {
+                span.textContent = text;
+            }
+
+            return span;
+        }
+
+        // Typewriter effect
+        function typewrite(el, fullHTML, speed) {
+            return new Promise(resolve => {
+                // We type character by character over the text content
+                // but we need to preserve HTML. Strategy: render full HTML hidden,
+                // then reveal character by character using a clipping approach.
+
+                // Simple approach: get the text content length, reveal incrementally
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = fullHTML;
+                const fullText = tempDiv.textContent;
+                const totalChars = fullText.length;
+
+                el.innerHTML = '';
+                el.classList.add('visible', 'typing');
+
+                let charIndex = 0;
+
+                function tick() {
+                    charIndex++;
+                    // Map charIndex to the HTML - find position in HTML that corresponds to charIndex visible chars
+                    el.innerHTML = clipHTML(fullHTML, charIndex);
+
+                    if (charIndex >= totalChars) {
+                        el.classList.remove('typing');
+                        el.classList.add('done');
+                        resolve();
+                    } else {
+                        // Vary speed slightly for organic feel
+                        const jitter = speed * (0.6 + Math.random() * 0.8);
+                        setTimeout(tick, jitter);
+                    }
+                }
+
+                setTimeout(tick, speed);
+            });
+        }
+
+        // Clip HTML to show only first N visible characters
+        function clipHTML(html, n) {
+            let result = '';
+            let visible = 0;
+            let inTag = false;
+
+            for (let i = 0; i < html.length; i++) {
+                const ch = html[i];
+
+                if (ch === '<') {
+                    inTag = true;
+                    result += ch;
+                } else if (ch === '>') {
+                    inTag = false;
+                    result += ch;
+                } else if (inTag) {
+                    result += ch;
+                } else {
+                    if (visible < n) {
+                        result += ch;
+                        visible++;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        // Progress bar animation
+        function animateProgress() {
+            return new Promise(resolve => {
+                const wrap = document.createElement('span');
+                wrap.className = 'progress-wrap';
+                terminal.appendChild(wrap);
+
+                const totalWidth = 32;
+                let filled = 0;
+
+                function update() {
+                    const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(totalWidth - filled);
+                    const pct = Math.round((filled / totalWidth) * 100);
+                    wrap.innerHTML = '<span class="dim">[</span><span class="ok">' + bar + '</span><span class="dim">]</span> <span class="progress-pct">' + pct + '%</span>';
+                    wrap.classList.add('visible');
+
+                    if (filled < totalWidth) {
+                        // Accelerate near the end, slow in middle
+                        let interval;
+                        if (filled < 5) interval = 40;
+                        else if (filled < 15) interval = 60;
+                        else if (filled < 25) interval = 35;
+                        else interval = 20;
+
+                        // Add some randomness
+                        interval += Math.random() * 30;
+
+                        filled++;
+                        setTimeout(update, interval);
+                    } else {
+                        wrap.innerHTML += '\n';
+                        resolve();
+                    }
+                }
+
+                update();
+            });
+        }
+
+        // Glitch effect on a line
+        function glitchLine(el) {
+            el.style.animation = 'glitch-in 0.4s ease-out forwards';
+        }
+
+        // Main sequence runner
+        async function runSequence() {
+            // Initial power-on delay
+            await sleep(800);
+
+            for (let i = 0; i < sequence.length; i++) {
+                const step = sequence[i];
+
+                if (step.type === 'pause') {
+                    await sleep(step.delay);
+                    continue;
+                }
+
+                if (step.type === 'progress') {
+                    await sleep(step.delay);
+                    await animateProgress();
+                    continue;
+                }
+
+                if (step.type === 'instant') {
+                    const el = createLine(step.text, step.style);
+                    terminal.appendChild(el);
+                    await sleep(step.delay || 50);
+                    el.classList.add('visible');
+                    if (step.glitch) glitchLine(el);
+                    continue;
+                }
+
+                if (step.type === 'type') {
+                    const el = createLine(step.text, step.style);
+                    terminal.appendChild(el);
+                    await sleep(step.delay || 100);
+                    await typewrite(el, el.innerHTML, step.speed);
+                    // Add newline
+                    continue;
+                }
+            }
+
+            // Sequence complete - show enter button
+            await sleep(600);
+            enterArea.classList.add('visible');
+        }
+
+        function sleep(ms) {
+            return new Promise(r => setTimeout(r, ms));
+        }
+
+        // Keyboard shortcut - Enter or Space to proceed
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                window.location.href = '/';
+            }
+        });
+
+        // Start
+        runSequence();
+    })();
+    </script>
+
+</body>
+</html>
