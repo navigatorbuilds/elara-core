@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Python API Reference</title>
+    <meta name="description" content="Python API reference for Elara Core — use the underlying classes directly for programmatic integration.">
+    <meta property="og:title" content="Elara Core — Python API Reference">
+    <meta property="og:description" content="Programmatic access to memory, mood, episodes, corrections, goals, and reasoning.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://elara.navigatorbuilds.com/api.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@NavigatorBuilds">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+            --purple: #c084fc;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .header-nav a {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--green-dark);
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(16px, 3vw, 24px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        .header .count {
+            color: var(--red);
+            font-weight: bold;
+        }
+
+        /* Disclaimer */
+        .disclaimer {
+            background: rgba(255, 176, 0, 0.06);
+            border: 1px solid rgba(255, 176, 0, 0.2);
+            padding: 14px 20px;
+            margin-bottom: 30px;
+            font-size: 13px;
+            color: var(--amber);
+            line-height: 1.6;
+        }
+
+        .disclaimer::before {
+            content: '// ';
+            color: var(--text-dim);
+        }
+
+        /* TOC */
+        .toc {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 20px 24px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            color: var(--amber);
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 6px;
+        }
+
+        .toc a {
+            color: var(--green-dim);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 4px 0;
+            transition: color 0.2s;
+        }
+
+        .toc a:hover { color: var(--green); }
+        .toc a .file { color: var(--text-dim); font-size: 11px; }
+
+        /* Module sections */
+        .module {
+            margin-bottom: 60px;
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .module-icon {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            color: var(--red);
+            background: rgba(255, 0, 64, 0.08);
+            padding: 6px 10px;
+            border: 1px solid rgba(255, 0, 64, 0.2);
+        }
+
+        .module-header h2 {
+            font-family: 'VT323', monospace;
+            font-size: 28px;
+            color: var(--green);
+            letter-spacing: 3px;
+        }
+
+        .module-header .file {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
+        .module-desc {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .module-import {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 10px 16px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: var(--green-dim);
+            overflow-x: auto;
+        }
+
+        .module-import .kw { color: var(--purple); }
+        .module-import .str { color: var(--amber); }
+
+        /* Method cards */
+        .method {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 16px 20px;
+            margin-bottom: 8px;
+            transition: border-color 0.2s;
+        }
+
+        .method:hover {
+            border-color: var(--green-dark);
+        }
+
+        .method-sig {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            color: var(--cyan);
+            margin-bottom: 6px;
+            word-break: break-word;
+        }
+
+        .method-sig .name {
+            color: var(--cyan);
+            font-weight: bold;
+        }
+
+        .method-sig .param {
+            color: var(--text-bright);
+        }
+
+        .method-sig .type {
+            color: var(--purple);
+        }
+
+        .method-sig .default {
+            color: var(--amber);
+        }
+
+        .method-sig::before {
+            content: 'def ';
+            color: var(--purple);
+        }
+
+        .method-desc {
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .method-returns {
+            margin-top: 4px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .method-returns .type {
+            color: var(--purple);
+        }
+
+        /* Code examples */
+        .example {
+            background: #080808;
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--green-dark);
+            padding: 14px 18px;
+            margin: 16px 0 24px 0;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .example-label {
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            color: var(--amber);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .example .comment { color: var(--text-dim); }
+        .example .kw { color: var(--purple); }
+        .example .fn { color: var(--cyan); }
+        .example .str { color: var(--amber); }
+        .example .num { color: var(--red); }
+        .example .var { color: var(--text-bright); }
+
+        /* Param tags */
+        .params {
+            margin-top: 8px;
+            font-size: 12px;
+        }
+
+        .params .param-item {
+            display: inline-block;
+            background: rgba(0, 229, 255, 0.06);
+            border: 1px solid rgba(0, 229, 255, 0.15);
+            padding: 2px 8px;
+            margin: 2px 4px 2px 0;
+            color: var(--cyan);
+        }
+
+        .params .param-item .type {
+            color: var(--purple);
+        }
+
+        /* Section dividers */
+        .section-note {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            padding-left: 4px;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        footer a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--green); }
+
+        @media (max-width: 600px) {
+            .toc-grid { grid-template-columns: 1fr; }
+            .module-header { flex-wrap: wrap; }
+            .module-header .file { margin-left: 0; width: 100%; margin-top: 4px; }
+            .method-sig { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="header-nav">
+            <a href="/">&larr; Back to Elara Core</a>
+            <a href="/architecture.html">ARCH</a>
+            <a href="/tools.html">TOOLS</a>
+            <a href="/quickstart.html">START</a>
+            <a href="/configure.html">CONFIGURE</a>
+            <a href="/personas.html">PERSONAS</a>
+            <a href="/faq.html">FAQ</a>
+            <a href="/roadmap.html">ROADMAP</a>
+            <a href="/changelog.html">CHANGELOG</a>
+            <a href="/status.html">STATUS</a>
+            <a href="/search.html">&#128269;</a>
+        </div>
+        <h1>// PYTHON API</h1>
+        <p>Programmatic access to <span class="count">6</span> core modules. Use the underlying Python classes directly &mdash; no MCP required.</p>
+    </div>
+
+    <div class="disclaimer">
+        API reference is derived from source and may not reflect exact signatures in every release. Always check the source code. Elara Core's internal module layout is <code style="color: var(--amber);">daemon.*</code> and <code style="color: var(--amber);">memory.*</code> &mdash; not a flat namespace.
+    </div>
+
+    <!-- Table of Contents -->
+    <div class="toc">
+        <h2>CLASSES</h2>
+        <div class="toc-grid">
+            <a href="#vectormemory">VectorMemory <span class="file">memory/vector.py</span></a>
+            <a href="#mood">Mood Functions <span class="file">daemon/mood.py</span></a>
+            <a href="#episodes">EpisodicMemory <span class="file">memory/episodic/</span></a>
+            <a href="#corrections">Corrections <span class="file">daemon/corrections.py</span></a>
+            <a href="#goals">Goals <span class="file">daemon/goals.py</span></a>
+            <a href="#reasoning">ReasoningTrails <span class="file">daemon/reasoning.py</span></a>
+        </div>
+    </div>
+
+
+    <!-- ================================================================== -->
+    <!-- VECTOR MEMORY -->
+    <!-- ================================================================== -->
+    <div class="module" id="vectormemory">
+        <div class="module-header">
+            <div class="module-icon">MEM</div>
+            <h2>VectorMemory</h2>
+            <span class="file">memory/vector.py</span>
+        </div>
+
+        <p class="module-desc">
+            Semantic memory store backed by ChromaDB. Memories are vectorized for meaning-based recall, and tagged with emotional context at encoding time. Retrieval supports mood-congruent boosting &mdash; memories encoded during similar emotional states surface first.
+        </p>
+
+        <div class="module-import">
+            <span class="kw">from</span> memory.vector <span class="kw">import</span> VectorMemory, remember, recall
+        </div>
+
+        <p class="section-note">// Class methods</p>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">remember</span>(<span class="param">content</span>: <span class="type">str</span>, <span class="param">memory_type</span>: <span class="type">str</span> = <span class="default">"conversation"</span>, <span class="param">importance</span>: <span class="type">float</span> = <span class="default">0.5</span>, <span class="param">metadata</span>: <span class="type">Optional[Dict]</span> = <span class="default">None</span>, <span class="param">tag_with_emotion</span>: <span class="type">bool</span> = <span class="default">True</span>)</div>
+            <div class="method-desc">Store a memory. Content is vectorized and indexed in ChromaDB. If <code>tag_with_emotion</code> is True, the current emotional state (valence, energy, openness, discrete emotion label) is captured alongside the memory.</div>
+            <div class="method-returns">Returns: <span class="type">str</span> &mdash; Memory ID</div>
+            <div class="params">
+                <span class="param-item">memory_type: <span class="type">"conversation" | "fact" | "moment" | "feeling" | "decision"</span></span>
+                <span class="param-item">importance: <span class="type">0.0 &ndash; 1.0</span></span>
+            </div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">recall</span>(<span class="param">query</span>: <span class="type">str</span>, <span class="param">n_results</span>: <span class="type">int</span> = <span class="default">5</span>, <span class="param">memory_type</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">min_importance</span>: <span class="type">float</span> = <span class="default">0</span>, <span class="param">mood_weight</span>: <span class="type">float</span> = <span class="default">0.3</span>)</div>
+            <div class="method-desc">Search memories by semantic similarity with mood-congruent boosting. <code>mood_weight</code> controls ranking bias: 0 = pure semantic, 1 = heavily mood-biased. Internally fetches 3x results and re-ranks using emotional resonance scores.</div>
+            <div class="method-returns">Returns: <span class="type">List[Dict]</span> &mdash; Memories with <code>relevance</code>, <code>resonance</code>, and <code>combined_score</code> fields</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">recall_by_feeling</span>(<span class="param">feeling</span>: <span class="type">str</span>, <span class="param">n_results</span>: <span class="type">int</span> = <span class="default">5</span>)</div>
+            <div class="method-desc">Recall memories matching a feeling or emotional tone. Uses heavy mood weighting (0.6).</div>
+            <div class="method-returns">Returns: <span class="type">List[Dict]</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">recall_mood_congruent</span>(<span class="param">n_results</span>: <span class="type">int</span> = <span class="default">5</span>)</div>
+            <div class="method-desc">Get memories that match current mood without a specific query. Used for spontaneous recall, nostalgia, or rumination. Ranks purely by emotional resonance.</div>
+            <div class="method-returns">Returns: <span class="type">List[Dict]</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">recall_recent</span>(<span class="param">days</span>: <span class="type">int</span> = <span class="default">7</span>, <span class="param">n_results</span>: <span class="type">int</span> = <span class="default">10</span>)</div>
+            <div class="method-desc">Get recent memories regardless of query, sorted by timestamp.</div>
+            <div class="method-returns">Returns: <span class="type">List[Dict]</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">forget</span>(<span class="param">memory_id</span>: <span class="type">str</span>)</div>
+            <div class="method-desc">Remove a specific memory by ID.</div>
+            <div class="method-returns">Returns: <span class="type">bool</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">count</span>()</div>
+            <div class="method-desc">Total number of stored memories.</div>
+            <div class="method-returns">Returns: <span class="type">int</span></div>
+        </div>
+
+        <div class="example-label">EXAMPLE</div>
+        <div class="example">
+<span class="kw">from</span> memory.vector <span class="kw">import</span> VectorMemory
+
+<span class="comment"># Create instance (uses ELARA_DATA_DIR or ~/.elara)</span>
+<span class="var">mem</span> = VectorMemory()
+
+<span class="comment"># Store a memory</span>
+<span class="var">mid</span> = <span class="var">mem</span>.<span class="fn">remember</span>(
+    <span class="str">"user prefers dark themes across all apps"</span>,
+    memory_type=<span class="str">"fact"</span>,
+    importance=<span class="num">0.8</span>
+)
+
+<span class="comment"># Semantic search with mood-congruent boosting</span>
+<span class="var">results</span> = <span class="var">mem</span>.<span class="fn">recall</span>(<span class="str">"dark theme preference"</span>, n_results=<span class="num">5</span>)
+<span class="kw">for</span> <span class="var">r</span> <span class="kw">in</span> <span class="var">results</span>:
+    <span class="fn">print</span>(f<span class="str">"{r['content'][:60]} (score: {r['combined_score']:.2f})"</span>)
+
+<span class="comment"># Convenience functions (use global singleton)</span>
+<span class="kw">from</span> memory.vector <span class="kw">import</span> remember, recall
+<span class="fn">remember</span>(<span class="str">"shipped v1.0 to production"</span>, memory_type=<span class="str">"moment"</span>, importance=<span class="num">0.9</span>)
+<span class="var">hits</span> = <span class="fn">recall</span>(<span class="str">"production deployment"</span>)
+        </div>
+    </div>
+
+
+    <!-- ================================================================== -->
+    <!-- MOOD -->
+    <!-- ================================================================== -->
+    <div class="module" id="mood">
+        <div class="module-header">
+            <div class="module-icon">MOD</div>
+            <h2>Mood Functions</h2>
+            <span class="file">daemon/mood.py</span>
+        </div>
+
+        <p class="module-desc">
+            Three-dimensional emotional state engine: valence (-1 to 1), energy (0 to 1), openness (0 to 1). Mood decays naturally toward a baseline temperament over time. Supports discrete emotion labels via a circumplex-style vocabulary (36 emotions). Not a class &mdash; uses module-level functions operating on a shared JSON state file.
+        </p>
+
+        <div class="module-import">
+            <span class="kw">from</span> daemon.mood <span class="kw">import</span> get_mood, adjust_mood, create_imprint, describe_mood
+        </div>
+
+        <p class="section-note">// Core functions</p>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">get_mood</span>()</div>
+            <div class="method-desc">Get current mood state with time decay applied. Returns the raw numerical values.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; <code>{"valence": float, "energy": float, "openness": float}</code></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">adjust_mood</span>(<span class="param">valence_delta</span>: <span class="type">float</span> = <span class="default">0</span>, <span class="param">energy_delta</span>: <span class="type">float</span> = <span class="default">0</span>, <span class="param">openness_delta</span>: <span class="type">float</span> = <span class="default">0</span>, <span class="param">reason</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">create_imprint</span>: <span class="type">bool</span> = <span class="default">False</span>, <span class="param">imprint_strength</span>: <span class="type">float</span> = <span class="default">0.5</span>)</div>
+            <div class="method-desc">Shift mood by deltas. Use small values (0.05 &ndash; 0.2). Optionally create an emotional imprint at the same time. The reason is logged to the mood journal and stored as emotional residue.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; Updated mood state</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">set_mood</span>(<span class="param">valence</span>: <span class="type">Optional[float]</span> = <span class="default">None</span>, <span class="param">energy</span>: <span class="type">Optional[float]</span> = <span class="default">None</span>, <span class="param">openness</span>: <span class="type">Optional[float]</span> = <span class="default">None</span>, <span class="param">reason</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>)</div>
+            <div class="method-desc">Set mood to absolute values. None values keep current. Used by personality mode switching.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; Updated mood state</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">create_imprint</span>(<span class="param">feeling</span>: <span class="type">str</span>, <span class="param">strength</span>: <span class="type">float</span> = <span class="default">0.7</span>, <span class="param">imprint_type</span>: <span class="type">str</span> = <span class="default">"moment"</span>)</div>
+            <div class="method-desc">Create an emotional imprint &mdash; a persistent feeling that outlasts session details. Imprints decay slowly and color future interactions. Up to 20 are retained.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; The imprint record</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">describe_mood</span>()</div>
+            <div class="method-desc">Human-readable mood description using the emotion vocabulary. Returns natural language like <em>"Feeling warm and present. Calm energy, very open."</em></div>
+            <div class="method-returns">Returns: <span class="type">str</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">get_current_emotions</span>()</div>
+            <div class="method-desc">Full emotion readout: primary emotion, secondary, blend, quadrant, and any imprints being carried.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; <code>{"primary", "secondary", "blend", "quadrant", "emotions", "raw", ...}</code></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">get_session_arc</span>()</div>
+            <div class="method-desc">Analyze the emotional arc of the current session. Classifies the trajectory as upswing, slow_drain, recovery, crash, rollercoaster, steady, or flat.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; <code>{"pattern", "description", "start_emotion", "end_emotion", "valence_delta", ...}</code></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">get_imprints</span>(<span class="param">min_strength</span>: <span class="type">float</span> = <span class="default">0.2</span>)</div>
+            <div class="method-desc">Get active emotional imprints above a strength threshold.</div>
+            <div class="method-returns">Returns: <span class="type">List[dict]</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">get_full_state</span>()</div>
+            <div class="method-desc">Complete emotional state including mood, imprints, residue, flags, consolidation, and allostatic load.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span></div>
+        </div>
+
+        <div class="example-label">EXAMPLE</div>
+        <div class="example">
+<span class="kw">from</span> daemon.mood <span class="kw">import</span> get_mood, adjust_mood, create_imprint, describe_mood
+
+<span class="comment"># Check current mood</span>
+<span class="var">mood</span> = <span class="fn">get_mood</span>()
+<span class="fn">print</span>(f<span class="str">"Valence: {mood['valence']}, Energy: {mood['energy']}"</span>)
+
+<span class="comment"># Shift mood after good progress</span>
+<span class="fn">adjust_mood</span>(valence_delta=<span class="num">0.1</span>, energy_delta=<span class="num">0.05</span>, reason=<span class="str">"shipped the feature"</span>)
+
+<span class="comment"># Human-readable description</span>
+<span class="fn">print</span>(<span class="fn">describe_mood</span>())
+<span class="comment"># "Feeling content and warm. Steady energy, open."</span>
+
+<span class="comment"># Create a lasting imprint</span>
+<span class="fn">create_imprint</span>(<span class="str">"meaningful late-night debugging session"</span>, strength=<span class="num">0.8</span>)
+
+<span class="comment"># Full emotion readout</span>
+<span class="kw">from</span> daemon.mood <span class="kw">import</span> get_current_emotions
+<span class="var">emo</span> = <span class="fn">get_current_emotions</span>()
+<span class="fn">print</span>(f<span class="str">"{emo['primary']} ({emo['blend']}), quadrant: {emo['quadrant']}"</span>)
+        </div>
+    </div>
+
+
+    <!-- ================================================================== -->
+    <!-- EPISODES -->
+    <!-- ================================================================== -->
+    <div class="module" id="episodes">
+        <div class="module-header">
+            <div class="module-icon">EPI</div>
+            <h2>EpisodicMemory</h2>
+            <span class="file">memory/episodic/</span>
+        </div>
+
+        <p class="module-desc">
+            Rich autobiographical memory for work sessions. Stores episodes with milestones, decisions, mood trajectory, project context, and auto-generated narrative summaries. Built from five mixins: Core, Lifecycle, Retrieval, Threading, and Compression. Episodes are stored as individual JSON files, indexed by date and project, with milestones in ChromaDB for semantic search.
+        </p>
+
+        <div class="module-import">
+            <span class="kw">from</span> memory.episodic <span class="kw">import</span> EpisodicMemory, get_episodic, milestone, decision
+        </div>
+
+        <p class="section-note">// Lifecycle methods</p>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">create_episode</span>(<span class="param">episode_id</span>: <span class="type">str</span>, <span class="param">session_type</span>: <span class="type">str</span>, <span class="param">started</span>: <span class="type">str</span>, <span class="param">projects</span>: <span class="type">List[str]</span> = <span class="default">None</span>, <span class="param">mood_at_start</span>: <span class="type">dict</span> = <span class="default">None</span>, <span class="param">continues_from</span>: <span class="type">str</span> = <span class="default">None</span>)</div>
+            <div class="method-desc">Create a new episode record. Automatically chains to previous episode and indexes by date and project.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; The full episode record</div>
+            <div class="params">
+                <span class="param-item">session_type: <span class="type">"work" | "drift" | "mixed"</span></span>
+            </div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">add_milestone</span>(<span class="param">episode_id</span>: <span class="type">str</span>, <span class="param">event</span>: <span class="type">str</span>, <span class="param">milestone_type</span>: <span class="type">str</span> = <span class="default">"event"</span>, <span class="param">importance</span>: <span class="type">float</span> = <span class="default">0.5</span>, <span class="param">metadata</span>: <span class="type">dict</span> = <span class="default">None</span>)</div>
+            <div class="method-desc">Add a milestone to an episode. Automatically tagged with current mood and indexed in ChromaDB for semantic search.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; The milestone record</div>
+            <div class="params">
+                <span class="param-item">milestone_type: <span class="type">"event" | "decision" | "milestone" | "insight" | "error"</span></span>
+            </div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">add_decision</span>(<span class="param">episode_id</span>: <span class="type">str</span>, <span class="param">what</span>: <span class="type">str</span>, <span class="param">why</span>: <span class="type">str</span> = <span class="default">None</span>, <span class="param">alternatives</span>: <span class="type">List[str]</span> = <span class="default">None</span>, <span class="param">confidence</span>: <span class="type">str</span> = <span class="default">"medium"</span>, <span class="param">project</span>: <span class="type">str</span> = <span class="default">None</span>)</div>
+            <div class="method-desc">Record a decision made during the episode. Also creates a high-importance milestone automatically.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; The decision record</div>
+            <div class="params">
+                <span class="param-item">confidence: <span class="type">"low" | "medium" | "high"</span></span>
+            </div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">close_episode</span>(<span class="param">episode_id</span>: <span class="type">str</span>, <span class="param">summary</span>: <span class="type">str</span> = <span class="default">None</span>, <span class="param">narrative</span>: <span class="type">str</span> = <span class="default">None</span>, <span class="param">mood_end</span>: <span class="type">dict</span> = <span class="default">None</span>)</div>
+            <div class="method-desc">Close an episode, finalizing its record. Calculates duration, mood delta, and auto-generates a narrative summary (tries local LLM first, falls back to template).</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; The finalized episode</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">get_episode</span>(<span class="param">episode_id</span>: <span class="type">str</span>)</div>
+            <div class="method-desc">Get a specific episode by ID.</div>
+            <div class="method-returns">Returns: <span class="type">Optional[dict]</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">get_stats</span>()</div>
+            <div class="method-desc">Episodic memory statistics: total episodes, projects tracked, milestone count.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span></div>
+        </div>
+
+        <p class="section-note">// Convenience functions (module-level)</p>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">milestone</span>(<span class="param">event</span>: <span class="type">str</span>, **<span class="param">kwargs</span>)</div>
+            <div class="method-desc">Quick milestone recording for the current active episode. Uses the global singleton.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">decision</span>(<span class="param">what</span>: <span class="type">str</span>, **<span class="param">kwargs</span>)</div>
+            <div class="method-desc">Quick decision recording for the current active episode.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span></div>
+        </div>
+
+        <div class="example-label">EXAMPLE</div>
+        <div class="example">
+<span class="kw">from</span> memory.episodic <span class="kw">import</span> EpisodicMemory, milestone, decision
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+
+<span class="comment"># Create instance</span>
+<span class="var">ep</span> = EpisodicMemory()
+
+<span class="comment"># Start an episode</span>
+<span class="var">episode_id</span> = datetime.<span class="fn">now</span>().<span class="fn">strftime</span>(<span class="str">"%Y-%m-%d-%H%M"</span>)
+<span class="var">ep</span>.<span class="fn">create_episode</span>(
+    episode_id=<span class="var">episode_id</span>,
+    session_type=<span class="str">"work"</span>,
+    started=datetime.<span class="fn">now</span>().<span class="fn">isoformat</span>(),
+    projects=[<span class="str">"elara-core"</span>],
+)
+
+<span class="comment"># Record milestones</span>
+<span class="var">ep</span>.<span class="fn">add_milestone</span>(<span class="var">episode_id</span>, <span class="str">"Completed API docs page"</span>, importance=<span class="num">0.7</span>)
+
+<span class="comment"># Record a decision</span>
+<span class="var">ep</span>.<span class="fn">add_decision</span>(
+    <span class="var">episode_id</span>,
+    what=<span class="str">"Use module-level functions instead of class for mood"</span>,
+    why=<span class="str">"Simpler API, state is file-backed anyway"</span>,
+    confidence=<span class="str">"high"</span>,
+)
+
+<span class="comment"># Close the episode</span>
+<span class="var">result</span> = <span class="var">ep</span>.<span class="fn">close_episode</span>(<span class="var">episode_id</span>, summary=<span class="str">"Built API docs"</span>)
+<span class="fn">print</span>(f<span class="str">"Duration: {result['duration_minutes']}min, mood delta: {result['mood_delta']}"</span>)
+
+<span class="comment"># Quick convenience (auto-uses current episode)</span>
+<span class="fn">milestone</span>(<span class="str">"Fixed the flaky test"</span>, importance=<span class="num">0.6</span>)
+        </div>
+    </div>
+
+
+    <!-- ================================================================== -->
+    <!-- CORRECTIONS -->
+    <!-- ================================================================== -->
+    <div class="module" id="corrections">
+        <div class="module-header">
+            <div class="module-icon">COR</div>
+            <h2>Corrections</h2>
+            <span class="file">daemon/corrections.py</span>
+        </div>
+
+        <p class="module-desc">
+            Learn from mistakes. Corrections never decay &mdash; they're permanent records of behavioral tendencies and technical patterns that should not be repeated. Backed by JSON (source of truth) with ChromaDB semantic indexing for context-aware matching. Before doing similar work, <code>check_corrections()</code> finds relevant warnings.
+        </p>
+
+        <div class="module-import">
+            <span class="kw">from</span> daemon.corrections <span class="kw">import</span> add_correction, check_corrections, list_corrections
+        </div>
+
+        <p class="section-note">// Public functions</p>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">add_correction</span>(<span class="param">mistake</span>: <span class="type">str</span>, <span class="param">correction</span>: <span class="type">str</span>, <span class="param">context</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">correction_type</span>: <span class="type">str</span> = <span class="default">"tendency"</span>, <span class="param">fails_when</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">fine_when</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>)</div>
+            <div class="method-desc">Record a correction. <code>fails_when</code> and <code>fine_when</code> prevent overgeneralization &mdash; the same pattern might be correct in different contexts.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; The correction entry</div>
+            <div class="params">
+                <span class="param-item">correction_type: <span class="type">"tendency" (behavioral) | "technical" (code pattern)</span></span>
+            </div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">check_corrections</span>(<span class="param">task_description</span>: <span class="type">str</span>, <span class="param">n_results</span>: <span class="type">int</span> = <span class="default">3</span>)</div>
+            <div class="method-desc">Semantic search: find corrections relevant to what you're about to do. This is the activation function &mdash; it matches corrections to your current task context, not just keywords. Fails <strong>loud</strong> if ChromaDB is down (returns error info rather than silently skipping).</div>
+            <div class="method-returns">Returns: <span class="type">List[dict]</span> &mdash; Matching corrections with <code>relevance</code> score and <code>fails_when</code>/<code>fine_when</code> conditions</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">list_corrections</span>(<span class="param">n</span>: <span class="type">int</span> = <span class="default">20</span>)</div>
+            <div class="method-desc">Get the most recent corrections.</div>
+            <div class="method-returns">Returns: <span class="type">List[dict]</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">record_activation</span>(<span class="param">correction_id</span>: <span class="type">int</span>, <span class="param">was_relevant</span>: <span class="type">bool</span> = <span class="default">True</span>)</div>
+            <div class="method-desc">Track that a correction was surfaced during work. Updates <code>last_activated</code>, <code>times_surfaced</code>, and <code>times_dismissed</code> counters.</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">get_dormant_corrections</span>(<span class="param">days</span>: <span class="type">int</span> = <span class="default">14</span>)</div>
+            <div class="method-desc">Find corrections that have never been activated or haven't fired in N days. Used by the blind_spots analysis.</div>
+            <div class="method-returns">Returns: <span class="type">List[dict]</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">boot_corrections</span>(<span class="param">n</span>: <span class="type">int</span> = <span class="default">10</span>)</div>
+            <div class="method-desc">Get corrections formatted for boot loading. Tendencies always show; technical corrections only if recently activated (last 7 days).</div>
+            <div class="method-returns">Returns: <span class="type">str</span> &mdash; Formatted list</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">ensure_index</span>()</div>
+            <div class="method-desc">Ensure ChromaDB index is in sync with the JSON file. Call at boot.</div>
+            <div class="method-returns">Returns: <span class="type">str</span> &mdash; Status message</div>
+        </div>
+
+        <div class="example-label">EXAMPLE</div>
+        <div class="example">
+<span class="kw">from</span> daemon.corrections <span class="kw">import</span> add_correction, check_corrections
+
+<span class="comment"># Record a mistake</span>
+<span class="fn">add_correction</span>(
+    mistake=<span class="str">"Used .toList() on Firestore query"</span>,
+    correction=<span class="str">"Use .get() instead for single reads"</span>,
+    context=<span class="str">"HandyBill invoice loading"</span>,
+    correction_type=<span class="str">"technical"</span>,
+    fails_when=<span class="str">"reading a single document by ID"</span>,
+    fine_when=<span class="str">"actually need a list of documents from a collection query"</span>,
+)
+
+<span class="comment"># Check before doing similar work</span>
+<span class="var">warnings</span> = <span class="fn">check_corrections</span>(<span class="str">"Writing a Firestore query to load invoices"</span>)
+<span class="kw">for</span> <span class="var">w</span> <span class="kw">in</span> <span class="var">warnings</span>:
+    <span class="fn">print</span>(f<span class="str">"  {w['mistake']} -> {w['correction']} (relevance: {w['relevance']:.2f})"</span>)
+    <span class="kw">if</span> <span class="var">w</span>.get(<span class="str">"fails_when"</span>):
+        <span class="fn">print</span>(f<span class="str">"    Fails when: {w['fails_when']}"</span>)
+        </div>
+    </div>
+
+
+    <!-- ================================================================== -->
+    <!-- GOALS -->
+    <!-- ================================================================== -->
+    <div class="module" id="goals">
+        <div class="module-header">
+            <div class="module-icon">GOL</div>
+            <h2>Goals</h2>
+            <span class="file">daemon/goals.py</span>
+        </div>
+
+        <p class="module-desc">
+            Persistent goal tracking across sessions. Simple JSON storage, no database. Goals have status (active, stalled, done, dropped), priority (high, medium, low), and optional project association. Checked at boot, with stale detection for goals untouched in 7+ days.
+        </p>
+
+        <div class="module-import">
+            <span class="kw">from</span> daemon.goals <span class="kw">import</span> add_goal, list_goals, update_goal, boot_summary
+        </div>
+
+        <p class="section-note">// Public functions</p>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">add_goal</span>(<span class="param">title</span>: <span class="type">str</span>, <span class="param">project</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">notes</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">priority</span>: <span class="type">str</span> = <span class="default">"medium"</span>)</div>
+            <div class="method-desc">Add a new goal. Automatically assigned an incrementing ID and set to "active" status.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; The goal record</div>
+            <div class="params">
+                <span class="param-item">priority: <span class="type">"high" | "medium" | "low"</span></span>
+            </div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">update_goal</span>(<span class="param">goal_id</span>: <span class="type">int</span>, <span class="param">status</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">notes</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">priority</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">title</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>)</div>
+            <div class="method-desc">Update a goal's status, notes, priority, or title. Automatically touches the <code>last_touched</code> timestamp.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; Updated goal or <code>{"error": "..."}</code></div>
+            <div class="params">
+                <span class="param-item">status: <span class="type">"active" | "stalled" | "done" | "dropped"</span></span>
+            </div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">list_goals</span>(<span class="param">status</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">project</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>)</div>
+            <div class="method-desc">List goals, optionally filtered by status and/or project.</div>
+            <div class="method-returns">Returns: <span class="type">List[dict]</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">get_goal</span>(<span class="param">goal_id</span>: <span class="type">int</span>)</div>
+            <div class="method-desc">Get a single goal by ID.</div>
+            <div class="method-returns">Returns: <span class="type">Optional[dict]</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">stale_goals</span>(<span class="param">days</span>: <span class="type">int</span> = <span class="default">7</span>)</div>
+            <div class="method-desc">Find active goals not touched in N days.</div>
+            <div class="method-returns">Returns: <span class="type">List[dict]</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">touch_goal</span>(<span class="param">goal_id</span>: <span class="type">int</span>)</div>
+            <div class="method-desc">Update a goal's <code>last_touched</code> timestamp without changing anything else.</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">boot_summary</span>()</div>
+            <div class="method-desc">Quick summary for session boot. Shows active goals sorted by priority, stale goals, and recently completed goals.</div>
+            <div class="method-returns">Returns: <span class="type">str</span> &mdash; Formatted summary</div>
+        </div>
+
+        <div class="example-label">EXAMPLE</div>
+        <div class="example">
+<span class="kw">from</span> daemon.goals <span class="kw">import</span> add_goal, list_goals, update_goal, boot_summary
+
+<span class="comment"># Add a goal</span>
+<span class="var">goal</span> = <span class="fn">add_goal</span>(
+    title=<span class="str">"Ship v1.0 to PyPI"</span>,
+    project=<span class="str">"elara-core"</span>,
+    priority=<span class="str">"high"</span>,
+)
+<span class="fn">print</span>(f<span class="str">"Goal #{goal['id']}: {goal['title']}"</span>)
+
+<span class="comment"># List active goals</span>
+<span class="var">active</span> = <span class="fn">list_goals</span>(status=<span class="str">"active"</span>)
+<span class="kw">for</span> <span class="var">g</span> <span class="kw">in</span> <span class="var">active</span>:
+    <span class="fn">print</span>(f<span class="str">"  #{g['id']} [{g['priority']}] {g['title']}"</span>)
+
+<span class="comment"># Mark as done</span>
+<span class="fn">update_goal</span>(<span class="var">goal</span>[<span class="str">"id"</span>], status=<span class="str">"done"</span>, notes=<span class="str">"Published to PyPI"</span>)
+
+<span class="comment"># Boot summary (for session start)</span>
+<span class="fn">print</span>(<span class="fn">boot_summary</span>())
+        </div>
+    </div>
+
+
+    <!-- ================================================================== -->
+    <!-- REASONING -->
+    <!-- ================================================================== -->
+    <div class="module" id="reasoning">
+        <div class="module-header">
+            <div class="module-icon">COG</div>
+            <h2>Reasoning Trails</h2>
+            <span class="file">daemon/reasoning.py</span>
+        </div>
+
+        <p class="module-desc">
+            Track hypothesis &rarr; evidence &rarr; conclusion &rarr; outcome chains. When debugging complex problems, record the reasoning trail so next time a similar problem appears, you can search past trails instead of re-discovering the same solution. Each trail is stored as an individual JSON file, with ChromaDB semantic indexing for problem-similarity search.
+        </p>
+
+        <div class="module-import">
+            <span class="kw">from</span> daemon.reasoning <span class="kw">import</span> start_trail, add_hypothesis, update_hypothesis, solve_trail, search_trails
+        </div>
+
+        <p class="section-note">// Core functions</p>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">start_trail</span>(<span class="param">context</span>: <span class="type">str</span>, <span class="param">tags</span>: <span class="type">Optional[List[str]]</span> = <span class="default">None</span>)</div>
+            <div class="method-desc">Start a new reasoning trail for a problem under investigation. Generates a unique trail ID (SHA-256 hash) and indexes the context in ChromaDB.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; The trail record with <code>trail_id</code></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">add_hypothesis</span>(<span class="param">trail_id</span>: <span class="type">str</span>, <span class="param">hypothesis</span>: <span class="type">str</span>, <span class="param">evidence</span>: <span class="type">Optional[List[str]]</span> = <span class="default">None</span>, <span class="param">confidence</span>: <span class="type">float</span> = <span class="default">0.5</span>)</div>
+            <div class="method-desc">Add a hypothesis to an existing trail with optional initial evidence and confidence level.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; Updated trail</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">update_hypothesis</span>(<span class="param">trail_id</span>: <span class="type">str</span>, <span class="param">hypothesis_index</span>: <span class="type">int</span>, <span class="param">outcome</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">evidence</span>: <span class="type">Optional[List[str]]</span> = <span class="default">None</span>, <span class="param">confidence</span>: <span class="type">Optional[float]</span> = <span class="default">None</span>)</div>
+            <div class="method-desc">Update a hypothesis's outcome, add new evidence, or adjust confidence.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; Updated trail</div>
+            <div class="params">
+                <span class="param-item">outcome: <span class="type">"true" | "false" | "partial"</span></span>
+                <span class="param-item">hypothesis_index: <span class="type">0-indexed</span></span>
+            </div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">abandon_approach</span>(<span class="param">trail_id</span>: <span class="type">str</span>, <span class="param">approach</span>: <span class="type">str</span>)</div>
+            <div class="method-desc">Record an approach that was tried and dropped. Tracked for analytics (abandonment rate).</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; Updated trail</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">solve_trail</span>(<span class="param">trail_id</span>: <span class="type">str</span>, <span class="param">solution</span>: <span class="type">str</span>, <span class="param">breakthrough_trigger</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">tags</span>: <span class="type">Optional[List[str]]</span> = <span class="default">None</span>)</div>
+            <div class="method-desc">Mark a trail as solved. Records the final solution and optionally what triggered the breakthrough. Tags are merged with existing tags.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; The solved trail</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">search_trails</span>(<span class="param">query</span>: <span class="type">str</span>, <span class="param">n</span>: <span class="type">int</span> = <span class="default">5</span>)</div>
+            <div class="method-desc">Search past reasoning trails by problem similarity using ChromaDB semantic search. Falls back to keyword search if ChromaDB is unavailable.</div>
+            <div class="method-returns">Returns: <span class="type">List[dict]</span> &mdash; Trails with <code>_similarity</code> score</div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">list_trails</span>(<span class="param">resolved</span>: <span class="type">Optional[bool]</span> = <span class="default">None</span>, <span class="param">tag</span>: <span class="type">Optional[str]</span> = <span class="default">None</span>, <span class="param">n</span>: <span class="type">int</span> = <span class="default">20</span>)</div>
+            <div class="method-desc">List trails, optionally filtered by resolved status or tag. Sorted by most recent first.</div>
+            <div class="method-returns">Returns: <span class="type">List[dict]</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">get_active_trail</span>()</div>
+            <div class="method-desc">Get the most recent unresolved trail (if any).</div>
+            <div class="method-returns">Returns: <span class="type">Optional[dict]</span></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">get_recurring_problem_tags</span>(<span class="param">min_count</span>: <span class="type">int</span> = <span class="default">3</span>)</div>
+            <div class="method-desc">Find tags appearing in multiple trails &mdash; recurring problem areas. Used by blind_spots analysis.</div>
+            <div class="method-returns">Returns: <span class="type">List[dict]</span> &mdash; <code>{"tag", "count", "trail_ids"}</code></div>
+        </div>
+
+        <div class="method">
+            <div class="method-sig"><span class="name">get_abandonment_rate</span>()</div>
+            <div class="method-desc">Stats on how often approaches are abandoned across trails.</div>
+            <div class="method-returns">Returns: <span class="type">dict</span> &mdash; <code>{"total_trails", "abandoned_total", "avg_per_trail", "unresolved"}</code></div>
+        </div>
+
+        <div class="example-label">EXAMPLE</div>
+        <div class="example">
+<span class="kw">from</span> daemon.reasoning <span class="kw">import</span> (
+    start_trail, add_hypothesis, update_hypothesis,
+    abandon_approach, solve_trail, search_trails
+)
+
+<span class="comment"># Start investigating a problem</span>
+<span class="var">trail</span> = <span class="fn">start_trail</span>(
+    context=<span class="str">"Memory search returning empty results after reboot"</span>,
+    tags=[<span class="str">"chromadb"</span>, <span class="str">"memory"</span>],
+)
+<span class="var">tid</span> = <span class="var">trail</span>[<span class="str">"trail_id"</span>]
+
+<span class="comment"># Form hypotheses</span>
+<span class="fn">add_hypothesis</span>(<span class="var">tid</span>, <span class="str">"ChromaDB collection might be corrupted"</span>, confidence=<span class="num">0.6</span>)
+<span class="fn">add_hypothesis</span>(<span class="var">tid</span>, <span class="str">"Data dir path changed between sessions"</span>, confidence=<span class="num">0.3</span>)
+
+<span class="comment"># Add evidence</span>
+<span class="fn">update_hypothesis</span>(<span class="var">tid</span>, hypothesis_index=<span class="num">0</span>,
+    evidence=[<span class="str">"rebuild_indexes fixed it"</span>, <span class="str">"collection.count() was 0 before rebuild"</span>],
+    confidence=<span class="num">0.9</span>, outcome=<span class="str">"true"</span>)
+
+<span class="comment"># Record dead end</span>
+<span class="fn">abandon_approach</span>(<span class="var">tid</span>, <span class="str">"Tried deleting and recreating the collection manually"</span>)
+
+<span class="comment"># Solved</span>
+<span class="fn">solve_trail</span>(<span class="var">tid</span>,
+    solution=<span class="str">"ChromaDB index was stale after state file migration"</span>,
+    breakthrough_trigger=<span class="str">"rebuild_indexes command"</span>,
+)
+
+<span class="comment"># Next time a similar problem appears...</span>
+<span class="var">past</span> = <span class="fn">search_trails</span>(<span class="str">"memory recall returns nothing"</span>)
+<span class="kw">for</span> <span class="var">t</span> <span class="kw">in</span> <span class="var">past</span>:
+    <span class="fn">print</span>(f<span class="str">"  [{t['_similarity']:.2f}] {t['context'][:60]}"</span>)
+    <span class="kw">if</span> <span class="var">t</span>.get(<span class="str">"final_solution"</span>):
+        <span class="fn">print</span>(f<span class="str">"    Solution: {t['final_solution']}"</span>)
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="/tools.html">MCP Tools</a> &mdash; <a href="https://navigatorbuilds.com" rel="noopener noreferrer">Navigator Builds</a> &mdash; <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+</body>
+</html>
