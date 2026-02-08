@@ -26,6 +26,7 @@ except ImportError:
     CHROMA_AVAILABLE = False
 
 from core.paths import get_paths
+from daemon.events import bus, Events
 from daemon.schemas import (
     ReasoningTrail, Hypothesis, load_validated, save_validated,
     ElaraNotFoundError, ElaraValidationError,
@@ -78,8 +79,8 @@ def _load_all_trails() -> List[Dict]:
             try:
                 model = load_validated(p, ReasoningTrail)
                 trails.append(model.model_dump())
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to load trail %s: %s", p.name, e)
     return trails
 
 
@@ -148,8 +149,8 @@ def _index_trail(trail: Dict):
             documents=[text],
             metadatas=[metadata],
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to index trail %s: %s", trail.get("trail_id", "?"), e)
 
 
 def _remove_from_index(trail_id: str):
@@ -158,8 +159,8 @@ def _remove_from_index(trail_id: str):
         return
     try:
         collection.delete(ids=[trail_id])
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to remove trail %s from index: %s", trail_id, e)
 
 
 # ============================================================================
@@ -178,6 +179,7 @@ def start_trail(context: str, tags: Optional[List[str]] = None) -> Dict:
     ).model_dump()
     _save_trail(trail)
     _index_trail(trail)
+    bus.emit(Events.TRAIL_STARTED, {"trail_id": trail_id, "context": context[:200]}, source="reasoning")
     return trail
 
 
@@ -271,6 +273,7 @@ def solve_trail(
 
     _save_trail(trail)
     _index_trail(trail)
+    bus.emit(Events.TRAIL_SOLVED, {"trail_id": trail_id, "solution": solution[:200]}, source="reasoning")
     return trail
 
 
@@ -305,7 +308,8 @@ def search_trails(query: str, n: int = 5) -> List[Dict]:
                 trails.append(trail)
 
         return trails
-    except Exception:
+    except Exception as e:
+        logger.warning("ChromaDB trail search failed, falling back to keyword: %s", e)
         return _keyword_search(query, n)
 
 

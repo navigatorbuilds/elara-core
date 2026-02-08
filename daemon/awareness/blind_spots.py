@@ -122,8 +122,8 @@ def blind_spots() -> dict:
                 "detail": f"Tag '{r['tag']}' appears in {r['count']} reasoning trails. Systemic issue?",
                 "severity": "high" if r["count"] >= 5 else "medium",
             })
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to check recurring problem tags: %s", e)
 
     # --- Outcome loss patterns ---
     try:
@@ -143,15 +143,15 @@ def blind_spots() -> dict:
                 "detail": f"{len(forgotten)} decisions recorded but never checked (7+ days). Close the loop.",
                 "severity": "medium",
             })
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to check outcome patterns: %s", e)
 
     # --- Goal conflicts ---
     try:
         conflicts = detect_goal_conflicts(active_goals)
         spots.extend(conflicts)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to detect goal conflicts: %s", e)
 
     result = {
         "timestamp": datetime.now().isoformat(),
@@ -247,7 +247,8 @@ def _check_time_conflicts(goals: List[dict]) -> List[dict]:
             (datetime.now() - datetime.fromisoformat(ep["ended"])).days <= 7
         ]
         sessions_last_week = len(recent_7d)
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to check recent episodes for time conflicts: %s", e)
         sessions_last_week = 3  # assume moderate if we can't check
 
     if len(goals) > sessions_last_week * 2:

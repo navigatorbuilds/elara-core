@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Optional, List, Dict
 
 from core.paths import get_paths
+from daemon.events import bus, Events
 from daemon.schemas import (
     BusinessIdea, Competitor, IdeaScore, load_validated, save_validated,
     ElaraNotFoundError, ElaraValidationError,
@@ -58,7 +59,8 @@ def _load_idea(idea_id: str) -> Optional[Dict]:
     try:
         model = load_validated(path, BusinessIdea)
         return model.model_dump()
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to load idea %s: %s", idea_id, e)
         return None
 
 
@@ -77,8 +79,8 @@ def _load_all_ideas() -> List[Dict]:
             try:
                 model = load_validated(p, BusinessIdea)
                 ideas.append(model.model_dump())
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to load idea file %s: %s", p.name, e)
     return ideas
 
 
@@ -113,6 +115,7 @@ def create_idea(
         last_touched=now,
     ).model_dump()
     _save_idea(idea)
+    bus.emit(Events.IDEA_CREATED, {"idea_id": idea_id, "name": name}, source="business")
     return idea
 
 
@@ -171,6 +174,7 @@ def score_idea(
     idea["score"] = score
     idea["last_touched"] = datetime.now().isoformat()
     _save_idea(idea)
+    bus.emit(Events.IDEA_SCORED, {"idea_id": idea_id, "total": total}, source="business")
     return idea
 
 
