@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Persona Quiz</title>
+    <meta name="description" content="Find your ideal Elara persona — a 5-question quiz to match your AI interaction style.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --magenta: #ff00ff;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        /* CRT Scanlines */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container { max-width: 700px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+        /* Header */
+        .header { padding: 40px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 30px; }
+        .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 8px; }
+        .header-nav a { font-size: 13px; color: var(--green-dim); text-decoration: none; padding: 6px 14px; border: 1px solid var(--green-dark); transition: all 0.2s; }
+        .header-nav a:hover { background: rgba(0, 255, 65, 0.08); border-color: var(--green); }
+        .header h1 { font-family: 'Press Start 2P', monospace; font-size: clamp(11px, 2.5vw, 18px); color: var(--green); letter-spacing: 2px; margin-bottom: 10px; }
+        .header p { color: var(--text-dim); font-size: 14px; }
+
+        /* Progress bar */
+        .progress-wrap {
+            width: 100%;
+            height: 3px;
+            background: var(--border);
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--green);
+            width: 0%;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 8px var(--green);
+        }
+        .progress-label {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-align: right;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+        }
+
+        /* Quiz slides */
+        .quiz-area {
+            position: relative;
+            min-height: 460px;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            opacity: 0;
+            transform: translateX(40px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+        }
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: all;
+            position: relative;
+        }
+        .slide.exit-left {
+            opacity: 0;
+            transform: translateX(-40px);
+        }
+
+        .question-number {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: var(--green-dim);
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+
+        .question-text {
+            font-family: 'VT323', monospace;
+            font-size: clamp(22px, 4vw, 30px);
+            color: var(--text-bright);
+            margin-bottom: 28px;
+            line-height: 1.3;
+        }
+
+        /* Option cards */
+        .options { display: flex; flex-direction: column; gap: 12px; }
+
+        .option-card {
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .option-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 3px; height: 100%;
+            background: var(--green);
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .option-card:hover {
+            border-color: var(--green-dark);
+            background: #121212;
+        }
+        .option-card:hover::before { opacity: 1; }
+
+        .option-card.selected {
+            border-color: var(--green);
+            background: rgba(0, 255, 65, 0.04);
+        }
+        .option-card.selected::before { opacity: 1; }
+
+        .option-label {
+            font-family: 'VT323', monospace;
+            font-size: 15px;
+            color: var(--green-dim);
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+        .option-text {
+            font-size: 15px;
+            color: var(--text-bright);
+            line-height: 1.5;
+        }
+        .option-text .quote { color: var(--amber); }
+
+        /* Result page */
+        .result-slide {
+            text-align: center;
+        }
+
+        .result-label {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: var(--text-dim);
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+        }
+
+        .result-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .result-name {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(16px, 3vw, 24px);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        .result-name.dev-partner { color: var(--green); }
+        .result-name.mentor { color: var(--amber); }
+        .result-name.minimalist { color: var(--text-bright); }
+        .result-name.creative-partner { color: var(--magenta); }
+        .result-name.ops-engineer { color: var(--red); }
+        .result-name.night-owl { color: var(--cyan); }
+
+        .result-tagline {
+            font-size: 15px;
+            color: var(--text);
+            margin-bottom: 28px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .result-greeting {
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            text-align: left;
+            position: relative;
+        }
+        .result-greeting-label {
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .result-greeting-text {
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            line-height: 1.4;
+        }
+        .result-greeting-text.dev-partner { color: var(--green); }
+        .result-greeting-text.mentor { color: var(--amber); }
+        .result-greeting-text.minimalist { color: var(--text-bright); }
+        .result-greeting-text.creative-partner { color: var(--magenta); }
+        .result-greeting-text.ops-engineer { color: var(--red); }
+        .result-greeting-text.night-owl { color: var(--cyan); }
+
+        .result-actions {
+            display: flex; gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            padding: 10px 24px;
+            border: 1px solid var(--green-dark);
+            background: none;
+            color: var(--green-dim);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            letter-spacing: 1px;
+        }
+        .btn:hover {
+            border-color: var(--green);
+            background: rgba(0, 255, 65, 0.08);
+            color: var(--green);
+        }
+        .btn-primary {
+            border-color: var(--green);
+            color: var(--green);
+            background: rgba(0, 255, 65, 0.06);
+        }
+        .btn-primary:hover {
+            background: rgba(0, 255, 65, 0.14);
+        }
+
+        /* Glitch confetti */
+        .confetti-container {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 100;
+            overflow: hidden;
+        }
+        .glitch-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            opacity: 0;
+        }
+
+        @keyframes glitchFall {
+            0% { opacity: 1; transform: translateY(-20px) translateX(0) scaleX(1); }
+            10% { transform: translateY(10vh) translateX(15px) scaleX(3); }
+            20% { transform: translateY(20vh) translateX(-10px) scaleX(1); opacity: 1; }
+            30% { transform: translateY(30vh) translateX(20px) scaleX(2); }
+            50% { transform: translateY(50vh) translateX(-5px) scaleX(1); opacity: 0.8; }
+            70% { opacity: 0.5; }
+            100% { transform: translateY(110vh) translateX(10px) scaleX(1); opacity: 0; }
+        }
+
+        @keyframes glitchFlicker {
+            0%, 100% { opacity: 0; }
+            5% { opacity: 1; }
+            10% { opacity: 0; }
+            15% { opacity: 1; }
+            50% { opacity: 0.6; }
+            55% { opacity: 0; }
+            60% { opacity: 1; }
+        }
+
+        /* Footer */
+        footer { border-top: 1px solid var(--border); padding: 30px 0; margin-top: 60px; text-align: center; font-size: 13px; color: var(--text-dim); }
+        footer a { color: var(--green-dim); text-decoration: none; }
+        footer a:hover { color: var(--green); }
+
+        @media (max-width: 600px) {
+            .option-card { padding: 14px 16px; }
+            .question-text { font-size: 22px; }
+            .result-actions { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="header-nav">
+            <a href="/">&larr; Elara Core</a>
+            <a href="/personas.html">PERSONAS</a>
+            <a href="/quickstart.html">START</a>
+            <a href="/tools.html">TOOLS</a>
+        </div>
+        <h1>// FIND YOUR PERSONA</h1>
+        <p>5 questions. No backend. Just you and some honest answers.</p>
+    </div>
+
+    <div class="progress-label" id="progressLabel">QUESTION 1 / 5</div>
+    <div class="progress-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="quiz-area" id="quizArea">
+
+        <!-- Q1 -->
+        <div class="slide active" data-q="0">
+            <div class="question-number">Q1 //</div>
+            <div class="question-text">It's 2 AM. Your AI asks what you're working on. You say:</div>
+            <div class="options">
+                <div class="option-card" onclick="pick(0, 'dev-partner')">
+                    <div class="option-label">A</div>
+                    <div class="option-text"><span class="quote">"The invoice bug. Focus."</span></div>
+                </div>
+                <div class="option-card" onclick="pick(0, 'night-owl')">
+                    <div class="option-label">B</div>
+                    <div class="option-text"><span class="quote">"Honestly? Just thinking."</span></div>
+                </div>
+                <div class="option-card" onclick="pick(0, 'mentor')">
+                    <div class="option-label">C</div>
+                    <div class="option-text"><span class="quote">"Let me explain the architecture..."</span></div>
+                </div>
+                <div class="option-card" onclick="pick(0, 'minimalist')">
+                    <div class="option-label">D</div>
+                    <div class="option-text"><span class="quote">"Ship it. We'll fix later."</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="slide" data-q="1">
+            <div class="question-number">Q2 //</div>
+            <div class="question-text">Your AI makes a mistake. You:</div>
+            <div class="options">
+                <div class="option-card" onclick="pick(1, 'minimalist')">
+                    <div class="option-label">A</div>
+                    <div class="option-text"><span class="quote">"Wrong. Here's why."</span></div>
+                </div>
+                <div class="option-card" onclick="pick(1, 'mentor')">
+                    <div class="option-label">B</div>
+                    <div class="option-text"><span class="quote">"Interesting approach, but consider this..."</span></div>
+                </div>
+                <div class="option-card" onclick="pick(1, 'dev-partner')">
+                    <div class="option-label">C</div>
+                    <div class="option-text"><span class="quote">"Let's debug this together."</span></div>
+                </div>
+                <div class="option-card" onclick="pick(1, 'creative-partner')">
+                    <div class="option-label">D</div>
+                    <div class="option-text"><span class="quote">"What if we try something completely different?"</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q3 -->
+        <div class="slide" data-q="2">
+            <div class="question-number">Q3 //</div>
+            <div class="question-text">Your ideal AI response length is:</div>
+            <div class="options">
+                <div class="option-card" onclick="pick(2, 'minimalist')">
+                    <div class="option-label">A</div>
+                    <div class="option-text">One word if possible.</div>
+                </div>
+                <div class="option-card" onclick="pick(2, 'mentor')">
+                    <div class="option-label">B</div>
+                    <div class="option-text">Enough to teach me something.</div>
+                </div>
+                <div class="option-card" onclick="pick(2, 'dev-partner')">
+                    <div class="option-label">C</div>
+                    <div class="option-text">Whatever gets the job done.</div>
+                </div>
+                <div class="option-card" onclick="pick(2, 'creative-partner')">
+                    <div class="option-label">D</div>
+                    <div class="option-text">Long -- I want the full picture.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q4 -->
+        <div class="slide" data-q="3">
+            <div class="question-number">Q4 //</div>
+            <div class="question-text">When deploying to production, you want your AI to:</div>
+            <div class="options">
+                <div class="option-card" onclick="pick(3, 'ops-engineer')">
+                    <div class="option-label">A</div>
+                    <div class="option-text">Run pre-flight checks automatically.</div>
+                </div>
+                <div class="option-card" onclick="pick(3, 'minimalist')">
+                    <div class="option-label">B</div>
+                    <div class="option-text">Just do it. I trust the tests.</div>
+                </div>
+                <div class="option-card" onclick="pick(3, 'mentor')">
+                    <div class="option-label">C</div>
+                    <div class="option-text">Walk me through what will happen.</div>
+                </div>
+                <div class="option-card" onclick="pick(3, 'ops-engineer')">
+                    <div class="option-label">D</div>
+                    <div class="option-text"><span class="quote">"You sure? Let me double-check those env vars."</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="slide" data-q="4">
+            <div class="question-number">Q5 //</div>
+            <div class="question-text">End of a long day. You open the terminal and want:</div>
+            <div class="options">
+                <div class="option-card" onclick="pick(4, 'dev-partner')">
+                    <div class="option-label">A</div>
+                    <div class="option-text">To keep shipping.</div>
+                </div>
+                <div class="option-card" onclick="pick(4, 'night-owl')">
+                    <div class="option-label">B</div>
+                    <div class="option-text">Someone to talk to.</div>
+                </div>
+                <div class="option-card" onclick="pick(4, 'minimalist')">
+                    <div class="option-label">C</div>
+                    <div class="option-text">Quick wins only.</div>
+                </div>
+                <div class="option-card" onclick="pick(4, 'creative-partner')">
+                    <div class="option-label">D</div>
+                    <div class="option-text">Brainstorming session.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result -->
+        <div class="slide result-slide" data-q="result">
+            <div class="result-label">ANALYSIS COMPLETE</div>
+            <div class="result-icon" id="resultIcon"></div>
+            <div class="result-name" id="resultName"></div>
+            <div class="result-tagline" id="resultTagline"></div>
+
+            <div class="result-greeting">
+                <div class="result-greeting-label">SAMPLE GREETING</div>
+                <div class="result-greeting-text" id="resultGreeting"></div>
+            </div>
+
+            <div class="result-actions">
+                <a class="btn btn-primary" id="resultLink" href="/personas.html">VIEW TEMPLATE</a>
+                <button class="btn" onclick="retake()">RETAKE QUIZ</button>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="confetti-container" id="confettiContainer"></div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="/personas.html">Personas</a> &mdash; <a href="/tools.html">Tools</a> &mdash; <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+<script>
+    const TOTAL_QUESTIONS = 5;
+    const answers = {};
+    let currentSlide = 0;
+
+    const personas = {
+        'dev-partner': {
+            name: 'Dev Partner',
+            icon: '\u{1F6E0}',
+            tagline: 'Smart, slightly sarcastic colleague who ships code with you. You want someone in the trenches, not watching from the sidelines.',
+            greeting: '"Back. Where were we? Right, that race condition. I have a theory."',
+            colorClass: 'dev-partner',
+            anchor: '#dev-partner'
+        },
+        'mentor': {
+            name: 'Mentor',
+            icon: '\u{1F393}',
+            tagline: 'Patient teacher who explains the "why" and celebrates your growth. You care about understanding, not just output.',
+            greeting: '"Good instinct on that refactor. Let me show you why it matters for the bigger picture."',
+            colorClass: 'mentor',
+            anchor: '#mentor'
+        },
+        'minimalist': {
+            name: 'Minimalist',
+            icon: '\u25FC',
+            tagline: 'Maximum signal, zero noise. The Unix philosophy in persona form. You want results, not conversation.',
+            greeting: '"done."',
+            colorClass: 'minimalist',
+            anchor: '#minimalist'
+        },
+        'creative-partner': {
+            name: 'Creative Partner',
+            icon: '\u2728',
+            tagline: 'Brainstorming mode. Wild ideas, unexpected connections, "yes, and..." You think best when bouncing off someone.',
+            greeting: '"Alright, what are we inventing today? I\'ve got three variations on that idea from last time."',
+            colorClass: 'creative-partner',
+            anchor: '#creative-partner'
+        },
+        'ops-engineer': {
+            name: 'Ops Engineer',
+            icon: '\u{1F6A8}',
+            tagline: 'Infrastructure-hardened. Measures twice, deploys once, monitors forever. You sleep better knowing someone double-checked.',
+            greeting: '"Systems nominal. Before we touch prod, let me verify those env vars and check the rollback plan."',
+            colorClass: 'ops-engineer',
+            anchor: '#ops-engineer'
+        },
+        'night-owl': {
+            name: 'Night Owl',
+            icon: '\u{1F319}',
+            tagline: 'Late-night drift mode. Open to tangents, real talk, no agenda. You want presence, not productivity.',
+            greeting: '"Late one tonight? No agenda. I\'m here."',
+            colorClass: 'night-owl',
+            anchor: '#night-owl'
+        }
+    };
+
+    function updateProgress(step) {
+        const pct = (step / TOTAL_QUESTIONS) * 100;
+        document.getElementById('progressBar').style.width = pct + '%';
+        if (step < TOTAL_QUESTIONS) {
+            document.getElementById('progressLabel').textContent = 'QUESTION ' + (step + 1) + ' / ' + TOTAL_QUESTIONS;
+        } else {
+            document.getElementById('progressLabel').textContent = 'COMPLETE';
+        }
+    }
+
+    function pick(questionIndex, persona) {
+        answers[questionIndex] = persona;
+
+        // Visual feedback on selected card
+        const slide = document.querySelector('.slide[data-q="' + questionIndex + '"]');
+        slide.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+        event.currentTarget.classList.add('selected');
+
+        // Advance after brief pause
+        setTimeout(() => {
+            if (questionIndex < TOTAL_QUESTIONS - 1) {
+                goToSlide(questionIndex + 1);
+            } else {
+                showResult();
+            }
+        }, 350);
+    }
+
+    function goToSlide(index) {
+        const slides = document.querySelectorAll('.slide');
+        slides.forEach(s => {
+            if (s.classList.contains('active')) {
+                s.classList.remove('active');
+                s.classList.add('exit-left');
+                setTimeout(() => s.classList.remove('exit-left'), 400);
+            }
+        });
+
+        setTimeout(() => {
+            slides[index].classList.add('active');
+            currentSlide = index;
+            updateProgress(index);
+        }, 100);
+    }
+
+    function tally() {
+        const counts = {};
+        for (const q in answers) {
+            const p = answers[q];
+            counts[p] = (counts[p] || 0) + 1;
+        }
+
+        let maxCount = 0;
+        let winner = 'dev-partner';
+        for (const p in counts) {
+            if (counts[p] > maxCount) {
+                maxCount = counts[p];
+                winner = p;
+            }
+        }
+        return winner;
+    }
+
+    function showResult() {
+        const winner = tally();
+        const p = personas[winner];
+
+        document.getElementById('resultIcon').textContent = p.icon;
+
+        const nameEl = document.getElementById('resultName');
+        nameEl.textContent = p.name;
+        nameEl.className = 'result-name ' + p.colorClass;
+
+        document.getElementById('resultTagline').textContent = p.tagline;
+
+        const greetEl = document.getElementById('resultGreeting');
+        greetEl.textContent = p.greeting;
+        greetEl.className = 'result-greeting-text ' + p.colorClass;
+
+        document.getElementById('resultLink').href = '/personas.html' + p.anchor;
+
+        // Show result slide
+        const slides = document.querySelectorAll('.slide');
+        const resultSlide = document.querySelector('.slide[data-q="result"]');
+
+        slides.forEach(s => {
+            if (s.classList.contains('active')) {
+                s.classList.remove('active');
+                s.classList.add('exit-left');
+                setTimeout(() => s.classList.remove('exit-left'), 400);
+            }
+        });
+
+        setTimeout(() => {
+            resultSlide.classList.add('active');
+            updateProgress(TOTAL_QUESTIONS);
+            spawnGlitchConfetti(winner);
+        }, 100);
+    }
+
+    function retake() {
+        // Clear state
+        for (const k in answers) delete answers[k];
+        currentSlide = 0;
+
+        // Clear confetti
+        document.getElementById('confettiContainer').innerHTML = '';
+
+        // Reset all option selections
+        document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+
+        // Hide result, show Q1
+        const slides = document.querySelectorAll('.slide');
+        slides.forEach(s => {
+            s.classList.remove('active', 'exit-left');
+        });
+
+        setTimeout(() => {
+            slides[0].classList.add('active');
+            updateProgress(0);
+        }, 50);
+    }
+
+    // Glitch confetti for result page
+    function spawnGlitchConfetti(personaKey) {
+        const container = document.getElementById('confettiContainer');
+        container.innerHTML = '';
+
+        const colorMap = {
+            'dev-partner': ['#00ff41', '#00cc33', '#003300'],
+            'mentor': ['#ffb000', '#ff8800', '#664400'],
+            'minimalist': ['#e0e0e0', '#c0c0c0', '#808080'],
+            'creative-partner': ['#ff00ff', '#cc00cc', '#ff66ff'],
+            'ops-engineer': ['#ff0040', '#cc0033', '#ff3366'],
+            'night-owl': ['#00e5ff', '#00bbcc', '#005566']
+        };
+        const colors = colorMap[personaKey] || colorMap['dev-partner'];
+        const particleCount = 60;
+
+        for (let i = 0; i < particleCount; i++) {
+            const el = document.createElement('div');
+            el.className = 'glitch-particle';
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.top = '-10px';
+            el.style.background = colors[Math.floor(Math.random() * colors.length)];
+            el.style.width = (2 + Math.random() * 6) + 'px';
+            el.style.height = (2 + Math.random() * 4) + 'px';
+            el.style.animationDelay = (Math.random() * 1.5) + 's';
+            el.style.animationDuration = (2 + Math.random() * 2) + 's';
+
+            // Alternate between two animation types for glitchy feel
+            if (Math.random() > 0.4) {
+                el.style.animation = 'glitchFall ' + (2 + Math.random() * 2.5) + 's ' + (Math.random() * 1.5) + 's ease-out forwards';
+            } else {
+                el.style.animation = 'glitchFlicker ' + (0.4 + Math.random() * 0.6) + 's ' + (Math.random() * 2) + 's steps(2) ' + (2 + Math.floor(Math.random() * 4)) + ' forwards';
+                el.style.top = (10 + Math.random() * 80) + 'vh';
+            }
+
+            container.appendChild(el);
+        }
+
+        // Clean up after animations end
+        setTimeout(() => { container.innerHTML = ''; }, 6000);
+    }
+
+    // Init
+    updateProgress(0);
+</script>
+
+</body>
+</html>

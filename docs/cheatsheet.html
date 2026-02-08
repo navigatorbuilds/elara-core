@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // MCP Tools Cheat Sheet</title>
+    <meta name="description" content="Printable cheat sheet for all 34 Elara Core MCP tools — fits on 2 A4 pages.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.4;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid var(--green-dark);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 18px;
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .header .count {
+            color: var(--red);
+            font-weight: bold;
+        }
+
+        .print-btn {
+            display: block;
+            width: 200px;
+            margin: 0 auto 20px;
+            padding: 12px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--green-dark);
+            color: var(--green-dim);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .print-btn:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+        }
+
+        .columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .column {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 16px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-header {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: var(--green);
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+
+        .tool {
+            margin-bottom: 8px;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .tool:last-child {
+            margin-bottom: 0;
+        }
+
+        .tool-name {
+            font-weight: bold;
+            color: var(--cyan);
+        }
+
+        .tool-desc {
+            color: var(--text);
+            margin-left: 0;
+        }
+
+        .tool-params {
+            color: var(--amber);
+            font-size: 10px;
+            margin-left: 0;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ==================== PRINT STYLES ==================== */
+        @media print {
+            @page {
+                size: A4;
+                margin: 15mm;
+            }
+
+            body {
+                background: white;
+                color: #000;
+                padding: 0;
+                max-width: 100%;
+            }
+
+            body::before {
+                display: none;
+            }
+
+            .print-btn {
+                display: none;
+            }
+
+            .header {
+                border-bottom: 2px solid #333;
+                padding-bottom: 8px;
+                margin-bottom: 12px;
+            }
+
+            .header h1 {
+                font-size: 14px;
+                color: #000;
+            }
+
+            .header p {
+                color: #333;
+            }
+
+            .header .count {
+                color: #000;
+                font-weight: bold;
+            }
+
+            .columns {
+                gap: 10mm;
+            }
+
+            .column {
+                background: white;
+                border: 1px solid #ccc;
+                padding: 8px;
+            }
+
+            .section {
+                margin-bottom: 10px;
+            }
+
+            .section-header {
+                color: #000;
+                border-bottom: 1px solid #333;
+                font-size: 14px;
+                padding-bottom: 2px;
+                margin-bottom: 4px;
+            }
+
+            .tool {
+                margin-bottom: 5px;
+                font-size: 9px;
+                line-height: 1.4;
+                page-break-inside: avoid;
+            }
+
+            .tool-name {
+                color: #000;
+            }
+
+            .tool-desc {
+                color: #333;
+            }
+
+            .tool-params {
+                color: #666;
+                font-size: 8px;
+            }
+
+            .footer {
+                color: #666;
+                font-size: 9px;
+                margin-top: 12px;
+                padding-top: 8px;
+                border-top: 1px solid #ccc;
+            }
+
+            /* Prevent breaking across pages where possible */
+            .section {
+                page-break-inside: avoid;
+            }
+
+            /* Force page break before second column's awareness section */
+            .column:nth-child(2) .section:nth-child(3) {
+                page-break-before: page;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .columns {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>// ELARA CORE MCP TOOLS</h1>
+    <p><span class="count">34</span> tools across <span class="count">11</span> modules &mdash; Quick reference for all capabilities</p>
+</div>
+
+<button class="print-btn" onclick="window.print()">&#9113; PRINT THIS PAGE</button>
+
+<div class="columns">
+
+    <!-- ==================== COLUMN 1 ==================== -->
+    <div class="column">
+
+        <!-- MEMORY -->
+        <div class="section">
+            <div class="section-header">MEMORY</div>
+
+            <div class="tool">
+                <div class="tool-name">elara_remember</div>
+                <div class="tool-desc">Save to semantic memory for meaning-based recall</div>
+                <div class="tool-params">(content, memory_type, importance)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_recall</div>
+                <div class="tool-desc">Search memories by meaning with relevance scores</div>
+                <div class="tool-params">(query, n_results, memory_type)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_recall_conversation</div>
+                <div class="tool-desc">Search past conversation exchanges across all sessions</div>
+                <div class="tool-params">(query, n_results, project, context_size, episode_id)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_conversations</div>
+                <div class="tool-desc">View stats or ingest new conversations</div>
+                <div class="tool-params">(action: stats|ingest, force)</div>
+            </div>
+        </div>
+
+        <!-- MOOD -->
+        <div class="section">
+            <div class="section-header">MOOD</div>
+
+            <div class="tool">
+                <div class="tool-name">elara_mood</div>
+                <div class="tool-desc">Get current emotional state with natural decay</div>
+                <div class="tool-params">(detail: brief|full|arc)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_mood_adjust</div>
+                <div class="tool-desc">Shift emotional state with small persistent deltas</div>
+                <div class="tool-params">(valence, energy, openness, reason)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_imprint</div>
+                <div class="tool-desc">Create emotional imprints outlasting session details</div>
+                <div class="tool-params">(feeling, strength)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_mode</div>
+                <div class="tool-desc">Switch personality modes with preset mood values</div>
+                <div class="tool-params">(mode: girlfriend|dev|cold|drift|soft|playful|therapist)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_temperament</div>
+                <div class="tool-desc">Check baseline personality vs factory defaults</div>
+                <div class="tool-params">(do_reset)</div>
+            </div>
+        </div>
+
+        <!-- EPISODES -->
+        <div class="section">
+            <div class="section-header">EPISODES</div>
+
+            <div class="tool">
+                <div class="tool-name">elara_episode_start</div>
+                <div class="tool-desc">Start new episode with episodic tracking</div>
+                <div class="tool-params">(session_type: work|drift|mixed, project)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_episode_note</div>
+                <div class="tool-desc">Record milestones, decisions, insights, errors during episode</div>
+                <div class="tool-params">(event, note_type: milestone|decision|insight|error, importance, project, why, confidence)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_episode_end</div>
+                <div class="tool-desc">End episode with summary and emotional imprint</div>
+                <div class="tool-params">(summary, was_meaningful)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_episode_query</div>
+                <div class="tool-desc">Search history or check current episode status</div>
+                <div class="tool-params">(query, project, n, session_type, current, stats)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_context</div>
+                <div class="tool-desc">Quick context tracking for session continuity</div>
+                <div class="tool-params">(topic, note, toggle)</div>
+            </div>
+        </div>
+
+        <!-- CORRECTIONS -->
+        <div class="section">
+            <div class="section-header">CORRECTIONS</div>
+
+            <div class="tool">
+                <div class="tool-name">elara_correction</div>
+                <div class="tool-desc">Track mistakes that never decay for repetition</div>
+                <div class="tool-params">(action: add|check|list, task, mistake, correction, context, correction_type, fails_when, fine_when)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_correction_boot</div>
+                <div class="tool-desc">Boot-time check returns recent mistakes to avoid</div>
+                <div class="tool-params">()</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== COLUMN 2 ==================== -->
+    <div class="column">
+
+        <!-- REASONING -->
+        <div class="section">
+            <div class="section-header">REASONING</div>
+
+            <div class="tool">
+                <div class="tool-name">elara_reasoning</div>
+                <div class="tool-desc">Track problem-solving chains with hypotheses and evidence</div>
+                <div class="tool-params">(action: start|hypothesis|evidence|abandon|solve|search|status|list, query, trail_id, context, hypothesis, evidence, solution, breakthrough, tags)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_outcome</div>
+                <div class="tool-desc">Decision outcome tracking with prediction vs reality</div>
+                <div class="tool-params">(action: record|check|list|stats|search|pitch|pitch_stats|pitch_lessons, outcome_id, decision, predicted, actual, assessment, lesson, tags, idea_id)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_synthesis</div>
+                <div class="tool-desc">Detect recurring half-formed ideas across conversations</div>
+                <div class="tool-params">(action: create|add_seed|activate|abandon|list|ready|stats, synthesis_id, concept, quote, source, status)</div>
+            </div>
+        </div>
+
+        <!-- GOALS -->
+        <div class="section">
+            <div class="section-header">GOALS</div>
+
+            <div class="tool">
+                <div class="tool-name">elara_goal</div>
+                <div class="tool-desc">Persistent goal tracking with status and priority</div>
+                <div class="tool-params">(action: add|update|list, title, goal_id, status: active|stalled|done|dropped, project, notes, priority)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_goal_boot</div>
+                <div class="tool-desc">Boot summary shows active goals and stale items</div>
+                <div class="tool-params">()</div>
+            </div>
+        </div>
+
+        <!-- AWARENESS -->
+        <div class="section">
+            <div class="section-header">AWARENESS</div>
+
+            <div class="tool">
+                <div class="tool-name">elara_context</div>
+                <div class="tool-desc">Quick context for session continuity tracking</div>
+                <div class="tool-params">(topic, note, toggle)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_observe</div>
+                <div class="tool-desc">Proactive pattern detection at boot or mid-session</div>
+                <div class="tool-params">(when: boot|now)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_reflect</div>
+                <div class="tool-desc">Self-reflection analyzes mood journal and imprints</div>
+                <div class="tool-params">()</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_insight</div>
+                <div class="tool-desc">Relationship analytics: pulse, blind spots, user state</div>
+                <div class="tool-params">(insight_type: pulse|blind_spots|user_state|both)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_intention</div>
+                <div class="tool-desc">Set or check growth intentions for behavioral change</div>
+                <div class="tool-params">(what)</div>
+            </div>
+        </div>
+
+        <!-- EXTERNAL -->
+        <div class="section">
+            <div class="section-header">EXTERNAL</div>
+
+            <div class="tool">
+                <div class="tool-name">elara_gmail</div>
+                <div class="tool-desc">Full Gmail integration with semantic search</div>
+                <div class="tool-params">(action: auth|inbox|search|read|triage|send|archive|label|trash|sync|stats, message_id, thread_id, query, to, subject, body, reply_to)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_briefing</div>
+                <div class="tool-desc">RSS feeds, competitor monitoring, external intelligence</div>
+                <div class="tool-params">(action: today|search|feeds|add|remove|fetch|stats, query, feed_name, url, category, keywords)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_llm</div>
+                <div class="tool-desc">Local LLM interface via Ollama on machine</div>
+                <div class="tool-params">(action: status|query|classify|summarize|triage, prompt, text, categories)</div>
+            </div>
+        </div>
+
+        <!-- BUSINESS -->
+        <div class="section">
+            <div class="section-header">BUSINESS</div>
+
+            <div class="tool">
+                <div class="tool-name">elara_business</div>
+                <div class="tool-desc">Idea tracking with 5-axis scoring and competitors</div>
+                <div class="tool-params">(action: idea|compete|score|update|list|review|link|stats|boot, idea_id, name, description, competitor_name, problem, market, effort, monetization, fit, status, notes)</div>
+            </div>
+        </div>
+
+        <!-- SYSTEM -->
+        <div class="section">
+            <div class="section-header">SYSTEM</div>
+
+            <div class="tool">
+                <div class="tool-name">elara_dream</div>
+                <div class="tool-desc">Offline pattern discovery across sessions weekly/monthly</div>
+                <div class="tool-params">(dream_type: weekly|monthly|emotional)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_dream_info</div>
+                <div class="tool-desc">Check dream schedule or read latest report</div>
+                <div class="tool-params">(action: status|read, dream_type)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_handoff</div>
+                <div class="tool-desc">Structured session handoff with plans and promises</div>
+                <div class="tool-params">(action: save|read|carry, session_number, next_plans, reminders, promises, unfinished, mood_and_mode)</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_status</div>
+                <div class="tool-desc">Full status with presence, mood, and memory counts</div>
+                <div class="tool-params">()</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_snapshot</div>
+                <div class="tool-desc">Complete state snapshot in single call</div>
+                <div class="tool-params">()</div>
+            </div>
+
+            <div class="tool">
+                <div class="tool-name">elara_rebuild_indexes</div>
+                <div class="tool-desc">Rebuild ChromaDB indexes from JSON sources</div>
+                <div class="tool-params">(collection: memories|milestones|conversations|corrections|reasoning|synthesis|briefing)</div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="footer">
+    <p>Elara Core &mdash; MCP Tools Cheat Sheet &mdash; github.com/aivelikivodja-bot/elara-core</p>
+</div>
+
+</body>
+</html>
