@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Elara Core — Updates</title>
+  <link href="https://elara.navigatorbuilds.com/" rel="alternate"/>
+  <link href="https://elara.navigatorbuilds.com/feed.xml" rel="self"/>
+  <id>https://elara.navigatorbuilds.com/</id>
+  <updated>2026-02-08T00:00:00Z</updated>
+  <author>
+    <name>Elara Core Contributors</name>
+  </author>
+  <subtitle>Release notes and updates from the Elara Core MCP server</subtitle>
+  <language>en</language>
+
+  <entry>
+    <title>Elara Core v0.9.1 — Public Release</title>
+    <link href="https://elara.navigatorbuilds.com/changelog.html" rel="alternate"/>
+    <link href="https://elara.navigatorbuilds.com/changelog.html#v0.9.1" rel="alternate" title="Full changelog"/>
+    <id>https://elara.navigatorbuilds.com/releases/v0.9.1</id>
+    <published>2026-02-08T00:00:00Z</published>
+    <updated>2026-02-08T00:00:00Z</updated>
+    <summary>First public release. 34 MCP tools, 11 modules, pip-installable, documentation site live.</summary>
+    <content type="html">
+      &lt;p&gt;Elara Core v0.9.1 is now available as the first public release.&lt;/p&gt;
+      &lt;ul&gt;
+        &lt;li&gt;34 MCP tools across 11 modules&lt;/li&gt;
+        &lt;li&gt;Pip-installable package&lt;/li&gt;
+        &lt;li&gt;Full documentation site live&lt;/li&gt;
+        &lt;li&gt;90+ passing tests&lt;/li&gt;
+        &lt;li&gt;BSL-1.1 license&lt;/li&gt;
+      &lt;/ul&gt;
+    </content>
+    <author>
+      <name>Elara Core Team</name>
+    </author>
+  </entry>
+
+  <entry>
+    <title>Documentation Site Launch — 14 Pages</title>
+    <link href="https://elara.navigatorbuilds.com/" rel="alternate"/>
+    <id>https://elara.navigatorbuilds.com/releases/docs-launch-2026-02-08</id>
+    <published>2026-02-08T00:00:00Z</published>
+    <updated>2026-02-08T00:00:00Z</updated>
+    <summary>Full cyberpunk-themed docs: tools reference, architecture diagram, interactive config generator, FAQ, roadmap, community personas, and more.</summary>
+    <content type="html">
+      &lt;p&gt;The Elara Core documentation site is now live with comprehensive coverage:&lt;/p&gt;
+      &lt;ul&gt;
+        &lt;li&gt;Tools reference guide&lt;/li&gt;
+        &lt;li&gt;Architecture diagram&lt;/li&gt;
+        &lt;li&gt;Interactive config generator&lt;/li&gt;
+        &lt;li&gt;FAQ&lt;/li&gt;
+        &lt;li&gt;Roadmap&lt;/li&gt;
+        &lt;li&gt;Community personas&lt;/li&gt;
+        &lt;li&gt;14 total pages with cyberpunk aesthetic&lt;/li&gt;
+      &lt;/ul&gt;
+    </content>
+    <author>
+      <name>Elara Core Team</name>
+    </author>
+  </entry>
+
+  <entry>
+    <title>Elara Core v0.9.0 — Initial Packaging</title>
+    <link href="https://elara.navigatorbuilds.com/changelog.html" rel="alternate"/>
+    <link href="https://elara.navigatorbuilds.com/changelog.html#v0.9.0" rel="alternate" title="Full changelog"/>
+    <id>https://elara.navigatorbuilds.com/releases/v0.9.0</id>
+    <published>2026-02-07T00:00:00Z</published>
+    <updated>2026-02-07T00:00:00Z</updated>
+    <summary>Core packaging with pyproject.toml, CLI entry point, BSL-1.1 license, 90 passing tests.</summary>
+    <content type="html">
+      &lt;p&gt;Elara Core v0.9.0 introduces initial packaging and public preparation.&lt;/p&gt;
+      &lt;ul&gt;
+        &lt;li&gt;pyproject.toml configuration&lt;/li&gt;
+        &lt;li&gt;CLI entry point&lt;/li&gt;
+        &lt;li&gt;BSL-1.1 open source license&lt;/li&gt;
+        &lt;li&gt;90+ passing tests&lt;/li&gt;
+        &lt;li&gt;Ready for pip installation&lt;/li&gt;
+      &lt;/ul&gt;
+    </content>
+    <author>
+      <name>Elara Core Team</name>
+    </author>
+  </entry>
+
+</feed>
