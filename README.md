@@ -1,14 +1,31 @@
 # Elara Core
 
-**[elara.navigatorbuilds.com](https://elara.navigatorbuilds.com)**
+> **Your AI doesn't remember yesterday. Elara fixes that.**
 
 [![Tests](https://github.com/aivelikivodja-bot/elara-core/actions/workflows/tests.yml/badge.svg)](https://github.com/aivelikivodja-bot/elara-core/actions/workflows/tests.yml)
 [![PyPI](https://img.shields.io/pypi/v/elara-core?color=%2300ff41&label=PyPI)](https://pypi.org/project/elara-core/)
+[![Python](https://img.shields.io/pypi/pyversions/elara-core?color=%2300e5ff)](https://pypi.org/project/elara-core/)
 [![License](https://img.shields.io/badge/license-BSL--1.1-ff0040)](https://github.com/aivelikivodja-bot/elara-core/blob/main/LICENSE)
+[![Docs](https://img.shields.io/badge/docs-elara.navigatorbuilds.com-%23ffb000)](https://elara.navigatorbuilds.com)
 
-Persistent presence, mood, memory, and self-awareness for AI assistants.
+Persistent presence, mood, memory, and self-awareness for AI assistants. **34 MCP tools. 11 modules. 19K lines of Python. Zero cloud dependencies.**
 
-Elara gives your AI assistant a sense of continuity across sessions. It remembers what you were working on, tracks emotional state, learns from mistakes, and builds semantic memory — all through the Model Context Protocol (MCP).
+Elara gives your AI assistant a sense of continuity across sessions. It remembers what you were working on, tracks emotional state, learns from mistakes, and builds semantic memory — all through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io).
+
+### What it looks like
+
+```
+You: "What were we working on last week?"
+Elara: recalls from semantic memory, checks episode history, surfaces relevant goals
+
+You: "I keep making the same mistake with async/await"
+Elara: saves correction, surfaces it next time you touch async code
+
+You: "How's the project going?"
+Elara: runs weekly dream, shows momentum trends, flags stalled goals
+```
+
+**Everything stays local.** No cloud. No telemetry. Your data lives in `~/.elara/`.
 
 ## Features
 
@@ -103,7 +120,7 @@ Complete documentation is available at **[elara.navigatorbuilds.com](https://ela
 ### Linux / macOS
 
 ```bash
-pip install git+https://github.com/aivelikivodja-bot/elara-core.git
+pip install elara-core
 elara init
 claude mcp add elara -- elara serve
 ```
@@ -111,7 +128,7 @@ claude mcp add elara -- elara serve
 ### Windows (Command Prompt or PowerShell)
 
 ```
-py -m pip install git+https://github.com/aivelikivodja-bot/elara-core.git
+py -m pip install elara-core
 elara init
 claude mcp add elara -- elara serve
 ```
@@ -183,7 +200,7 @@ Key patterns:
 
 ```bash
 # Clone and install in dev mode
-git clone https://github.com/AiVelikIVodja/elara-core.git
+git clone https://github.com/aivelikivodja-bot/elara-core.git
 cd elara-core
 python -m venv venv
 source venv/bin/activate
