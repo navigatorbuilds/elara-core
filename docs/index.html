@@ -737,7 +737,73 @@
             .hero h1 { font-size: 16px; }
             .stat-value { font-size: 36px; }
         }
+        /* Demo terminal */
+        .demo { padding: 60px 0 20px; }
+
+        .demo .section-header { margin-bottom: 32px; }
+
+        .demo-terminal {
+            max-width: 740px;
+            margin: 0 auto;
+            border: 1px solid var(--green-dark);
+            background: #050505;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.08), 0 4px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .demo-terminal .terminal-bar {
+            background: #111;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-green);
+        }
+
+        .demo-terminal .terminal-bar .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--text-dim);
+        }
+        .demo-terminal .terminal-bar .dot:nth-child(1) { background: var(--red); }
+        .demo-terminal .terminal-bar .dot:nth-child(2) { background: var(--amber); }
+        .demo-terminal .terminal-bar .dot:nth-child(3) { background: var(--green); }
+
+        .demo-terminal .terminal-bar span {
+            margin-left: 12px;
+            color: var(--text-dim);
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .demo-terminal asciinema-player {
+            display: block;
+        }
+
+        /* Override asciinema player theme to match our cyberpunk look */
+        .demo-terminal .ap-wrapper {
+            background: #050505 !important;
+        }
+
+        .demo-terminal .ap-player {
+            background: #050505 !important;
+        }
+
+        .demo-terminal .ap-control-bar {
+            background: #111 !important;
+            border-top: 1px solid var(--border-green) !important;
+        }
+
+        .demo-terminal .ap-start-button svg {
+            fill: var(--green) !important;
+        }
+
+        .demo-terminal .ap-start-button {
+            color: var(--green) !important;
+        }
     </style>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.css" />
 </head>
 <body>
 
@@ -749,6 +815,7 @@
         <div class="container">
             <a href="#" class="nav-logo">ELARA<span class="red">/</span>CORE</a>
             <div class="nav-links">
+                <a href="#demo">DEMO</a>
                 <a href="#features">SYS</a>
                 <a href="#install">INIT</a>
                 <a href="#tools">TOOLS</a>
@@ -799,6 +866,25 @@
             <div class="stat">
                 <div class="stat-value">8</div>
                 <div class="stat-label">Vector DBs</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo -->
+    <section class="demo" id="demo">
+        <div class="container">
+            <div class="section-header">
+                <h2>// LIVE DEMO</h2>
+                <p>Watch Elara recall context across sessions, track bugs, and triage email.</p>
+            </div>
+            <div class="demo-terminal">
+                <div class="terminal-bar">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <span>claude code + elara</span>
+                </div>
+                <div id="demo-player"></div>
             </div>
         </div>
     </section>
@@ -1230,6 +1316,21 @@
                 setTimeout(() => btn.textContent = 'copy', 2000);
             });
         }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.min.js"></script>
+    <script>
+        AsciinemaPlayer.create('demo.cast', document.getElementById('demo-player'), {
+            theme: 'monokai',
+            cols: 82,
+            rows: 24,
+            autoPlay: true,
+            loop: true,
+            speed: 1.2,
+            fit: 'width',
+            terminalFontFamily: "'Share Tech Mono', monospace",
+            idleTimeLimit: 2,
+            pauseOnMarkers: false,
+        });
     </script>
 
 </body>
