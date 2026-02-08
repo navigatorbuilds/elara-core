@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Search Documentation</title>
+    <meta name="description" content="Search across all Elara Core documentation — tools, architecture, setup, examples, and troubleshooting.">
+    <meta property="og:title" content="Elara Core — Documentation Search">
+    <meta property="og:description" content="Find what you need. Fast.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://elara.navigatorbuilds.com/search.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@NavigatorBuilds">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/lunr@2.3.9/lunr.min.js"></script>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-nav a {
+            font-size: 13px;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--green-dark);
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(14px, 2.5vw, 22px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        /* Search input */
+        .search-container {
+            margin-bottom: 40px;
+        }
+
+        .search-box {
+            background: #050505;
+            border: 2px solid var(--green-dark);
+            padding: 20px;
+            position: relative;
+            transition: border-color 0.3s;
+        }
+
+        .search-box:focus-within {
+            border-color: var(--green);
+        }
+
+        .search-prompt {
+            color: var(--green);
+            font-size: 16px;
+            margin-bottom: 4px;
+            font-family: 'VT323', monospace;
+            letter-spacing: 1px;
+        }
+
+        .search-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-cursor {
+            color: var(--green);
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #searchInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-bright);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 16px;
+            outline: none;
+            caret-color: var(--green);
+        }
+
+        #searchInput::placeholder {
+            color: var(--text-dim);
+        }
+
+        .search-hint {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .search-hint kbd {
+            background: rgba(0, 255, 65, 0.06);
+            border: 1px solid var(--green-dark);
+            padding: 2px 6px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--green-dim);
+        }
+
+        /* Results */
+        .results-container {
+            margin-bottom: 60px;
+        }
+
+        .results-header {
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            color: var(--cyan);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .results-header .count {
+            color: var(--green);
+        }
+
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+
+        .result-card:hover {
+            border-color: var(--green-dark);
+            background: rgba(0, 255, 65, 0.02);
+        }
+
+        .result-card:focus {
+            outline: 2px solid var(--green);
+            outline-offset: 2px;
+        }
+
+        .result-title {
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            color: var(--green);
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .result-path {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+        }
+
+        .result-excerpt {
+            font-size: 14px;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .result-excerpt mark {
+            background: rgba(0, 255, 65, 0.15);
+            color: var(--green-dim);
+            padding: 1px 3px;
+            font-weight: bold;
+        }
+
+        /* No results */
+        .no-results {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .no-results-icon {
+            font-family: 'VT323', monospace;
+            font-size: 48px;
+            color: var(--red);
+            margin-bottom: 16px;
+        }
+
+        .no-results h3 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            color: var(--red);
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+        }
+
+        .no-results p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(3, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        footer a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--green); }
+
+        @media (max-width: 600px) {
+            .search-box { padding: 16px; }
+            .result-card { padding: 16px; }
+            .no-results { padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="header-nav">
+            <a href="/">&larr; Elara Core</a>
+            <div class="nav-links">
+                <a href="/tools.html">TOOLS</a>
+                <a href="/architecture.html">ARCH</a>
+                <a href="/quickstart.html">START</a>
+                <a href="/configure.html">CONFIGURE</a>
+                <a href="/faq.html">FAQ</a>
+                <a href="/changelog.html">CHANGELOG</a>
+            </div>
+        </div>
+        <h1>// SEARCH DOCS</h1>
+        <p>Full-text search across all documentation. Fast. Client-side. No tracking.</p>
+    </div>
+
+    <div class="search-container">
+        <div class="search-box">
+            <div class="search-prompt">&gt; SEARCH QUERY:</div>
+            <div class="search-input-wrapper">
+                <span class="search-cursor">&gt;</span>
+                <input type="text" id="searchInput" placeholder="memory system, MCP tools, installation..." autocomplete="off" autofocus>
+            </div>
+            <div class="search-hint">
+                <kbd>ENTER</kbd> to open first result &nbsp;|&nbsp; <kbd>ESC</kbd> to clear
+            </div>
+        </div>
+    </div>
+
+    <div id="resultsContainer" class="results-container">
+        <!-- Results will be injected here -->
+    </div>
+
+</div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="/quickstart.html">Quickstart</a> &mdash; <a href="/tools.html">Tools</a> &mdash; <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+<script>
+// Pre-built search index with all documentation pages
+const documents = [
+    {
+        id: 'index',
+        title: 'Home',
+        path: 'index.html',
+        description: 'Elara Core landing page — persistent memory and presence for Claude via MCP',
+        content: 'Elara Core MCP persistent memory mood presence temperament session continuity relationship memory Claude AI assistant partner cyberpunk terminal aesthetic remembers learns grows emotional state conversational memory'
+    },
+    {
+        id: 'tools',
+        title: 'Tools Reference',
+        path: 'tools.html',
+        description: '34 MCP tools across 11 modules for memory, mood, episodes, and more',
+        content: 'tools reference 34 MCP elara_remember elara_recall elara_mood elara_episode elara_dream elara_correction elara_reasoning elara_outcome elara_goal elara_business elara_gmail elara_briefing elara_context elara_handoff elara_synthesis modules memory mood presence episodes corrections reasoning goals outcomes business intelligence Gmail RSS'
+    },
+    {
+        id: 'architecture',
+        title: 'Architecture',
+        path: 'architecture.html',
+        description: 'System design, data flow, ChromaDB indexes, and Overwatch daemon',
+        content: 'architecture system diagram ChromaDB vector indexes semantic search data layer Overwatch daemon micro-ingestion conversation monitoring MCP protocol stdio transport Python modules cosine similarity JSONL storage episodic memory persistent state'
+    },
+    {
+        id: 'quickstart',
+        title: 'Quickstart',
+        path: 'quickstart.html',
+        description: 'Installation and setup guide for Elara Core',
+        content: 'quickstart installation setup pip install elara-core claude mcp add init configuration requirements Python 3.10 ChromaDB dependencies first run test verify tools working WSL macOS Linux'
+    },
+    {
+        id: 'configure',
+        title: 'Configure',
+        path: 'configure.html',
+        description: 'Configuration generator and MCP client setup',
+        content: 'configure configuration generator MCP client setup Claude Code Cursor Windsurf Cline persona customization environment variables ELARA_DATA_DIR module toggles mood presets dream scheduling custom paths'
+    },
+    {
+        id: 'compare',
+        title: 'Before & After',
+        path: 'compare.html',
+        description: 'Comparison showing session continuity and bug recall improvements',
+        content: 'before after comparison baseline Claude Elara session continuity bug recall corrections context retention memory persistence forgets remembers empty state learns from mistakes relationship continuity emotional state tracking'
+    },
+    {
+        id: 'examples',
+        title: 'Examples',
+        path: 'examples.html',
+        description: 'Persona templates, boot sequences, memory patterns, and environment variables',
+        content: 'examples persona template boot sequence memory patterns workflow environment variables ELARA_DATA_DIR ELARA_PERSONA_FILE usage examples code snippets integration patterns best practices conversational style mood adjustment episodic notes'
+    },
+    {
+        id: 'faq',
+        title: 'FAQ & Troubleshooting',
+        path: 'faq.html',
+        description: 'Common issues and solutions for setup, runtime, and data management',
+        content: 'FAQ troubleshooting common issues ChromaDB installation permission denied MCP client tools not showing memory search returns nothing mood stuck Gmail OAuth dreams not running backup reset data directory Python version build tools'
+    },
+    {
+        id: 'changelog',
+        title: 'Changelog',
+        path: 'changelog.html',
+        description: 'Version history and release notes',
+        content: 'changelog version history release notes v0.9.1 updates bug fixes new features improvements changes MCP tools modules ChromaDB schema migrations breaking changes deprecations'
+    },
+    {
+        id: 'status',
+        title: 'Status',
+        path: 'status.html',
+        description: 'Build badges, test coverage, PyPI package, and community links',
+        content: 'status build badges tests passing PyPI package community GitHub stars contributors license BSL-1.1 test coverage CI/CD pipeline development roadmap active development'
+    },
+    {
+        id: 'privacy',
+        title: 'Privacy',
+        path: 'privacy.html',
+        description: 'Zero telemetry, local-only data storage, no cloud dependencies',
+        content: 'privacy zero telemetry local data no cloud no tracking no analytics GDPR compliant private local-only storage ChromaDB offline semantic search no external services no phone home self-hosted data sovereignty'
+    }
+];
+
+// Initialize lunr index
+let searchIndex;
+let indexReady = false;
+
+function initializeIndex() {
+    searchIndex = lunr(function() {
+        this.ref('id');
+        this.field('title', { boost: 10 });
+        this.field('description', { boost: 5 });
+        this.field('content');
+
+        documents.forEach(doc => {
+            this.add(doc);
+        });
+    });
+    indexReady = true;
+}
+
+// Perform search
+function performSearch(query) {
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    if (!query.trim()) {
+        resultsContainer.innerHTML = '';
+        return;
+    }
+
+    if (!indexReady) {
+        resultsContainer.innerHTML = '<div class="loading">Initializing search index</div>';
+        return;
+    }
+
+    try {
+        const results = searchIndex.search(query);
+
+        if (results.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="no-results">
+                    <div class="no-results-icon">ERROR 404</div>
+                    <h3>NO RESULTS</h3>
+                    <p>Query returned zero matches. Try different keywords.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const resultsHTML = results.map((result, index) => {
+            const doc = documents.find(d => d.id === result.ref);
+            if (!doc) return '';
+
+            // Highlight matching terms in description
+            const highlightedDesc = highlightMatches(doc.description, query);
+
+            return `
+                <a href="/${doc.path}" class="result-card" data-index="${index}">
+                    <div class="result-title">${doc.title}</div>
+                    <div class="result-path">/${doc.path}</div>
+                    <div class="result-excerpt">${highlightedDesc}</div>
+                </a>
+            `;
+        }).join('');
+
+        resultsContainer.innerHTML = `
+            <div class="results-header">
+                <span class="count">${results.length}</span> ${results.length === 1 ? 'result' : 'results'} found
+            </div>
+            ${resultsHTML}
+        `;
+
+        // Focus first result for keyboard navigation
+        const firstResult = resultsContainer.querySelector('.result-card');
+        if (firstResult) {
+            firstResult.setAttribute('tabindex', '0');
+        }
+
+    } catch (e) {
+        console.error('Search error:', e);
+        resultsContainer.innerHTML = `
+            <div class="no-results">
+                <div class="no-results-icon">ERROR</div>
+                <h3>SEARCH FAILED</h3>
+                <p>Invalid query syntax. Try simpler terms.</p>
+            </div>
+        `;
+    }
+}
+
+// Highlight matching terms
+function highlightMatches(text, query) {
+    const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+    let highlighted = text;
+
+    terms.forEach(term => {
+        const regex = new RegExp(`(${term})`, 'gi');
+        highlighted = highlighted.replace(regex, '<mark>$1</mark>');
+    });
+
+    return highlighted;
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('searchInput');
+
+    // Initialize index
+    initializeIndex();
+
+    // Search on input (with debounce)
+    let debounceTimer;
+    searchInput.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            performSearch(e.target.value);
+        }, 300);
+    });
+
+    // Keyboard shortcuts
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            // Open first result
+            const firstResult = document.querySelector('.result-card');
+            if (firstResult) {
+                window.location.href = firstResult.href;
+            }
+        } else if (e.key === 'Escape') {
+            // Clear search
+            searchInput.value = '';
+            document.getElementById('resultsContainer').innerHTML = '';
+            searchInput.focus();
+        }
+    });
+
+    // Focus search input
+    searchInput.focus();
+});
+</script>
+
+</body>
+</html>

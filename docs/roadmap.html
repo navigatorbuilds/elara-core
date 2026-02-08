@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Roadmap</title>
+    <meta name="description" content="Development roadmap and future plans for Elara Core.">
+    <meta property="og:title" content="ELARA CORE // Roadmap">
+    <meta property="og:description" content="Timeline of features, phases, and community plans.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --bg-card-hover: #141414;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --green-glow: rgba(0, 255, 65, 0.08);
+            --red: #ff0040;
+            --red-dim: #cc0033;
+            --red-glow: rgba(255, 0, 64, 0.08);
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --amber-dim: #cc8800;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+            --scanline: rgba(0, 255, 65, 0.03);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* CRT Scanlines overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.08) 2px,
+                rgba(0, 0, 0, 0.08) 4px
+            );
+        }
+
+        /* Floating pixel characters */
+        .pixel-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .pixel-char {
+            position: absolute;
+            font-family: 'Press Start 2P', monospace;
+            opacity: 0.04;
+            animation: float-char linear infinite;
+            color: var(--green);
+        }
+
+        .pixel-char.red { color: var(--red); }
+
+        @keyframes float-char {
+            0% { transform: translateY(110vh) rotate(0deg); }
+            100% { transform: translateY(-10vh) rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            92% { opacity: 1; }
+            93% { opacity: 0.8; }
+            94% { opacity: 1; }
+            96% { opacity: 0.9; }
+            97% { opacity: 1; }
+        }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 12px 0;
+            background: rgba(10, 10, 10, 0.92);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-green);
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: var(--green);
+            text-decoration: none;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+            animation: flicker 8s infinite;
+        }
+
+        .nav-logo .red { color: var(--red); text-shadow: 0 0 10px rgba(255, 0, 64, 0.5); }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 65, 0.4); }
+
+        .btn-github {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--green-dark);
+            color: var(--green);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .btn-github:hover {
+            background: var(--green-glow);
+            border-color: var(--green-dim);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+        }
+
+        .btn-github svg { width: 16px; height: 16px; fill: currentColor; }
+
+        /* Header */
+        .header {
+            padding: 120px 0 60px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-green);
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 32px;
+            color: var(--red);
+            text-shadow: 0 0 20px rgba(255, 0, 64, 0.5);
+            margin-bottom: 12px;
+            letter-spacing: 4px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        /* Timeline */
+        .timeline {
+            padding: 60px 0;
+        }
+
+        .phase {
+            margin-bottom: 60px;
+        }
+
+        .phase-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .phase-status {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            padding: 6px 12px;
+            border: 1px solid;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .phase-status.done {
+            color: var(--green);
+            border-color: var(--green-dark);
+            background: var(--green-glow);
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+        }
+
+        .phase-status.in-progress {
+            color: var(--amber);
+            border-color: var(--amber-dim);
+            background: rgba(255, 176, 0, 0.08);
+            text-shadow: 0 0 10px rgba(255, 176, 0, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .phase-status.planned {
+            color: var(--text-dim);
+            border-color: var(--border);
+            background: transparent;
+        }
+
+        .phase-status.future {
+            color: var(--text-dim);
+            border-color: var(--border);
+            background: transparent;
+            border-style: dashed;
+            opacity: 0.5;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .phase-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 18px;
+            color: var(--green);
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+        }
+
+        /* Terminal block */
+        .terminal-block {
+            background: #050505;
+            border: 1px solid var(--border-green);
+            overflow: hidden;
+        }
+
+        .terminal-block.in-progress {
+            border-color: var(--amber-dim);
+        }
+
+        .terminal-block.planned {
+            border-color: var(--border);
+            opacity: 0.8;
+        }
+
+        .terminal-block.future {
+            border-style: dashed;
+            opacity: 0.5;
+        }
+
+        .terminal-bar {
+            background: #111;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .terminal-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-dim);
+        }
+
+        .terminal-dot.red { background: var(--red); }
+        .terminal-dot.amber { background: var(--amber); }
+        .terminal-dot.green { background: var(--green); }
+
+        .terminal-title {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-left: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .terminal-body {
+            padding: 24px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            line-height: 2;
+        }
+
+        .terminal-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .terminal-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .item-icon {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .item-icon.done {
+            color: var(--green);
+        }
+
+        .item-icon.in-progress {
+            color: var(--amber);
+            animation: spin 2s linear infinite;
+        }
+
+        .item-icon.planned {
+            color: var(--text-dim);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .item-text {
+            color: var(--text);
+        }
+
+        .terminal-block.done .item-text {
+            color: var(--text-bright);
+        }
+
+        .terminal-block.planned .item-text,
+        .terminal-block.future .item-text {
+            color: var(--text-dim);
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: var(--bg-card);
+            border: 2px solid var(--green-dark);
+            padding: 40px;
+            margin: 80px 0;
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 20px;
+            color: var(--green);
+            text-shadow: 0 0 15px rgba(0, 255, 65, 0.4);
+            margin-bottom: 16px;
+            letter-spacing: 3px;
+        }
+
+        .cta-section p {
+            color: var(--text);
+            font-size: 14px;
+            margin-bottom: 32px;
+            line-height: 1.8;
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: transparent;
+            border: 1px solid var(--green-dark);
+            color: var(--green);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .cta-btn:hover {
+            background: var(--green-glow);
+            border-color: var(--green-dim);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        .cta-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* ASCII divider */
+        .ascii-divider {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 12px;
+            padding: 40px 0;
+            letter-spacing: 4px;
+            opacity: 0.4;
+        }
+
+        /* Footer */
+        footer {
+            padding: 48px 0;
+            border-top: 1px solid var(--border-green);
+            text-align: center;
+            margin-top: 80px;
+        }
+
+        .footer-ascii {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            letter-spacing: 2px;
+            opacity: 0.4;
+        }
+
+        footer .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 24px;
+        }
+
+        footer .footer-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+        }
+
+        footer .footer-links a:hover { color: var(--green); }
+
+        footer .footer-copy {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        footer .footer-copy a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 22px; letter-spacing: 3px; }
+            .phase-header { flex-direction: column; align-items: flex-start; }
+            .nav-links a:not(.btn-github) { display: none; }
+            .cta-buttons { flex-direction: column; }
+            .cta-section { padding: 24px; }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 { font-size: 18px; letter-spacing: 2px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Floating pixel characters -->
+    <div class="pixel-bg" id="pixelBg"></div>
+
+    <!-- Nav -->
+    <nav>
+        <div class="container">
+            <a href="/" class="nav-logo">ELARA<span class="red">/</span>CORE</a>
+            <div class="nav-links">
+                <a href="/#demo">DEMO</a>
+                <a href="/#features">SYS</a>
+                <a href="/#install">INIT</a>
+                <a href="/tools.html">TOOLS</a>
+                <a href="/architecture.html">ARCH</a>
+                <a href="/quickstart.html">START</a>
+                <a href="/configure.html">CONFIGURE</a>
+                <a href="/faq.html">FAQ</a>
+                <a href="/changelog.html">CHANGELOG</a>
+                <a href="/status.html">STATUS</a>
+                <a href="https://x.com/NavigatorBuilds" target="_blank" rel="noopener">X</a>
+                <a href="mailto:aivelikivodja@gmail.com">aivelikivodja@gmail.com</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core" class="btn-github" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    SRC
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <section class="header">
+        <div class="container">
+            <h1>ROADMAP</h1>
+            <p>Development timeline & future vision</p>
+        </div>
+    </section>
+
+    <!-- Timeline -->
+    <div class="container timeline">
+
+        <!-- Phase 1 -->
+        <div class="phase">
+            <div class="phase-header">
+                <div class="phase-status done">✓ DONE</div>
+                <h2 class="phase-title">PHASE 1: FOUNDATION</h2>
+            </div>
+            <div class="terminal-block done">
+                <div class="terminal-bar">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot amber"></span>
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-title">phase-1 // completed</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">34 MCP tools across 11 modules</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">Semantic memory with ChromaDB</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">Mood system with emotional imprints</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">Episodic tracking with milestones</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">Dream processing (weekly/monthly)</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">Corrections system</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">Goal tracking</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">Gmail integration</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">RSS briefing</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">Business intelligence</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">Overwatch daemon</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">PyPI package</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ascii-divider">- - - - - - - - [ IN PROGRESS ] - - - - - - - -</div>
+
+        <!-- Phase 2 -->
+        <div class="phase">
+            <div class="phase-header">
+                <div class="phase-status in-progress">⟳ IN PROGRESS</div>
+                <h2 class="phase-title">PHASE 2: POLISH</h2>
+            </div>
+            <div class="terminal-block in-progress">
+                <div class="terminal-bar">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot amber"></span>
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-title">phase-2 // active</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="terminal-item">
+                        <span class="item-icon done">✓</span>
+                        <span class="item-text">Documentation site (11 pages)</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon in-progress">⟳</span>
+                        <span class="item-text">Interactive config generator</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Community personas library</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Plugin system architecture</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Improved onboarding UX</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Test coverage to 95%+</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ascii-divider">- - - - - - - - [ PLANNED ] - - - - - - - -</div>
+
+        <!-- Phase 3 -->
+        <div class="phase">
+            <div class="phase-header">
+                <div class="phase-status planned">○ PLANNED</div>
+                <h2 class="phase-title">PHASE 3: COMMUNITY</h2>
+            </div>
+            <div class="terminal-block planned">
+                <div class="terminal-bar">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot amber"></span>
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-title">phase-3 // queued</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Community persona templates</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Plugin/extension system</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Custom module API</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Shared memory exports</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Multi-agent support</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Calendar integration</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ascii-divider">- - - - - - - - [ FUTURE ] - - - - - - - -</div>
+
+        <!-- Phase 4 -->
+        <div class="phase">
+            <div class="phase-header">
+                <div class="phase-status future">◇ FUTURE</div>
+                <h2 class="phase-title">PHASE 4: SCALE</h2>
+            </div>
+            <div class="terminal-block future">
+                <div class="terminal-bar">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot amber"></span>
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-title">phase-4 // concept</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Performance benchmarks</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Memory compression/archival</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Federated memory (multi-machine)</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Voice integration</span>
+                    </div>
+                    <div class="terminal-item">
+                        <span class="item-icon planned">○</span>
+                        <span class="item-text">Mobile companion app</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-section">
+            <h2>WANT TO HELP?</h2>
+            <p>Elara is open-source and community-driven. Contribute code, report bugs, suggest features, or share your persona.</p>
+            <div class="cta-buttons">
+                <a href="https://github.com/aivelikivodja-bot/elara-core/blob/main/CONTRIBUTING.md" class="cta-btn" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+                    CONTRIBUTING.md
+                </a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core/issues" class="cta-btn" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    GitHub Issues
+                </a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core" class="cta-btn" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    View on GitHub
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-ascii">========================================</div>
+            <div class="footer-links">
+                <a href="/">HOME</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core/issues" target="_blank" rel="noopener">Issues</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core/blob/main/LICENSE" target="_blank" rel="noopener">BSL-1.1</a>
+            </div>
+            <p class="footer-copy">Built by <a href="https://github.com/aivelikivodja-bot" target="_blank" rel="noopener">Nenad Vasic</a> // Python 3.10+ // Linux, macOS, Windows</p>
+        </div>
+    </footer>
+
+    <script>
+        // Floating pixel characters
+        const chars = ['@', '#', '$', '%', '&', '*', '>', '<', '/', '\\', '|', '0', '1', '{', '}', '[', ']', '=', '+', '~'];
+        const bg = document.getElementById('pixelBg');
+
+        for (let i = 0; i < 40; i++) {
+            const span = document.createElement('span');
+            span.className = 'pixel-char' + (Math.random() > 0.7 ? ' red' : '');
+            span.textContent = chars[Math.floor(Math.random() * chars.length)];
+            span.style.left = Math.random() * 100 + '%';
+            span.style.fontSize = (8 + Math.random() * 24) + 'px';
+            span.style.animationDuration = (15 + Math.random() * 30) + 's';
+            span.style.animationDelay = -(Math.random() * 30) + 's';
+            bg.appendChild(span);
+        }
+    </script>
+
+</body>
+</html>
