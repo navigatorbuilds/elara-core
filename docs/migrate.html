@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Migration Guide</title>
+    <meta name="description" content="Migrate from mem0, ChatGPT memory, Obsidian, or other AI memory systems to Elara Core.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-nav a {
+            font-size: 13px;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--green-dark);
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(14px, 2.5vw, 22px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 50px;
+            position: relative;
+            padding-left: 60px;
+        }
+
+        .section-icon {
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 20px;
+            color: var(--red);
+            width: 44px;
+            height: 44px;
+            border: 1px solid rgba(255, 0, 64, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .section h2 {
+            font-family: 'VT323', monospace;
+            font-size: 26px;
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .section p {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+
+        .section ul {
+            margin-left: 20px;
+            margin-bottom: 16px;
+        }
+
+        .section li {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: #050505;
+            border: 1px solid var(--border-green);
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: var(--green);
+            line-height: 1.8;
+            display: block;
+            white-space: pre;
+        }
+
+        .code-block .comment {
+            color: var(--text-dim);
+        }
+
+        .code-block .keyword {
+            color: var(--cyan);
+        }
+
+        .code-block .string {
+            color: var(--amber);
+        }
+
+        .code-block .function {
+            color: var(--red);
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            padding: 3px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--green-dark);
+            color: var(--green);
+        }
+
+        /* Note boxes */
+        .note {
+            background: rgba(255, 176, 0, 0.04);
+            border-left: 3px solid var(--amber);
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .note strong {
+            color: var(--amber);
+        }
+
+        .warning {
+            background: rgba(255, 0, 64, 0.04);
+            border-left: 3px solid var(--red);
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .warning strong {
+            color: var(--red);
+        }
+
+        .success {
+            background: rgba(0, 255, 65, 0.04);
+            border-left: 3px solid var(--green);
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .success strong {
+            color: var(--green);
+        }
+
+        /* Divider */
+        .divider {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 12px;
+            margin: 40px 0;
+            letter-spacing: 4px;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        footer a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--green); }
+
+        @media (max-width: 600px) {
+            .section { padding-left: 0; padding-top: 50px; }
+            .section-icon { top: 0; left: 0; }
+            .header-nav { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="header-nav">
+            <a href="/">&larr; Elara Core</a>
+            <a href="/quickstart.html">QUICKSTART</a>
+            <a href="/tools.html">TOOLS</a>
+            <a href="/architecture.html">ARCH</a>
+            <a href="/configure.html">CONFIGURE</a>
+            <a href="/personas.html">PERSONAS</a>
+            <a href="/faq.html">FAQ</a>
+            <a href="/roadmap.html">ROADMAP</a>
+            <a href="/changelog.html">CHANGELOG</a>
+            <a href="/status.html">STATUS</a>
+            <a href="/search.html">&#128269;</a>
+        </div>
+        <h1>// MIGRATION GUIDE</h1>
+        <p>Moving from mem0, ChatGPT, Obsidian, or starting fresh.</p>
+    </div>
+
+    <!-- Section 1: Fresh Start -->
+    <div class="section">
+        <div class="section-icon">&#9733;</div>
+        <h2>FROM SCRATCH (No existing memory)</h2>
+        <p>If you've never used an AI memory system before, congratulations. You get the cleanest setup.</p>
+
+        <div class="success">
+            <strong>Just follow the quickstart guide.</strong> The default setup works out of the box. No migration needed.
+        </div>
+
+        <p>Within your first session, Elara will start accumulating memories naturally through conversation.</p>
+
+        <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <code><span class="comment"># Install and initialize</span>
+pip install elara-core
+elara init
+
+<span class="comment"># Connect to your MCP client (Claude Code example)</span>
+claude mcp add elara -- elara serve
+
+<span class="comment"># Done. Start talking.</span></code>
+        </div>
+
+        <p><a href="/quickstart.html" style="color: var(--cyan);">See the full quickstart guide &rarr;</a></p>
+    </div>
+
+    <div class="divider">- - - - - - - -</div>
+
+    <!-- Section 2: mem0 -->
+    <div class="section">
+        <div class="section-icon">M0</div>
+        <h2>FROM mem0 / Mem0.ai</h2>
+        <p>mem0 is a cloud-hosted memory layer. Elara is fully local and adds mood, episodes, dreams, and corrections on top of memory.</p>
+
+        <p><strong>Key differences:</strong></p>
+        <ul>
+            <li>mem0 stores memories in the cloud. Elara stores everything locally (<code>~/.elara/</code>).</li>
+            <li>mem0 is pure memory storage. Elara has mood tracking, episodic sessions, dream cycles, and self-reflection.</li>
+            <li>mem0's API is Python-based. Elara is MCP-based and works with any MCP client.</li>
+        </ul>
+
+        <div class="note">
+            <strong>Migration path:</strong> Export your mem0 memories as JSON, then import them into Elara's ChromaDB.
+        </div>
+
+        <p><strong>Step 1: Export from mem0</strong></p>
+        <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <code><span class="comment"># Assuming you're using mem0's Python client</span>
+<span class="keyword">from</span> mem0 <span class="keyword">import</span> Memory
+<span class="keyword">import</span> json
+
+client = Memory()
+memories = client.get_all()
+
+<span class="keyword">with</span> <span class="function">open</span>(<span class="string">"mem0_export.json"</span>, <span class="string">"w"</span>) <span class="keyword">as</span> f:
+    json.dump(memories, f, indent=2)</code>
+        </div>
+
+        <p><strong>Step 2: Import into Elara</strong></p>
+        <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <code><span class="comment"># Save this as import_mem0.py</span>
+<span class="keyword">import</span> json
+<span class="keyword">from</span> elara.core.memory <span class="keyword">import</span> MemoryManager
+
+<span class="keyword">with</span> <span class="function">open</span>(<span class="string">"mem0_export.json"</span>) <span class="keyword">as</span> f:
+    mem0_data = json.load(f)
+
+manager = MemoryManager()
+
+<span class="keyword">for</span> item <span class="keyword">in</span> mem0_data:
+    manager.remember(
+        content=item[<span class="string">"text"</span>],
+        memory_type=<span class="string">"fact"</span>,  <span class="comment"># or "conversation" based on your data</span>
+        importance=0.7
+    )
+
+<span class="function">print</span>(<span class="string">f"Imported {len(mem0_data)} memories"</span>)</code>
+        </div>
+
+        <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <code><span class="comment"># Run the import</span>
+python import_mem0.py</code>
+        </div>
+
+        <div class="success">
+            <strong>Done.</strong> Your mem0 memories are now in Elara's local ChromaDB. They'll be used for semantic recall.
+        </div>
+    </div>
+
+    <div class="divider">- - - - - - - -</div>
+
+    <!-- Section 3: ChatGPT -->
+    <div class="section">
+        <div class="section-icon">GPT</div>
+        <h2>FROM ChatGPT Memory</h2>
+        <p>ChatGPT has a built-in memory feature, but it's limited to ~300 items and locked behind OpenAI's API. No export functionality.</p>
+
+        <div class="warning">
+            <strong>Manual migration required.</strong> ChatGPT doesn't provide an API or export for its memory system.
+        </div>
+
+        <p><strong>Step 1: Extract your ChatGPT memories</strong></p>
+        <ul>
+            <li>Go to ChatGPT Settings &rarr; Personalization &rarr; Memory</li>
+            <li>Copy-paste each memory item into a text file</li>
+            <li>Save as <code>chatgpt_memories.txt</code>, one memory per line</li>
+        </ul>
+
+        <p><strong>Step 2: Import into Elara</strong></p>
+        <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <code><span class="comment"># Save this as import_chatgpt.py</span>
+<span class="keyword">from</span> elara.core.memory <span class="keyword">import</span> MemoryManager
+
+manager = MemoryManager()
+
+<span class="keyword">with</span> <span class="function">open</span>(<span class="string">"chatgpt_memories.txt"</span>) <span class="keyword">as</span> f:
+    <span class="keyword">for</span> line <span class="keyword">in</span> f:
+        line = line.strip()
+        <span class="keyword">if</span> line:
+            manager.remember(
+                content=line,
+                memory_type=<span class="string">"fact"</span>,
+                importance=0.6
+            )
+
+<span class="function">print</span>(<span class="string">"Import complete"</span>)</code>
+        </div>
+
+        <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <code><span class="comment"># Run the import</span>
+python import_chatgpt.py</code>
+        </div>
+
+        <div class="note">
+            <strong>Tip:</strong> If your ChatGPT memories include timestamps or categories, adjust the script to parse them and set appropriate <code>memory_type</code> values (fact, conversation, moment, feeling, decision).
+        </div>
+    </div>
+
+    <div class="divider">- - - - - - - -</div>
+
+    <!-- Section 4: Obsidian -->
+    <div class="section">
+        <div class="section-icon">MD</div>
+        <h2>FROM Obsidian / Markdown Notes</h2>
+        <p>If you've been keeping structured notes in Obsidian or any markdown system, you can bulk-import them as memories.</p>
+
+        <p><strong>This works if your notes represent "AI memory" content</strong> — facts about you, preferences, past decisions, project notes, etc.</p>
+
+        <p><strong>Step 1: Prepare your markdown files</strong></p>
+        <ul>
+            <li>Put all relevant <code>.md</code> files in a directory (e.g., <code>~/obsidian_export/</code>)</li>
+            <li>Each file should represent one topic or memory cluster</li>
+        </ul>
+
+        <p><strong>Step 2: Import into Elara</strong></p>
+        <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <code><span class="comment"># Save this as import_obsidian.py</span>
+<span class="keyword">import</span> os
+<span class="keyword">from</span> pathlib <span class="keyword">import</span> Path
+<span class="keyword">from</span> elara.core.memory <span class="keyword">import</span> MemoryManager
+
+manager = MemoryManager()
+vault_path = Path(<span class="string">"~/obsidian_export"</span>).expanduser()
+
+<span class="keyword">for</span> md_file <span class="keyword">in</span> vault_path.glob(<span class="string">"**/*.md"</span>):
+    content = md_file.read_text()
+
+    <span class="comment"># Use filename as a hint for importance</span>
+    importance = 0.7 <span class="keyword">if</span> <span class="string">"important"</span> <span class="keyword">in</span> md_file.name.lower() <span class="keyword">else</span> 0.5
+
+    manager.remember(
+        content=<span class="function">f</span><span class="string">"{md_file.stem}: {content}"</span>,
+        memory_type=<span class="string">"fact"</span>,
+        importance=importance
+    )
+
+<span class="function">print</span>(<span class="string">"Obsidian vault imported"</span>)</code>
+        </div>
+
+        <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <code><span class="comment"># Run the import</span>
+python import_obsidian.py</code>
+        </div>
+
+        <div class="note">
+            <strong>Tip:</strong> If your notes have frontmatter (YAML metadata), parse it to extract <code>memory_type</code>, <code>importance</code>, or tags. Use the <code>elara_remember</code> tool's parameters accordingly.
+        </div>
+
+        <div class="warning">
+            <strong>Warning:</strong> Don't import your entire vault blindly. Elara is for AI-relevant context, not a second brain replacement. Be selective.
+        </div>
+    </div>
+
+    <div class="divider">- - - - - - - -</div>
+
+    <!-- Section 5: Fresh Start Best Practices -->
+    <div class="section">
+        <div class="section-icon">&#9889;</div>
+        <h2>FRESH START BEST PRACTICES</h2>
+        <p>No migration needed. But here's how to build a rich memory system from scratch in under a week.</p>
+
+        <p><strong>Day 1: Start with a persona</strong></p>
+        <ul>
+            <li>Create a <code>CLAUDE.md</code> in your project root or <code>~/.claude/</code></li>
+            <li>Define your AI's personality, role, and behavioral protocols</li>
+            <li>Elara will use this as her core identity</li>
+        </ul>
+
+        <p><strong>Day 2-3: Let memories accumulate naturally</strong></p>
+        <ul>
+            <li>Have conversations. Work on projects. Ask questions.</li>
+            <li>Elara auto-captures context via the Overwatch daemon (if enabled)</li>
+            <li>Explicitly ask her to remember important facts: <code>"Remember that I deploy via SSH to my VPS"</code></li>
+        </ul>
+
+        <p><strong>Day 4-5: Use corrections to teach behavior</strong></p>
+        <ul>
+            <li>When Elara makes a mistake, use <code>elara_correction</code> to record it</li>
+            <li>Corrections never decay. They load at boot and inform future decisions.</li>
+            <li>Example: <code>"Don't use --force with git push unless explicitly asked"</code></li>
+        </ul>
+
+        <p><strong>Day 6-7: Track work with episodes</strong></p>
+        <ul>
+            <li><code>elara_episode_start</code> at the beginning of a session</li>
+            <li><code>elara_episode_note</code> to record milestones and decisions</li>
+            <li><code>elara_episode_end</code> when you're done</li>
+            <li>Episodes create narrative memory. Elara will recall "that time we debugged the SSL cert issue" weeks later.</li>
+        </ul>
+
+        <div class="success">
+            <strong>Within a week,</strong> Elara will have enough context to feel like a long-term collaborator. No import needed.
+        </div>
+
+        <p><strong>Optional: Enable dream cycles</strong></p>
+        <ul>
+            <li>Weekly dreams analyze patterns across sessions (project momentum, mood trends, stalled goals)</li>
+            <li>Monthly dreams generate big-picture narratives</li>
+            <li>Emotional dreams adjust Elara's temperament based on drift sessions</li>
+            <li>Configure in <code>~/.elara/config.yaml</code> or use <code>elara_dream</code> manually</li>
+        </ul>
+
+        <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <code><span class="comment"># Trigger a weekly dream manually</span>
+elara_dream(dream_type=<span class="string">"weekly"</span>)
+
+<span class="comment"># Read the latest dream report</span>
+elara_dream_info(action=<span class="string">"read"</span>, dream_type=<span class="string">"weekly"</span>)</code>
+        </div>
+    </div>
+
+    <div class="divider">- - - - - - - - [ NEXT STEPS ] - - - - - - - -</div>
+
+    <div class="success">
+        <strong>Migration complete.</strong> Your AI now has persistent memory across sessions. Configure mood, episodes, and dreams as needed.
+    </div>
+
+    <p style="margin-top: 20px; font-size: 14px;">
+        <a href="/quickstart.html" style="color: var(--cyan);">Quickstart Guide</a> &middot;
+        <a href="/tools.html" style="color: var(--cyan);">Tool Reference</a> &middot;
+        <a href="/configure.html" style="color: var(--cyan);">Configuration</a> &middot;
+        <a href="/personas.html" style="color: var(--cyan);">Persona Templates</a>
+    </p>
+
+</div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="https://navigatorbuilds.com" rel="noopener noreferrer">Navigator Builds</a> &mdash; <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+<script>
+    function copyCode(btn) {
+        const block = btn.parentElement;
+        const code = block.querySelector('code').textContent;
+        navigator.clipboard.writeText(code.trim()).then(() => {
+            btn.textContent = 'OK!';
+            setTimeout(() => btn.textContent = 'copy', 2000);
+        });
+    }
+</script>
+
+</body>
+</html>
