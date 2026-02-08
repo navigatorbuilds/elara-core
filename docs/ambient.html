@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA // Ambient Soundscape</title>
+    <meta name="description" content="Cyberpunk ambient soundscape generator for deep work sessions. Synthesized in-browser with Web Audio API.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Scanline overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 255, 0, 0.015) 2px,
+                rgba(0, 255, 0, 0.015) 4px
+            );
+            z-index: 1000;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* --- ORB / RING --- */
+        #orb-container {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #ring {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 255, 0, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1), inset 0 0 20px rgba(0, 255, 0, 0.05);
+            position: relative;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        #ring.active {
+            border-color: rgba(0, 255, 0, 0.6);
+            box-shadow: 0 0 40px rgba(0, 255, 0, 0.2), 0 0 80px rgba(0, 255, 0, 0.1), inset 0 0 30px rgba(0, 255, 0, 0.08);
+            animation: ringPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes ringPulse {
+            0%, 100% {
+                box-shadow: 0 0 40px rgba(0, 255, 0, 0.2), 0 0 80px rgba(0, 255, 0, 0.1), inset 0 0 30px rgba(0, 255, 0, 0.08);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 60px rgba(0, 255, 0, 0.35), 0 0 120px rgba(0, 255, 0, 0.15), inset 0 0 50px rgba(0, 255, 0, 0.12);
+                transform: scale(1.02);
+            }
+        }
+
+        /* Inner glow */
+        #ring-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.08) 0%, transparent 70%);
+            transition: all 0.3s ease;
+        }
+
+        #ring.active #ring-inner {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.15) 0%, transparent 70%);
+        }
+
+        /* Orbital dots */
+        .orbital-dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(0, 255, 0, 0.2);
+            transition: all 0.15s ease;
+        }
+
+        .orbital-dot.lit {
+            background: #0f0;
+            box-shadow: 0 0 8px #0f0, 0 0 16px rgba(0, 255, 0, 0.5);
+            width: 8px;
+            height: 8px;
+        }
+
+        /* Memory pulse ring flash */
+        #pulse-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            pointer-events: none;
+        }
+
+        #pulse-ring.flash {
+            animation: pulseFlash 1.5s ease-out;
+        }
+
+        @keyframes pulseFlash {
+            0% {
+                border-color: rgba(0, 255, 0, 0.6);
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% {
+                border-color: rgba(0, 255, 0, 0);
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* --- MOOD STATE --- */
+        #mood {
+            font-size: 0.7rem;
+            letter-spacing: 0.3em;
+            color: rgba(0, 255, 0, 0.5);
+            text-transform: uppercase;
+            min-height: 1.2em;
+            transition: color 0.5s ease;
+        }
+
+        #mood.active {
+            color: #0f0;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        /* --- ACTIVATE BUTTON --- */
+        #activate-btn {
+            background: transparent;
+            border: 1px solid rgba(0, 255, 0, 0.4);
+            color: #0f0;
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            font-size: 1rem;
+            letter-spacing: 0.3em;
+            padding: 12px 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        #activate-btn:hover {
+            background: rgba(0, 255, 0, 0.1);
+            border-color: #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+        }
+
+        #activate-btn.hidden {
+            display: none;
+        }
+
+        /* --- CONTROLS PANEL --- */
+        #controls {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 320px;
+        }
+
+        #controls.visible {
+            display: flex;
+        }
+
+        /* Toggle buttons */
+        #toggles {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            color: rgba(0, 255, 0, 0.3);
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            text-align: left;
+        }
+
+        .toggle-btn:hover {
+            border-color: rgba(0, 255, 0, 0.5);
+        }
+
+        .toggle-btn.on {
+            border-color: rgba(0, 255, 0, 0.6);
+            color: #0f0;
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .toggle-btn .indicator {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(0, 255, 0, 0.15);
+            margin-right: 8px;
+            transition: all 0.2s ease;
+            vertical-align: middle;
+        }
+
+        .toggle-btn.on .indicator {
+            background: #0f0;
+            box-shadow: 0 0 6px #0f0;
+        }
+
+        /* Volume slider */
+        #volume-section {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #volume-label {
+            font-size: 0.6rem;
+            color: rgba(0, 255, 0, 0.4);
+            letter-spacing: 0.15em;
+            white-space: nowrap;
+        }
+
+        #volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 255, 0, 0.15);
+            outline: none;
+            cursor: pointer;
+        }
+
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #0f0;
+            box-shadow: 0 0 6px rgba(0, 255, 0, 0.5);
+            cursor: pointer;
+        }
+
+        #volume-slider::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #0f0;
+            box-shadow: 0 0 6px rgba(0, 255, 0, 0.5);
+            border: none;
+            cursor: pointer;
+        }
+
+        #volume-value {
+            font-size: 0.6rem;
+            color: rgba(0, 255, 0, 0.4);
+            min-width: 30px;
+            text-align: right;
+        }
+
+        /* --- SUBTITLE --- */
+        #subtitle {
+            font-size: 0.55rem;
+            color: rgba(0, 255, 0, 0.2);
+            letter-spacing: 0.2em;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        /* --- BACK LINK --- */
+        #back {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 0.65rem;
+            color: rgba(0, 255, 0, 0.25);
+            text-decoration: none;
+            letter-spacing: 0.1em;
+            z-index: 10;
+            transition: color 0.2s ease;
+        }
+
+        #back:hover {
+            color: rgba(0, 255, 0, 0.6);
+        }
+
+        /* --- WATERMARK --- */
+        #watermark {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 0.6rem;
+            color: rgba(0, 255, 0, 0.15);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* --- BG PARTICLES --- */
+        canvas#bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @media (max-width: 480px) {
+            #orb-container {
+                width: 200px;
+                height: 200px;
+            }
+            #ring {
+                width: 150px;
+                height: 150px;
+            }
+            #controls {
+                width: 280px;
+            }
+            #toggles {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg"></canvas>
+    <a id="back" href="/">&lt; ELARA CORE</a>
+
+    <div id="container">
+        <div id="mood">OFFLINE</div>
+
+        <div id="orb-container">
+            <div id="ring">
+                <div id="ring-inner"></div>
+            </div>
+            <div id="pulse-ring"></div>
+            <!-- 8 orbital dots placed via JS -->
+        </div>
+
+        <button id="activate-btn">ACTIVATE</button>
+
+        <div id="controls">
+            <div id="toggles">
+                <button class="toggle-btn on" data-layer="drone">
+                    <span class="indicator"></span>Deep Drone
+                </button>
+                <button class="toggle-btn on" data-layer="chirps">
+                    <span class="indicator"></span>Data Chirps
+                </button>
+                <button class="toggle-btn on" data-layer="pulse">
+                    <span class="indicator"></span>Memory Pulse
+                </button>
+                <button class="toggle-btn on" data-layer="static">
+                    <span class="indicator"></span>Rain Static
+                </button>
+            </div>
+
+            <div id="volume-section">
+                <span id="volume-label">VOL</span>
+                <input type="range" id="volume-slider" min="0" max="100" value="60">
+                <span id="volume-value">60</span>
+            </div>
+        </div>
+
+        <div id="subtitle">Ambient workspace sounds for deep work sessions</div>
+    </div>
+
+    <div id="watermark">elara.navigatorbuilds.com</div>
+
+    <script>
+    (function() {
+        // ============================================================
+        //  STATE
+        // ============================================================
+        const state = {
+            active: false,
+            layers: { drone: true, chirps: true, pulse: true, static: true },
+            volume: 0.6
+        };
+
+        let audioCtx = null;
+        let masterGain = null;
+        const nodes = {};
+        let chirpTimer = null;
+        let pulseTimer = null;
+
+        // ============================================================
+        //  ORBITAL DOTS
+        // ============================================================
+        const orbContainer = document.getElementById('orb-container');
+        const ring = document.getElementById('ring');
+        const dotCount = 8;
+        const dots = [];
+
+        for (let i = 0; i < dotCount; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'orbital-dot';
+            const angle = (i / dotCount) * Math.PI * 2 - Math.PI / 2;
+            const radius = 115; // just outside the ring
+            const cx = 130; // center of orb-container (260/2)
+            const cy = 130;
+            const x = cx + Math.cos(angle) * radius - 3;
+            const y = cy + Math.sin(angle) * radius - 3;
+            dot.style.left = x + 'px';
+            dot.style.top = y + 'px';
+            orbContainer.appendChild(dot);
+            dots.push(dot);
+        }
+
+        function flashDot() {
+            const idx = Math.floor(Math.random() * dotCount);
+            const dot = dots[idx];
+            dot.classList.add('lit');
+            setTimeout(() => dot.classList.remove('lit'), 300);
+        }
+
+        function flashPulseRing() {
+            const pr = document.getElementById('pulse-ring');
+            pr.classList.remove('flash');
+            void pr.offsetWidth; // reflow
+            pr.classList.add('flash');
+        }
+
+        // ============================================================
+        //  MOOD LABEL
+        // ============================================================
+        const moodEl = document.getElementById('mood');
+
+        function updateMood() {
+            if (!state.active) {
+                moodEl.textContent = 'OFFLINE';
+                moodEl.classList.remove('active');
+                return;
+            }
+            moodEl.classList.add('active');
+
+            const { drone, chirps, pulse, static: st } = state.layers;
+
+            if (drone && chirps && pulse && st) {
+                moodEl.textContent = 'FULLY OPERATIONAL';
+            } else if (drone && pulse && !chirps && !st) {
+                moodEl.textContent = 'STANDBY MODE';
+            } else if (!drone && chirps && !pulse && !st) {
+                moodEl.textContent = 'DATA PROCESSING';
+            } else if (!drone && !chirps && !pulse && st) {
+                moodEl.textContent = 'BACKGROUND NOISE';
+            } else if (!drone && !chirps && !pulse && !st) {
+                moodEl.textContent = 'SILENT RUNNING';
+            } else if (drone && !chirps && !pulse && !st) {
+                moodEl.textContent = 'DEEP RESONANCE';
+            } else if (!drone && !chirps && pulse && !st) {
+                moodEl.textContent = 'HEARTBEAT ONLY';
+            } else if (drone && chirps && !pulse && !st) {
+                moodEl.textContent = 'PROCESSING STREAM';
+            } else if (drone && pulse && chirps && !st) {
+                moodEl.textContent = 'CORE ACTIVE';
+            } else if (drone && pulse && !chirps && st) {
+                moodEl.textContent = 'AMBIENT STANDBY';
+            } else {
+                moodEl.textContent = 'PARTIAL SYSTEMS';
+            }
+        }
+
+        // ============================================================
+        //  AUDIO ENGINE
+        // ============================================================
+
+        function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = state.volume;
+            masterGain.connect(audioCtx.destination);
+        }
+
+        // --- DEEP DRONE ---
+        function startDrone() {
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0.25;
+
+            // Main oscillator — low sine
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = 60;
+
+            // LFO for slow modulation
+            const lfo = audioCtx.createOscillator();
+            lfo.type = 'sine';
+            lfo.frequency.value = 0.15; // very slow
+            const lfoGain = audioCtx.createGain();
+            lfoGain.gain.value = 8; // modulation depth in Hz
+
+            lfo.connect(lfoGain);
+            lfoGain.connect(osc.frequency);
+
+            // Second harmonic for richness
+            const osc2 = audioCtx.createOscillator();
+            osc2.type = 'sine';
+            osc2.frequency.value = 90;
+            const gain2 = audioCtx.createGain();
+            gain2.gain.value = 0.08;
+
+            // Sub bass
+            const osc3 = audioCtx.createOscillator();
+            osc3.type = 'sine';
+            osc3.frequency.value = 40;
+            const gain3 = audioCtx.createGain();
+            gain3.gain.value = 0.12;
+
+            osc.connect(gain);
+            osc2.connect(gain2);
+            osc3.connect(gain3);
+            gain.connect(masterGain);
+            gain2.connect(masterGain);
+            gain3.connect(masterGain);
+
+            osc.start();
+            osc2.start();
+            osc3.start();
+            lfo.start();
+
+            nodes.drone = { oscs: [osc, osc2, osc3, lfo], gains: [gain, gain2, gain3], main: gain };
+        }
+
+        function stopDrone() {
+            if (!nodes.drone) return;
+            nodes.drone.gains.forEach(g => {
+                g.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5);
+            });
+            setTimeout(() => {
+                nodes.drone.oscs.forEach(o => { try { o.stop(); } catch(e){} });
+                nodes.drone = null;
+            }, 2000);
+        }
+
+        // --- DATA CHIRPS ---
+        function playChirp() {
+            if (!audioCtx || !state.layers.chirps) return;
+
+            const freq = 800 + Math.random() * 1200;
+            const osc = audioCtx.createOscillator();
+            osc.type = Math.random() > 0.5 ? 'sine' : 'square';
+            osc.frequency.value = freq;
+
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0;
+
+            // Quick attack, quick decay
+            const now = audioCtx.currentTime;
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.06 + Math.random() * 0.04, now + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08 + Math.random() * 0.12);
+
+            // Optional frequency slide for variety
+            if (Math.random() > 0.6) {
+                osc.frequency.setValueAtTime(freq, now);
+                osc.frequency.exponentialRampToValueAtTime(freq * (0.5 + Math.random()), now + 0.1);
+            }
+
+            // Bandpass for softening
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = freq;
+            filter.Q.value = 2;
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGain);
+
+            osc.start(now);
+            osc.stop(now + 0.25);
+
+            flashDot();
+        }
+
+        function scheduleChirp() {
+            if (!state.layers.chirps || !state.active) return;
+            const delay = 2000 + Math.random() * 2000; // 2-4 seconds
+            chirpTimer = setTimeout(() => {
+                playChirp();
+                scheduleChirp();
+            }, delay);
+        }
+
+        function stopChirps() {
+            clearTimeout(chirpTimer);
+            chirpTimer = null;
+        }
+
+        // --- MEMORY PULSE ---
+        function playPulse() {
+            if (!audioCtx || !state.layers.pulse) return;
+
+            const now = audioCtx.currentTime;
+
+            // Main ping
+            const osc = audioCtx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = 440;
+
+            // Soft harmonic
+            const osc2 = audioCtx.createOscillator();
+            osc2.type = 'sine';
+            osc2.frequency.value = 660;
+
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.08, now + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+            const gain2 = audioCtx.createGain();
+            gain2.gain.setValueAtTime(0, now);
+            gain2.gain.linearRampToValueAtTime(0.03, now + 0.05);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+
+            // Reverb via convolver (simple delay-based)
+            const delay = audioCtx.createDelay();
+            delay.delayTime.value = 0.15;
+            const delayGain = audioCtx.createGain();
+            delayGain.gain.value = 0.3;
+            const delay2 = audioCtx.createDelay();
+            delay2.delayTime.value = 0.3;
+            const delayGain2 = audioCtx.createGain();
+            delayGain2.gain.value = 0.15;
+
+            osc.connect(gain);
+            osc2.connect(gain2);
+            gain.connect(masterGain);
+            gain2.connect(masterGain);
+
+            // Delay chain for reverb effect
+            gain.connect(delay);
+            delay.connect(delayGain);
+            delayGain.connect(masterGain);
+            delayGain.connect(delay2);
+            delay2.connect(delayGain2);
+            delayGain2.connect(masterGain);
+
+            osc.start(now);
+            osc.stop(now + 2);
+            osc2.start(now);
+            osc2.stop(now + 1.5);
+
+            flashPulseRing();
+        }
+
+        function schedulePulse() {
+            if (!state.layers.pulse || !state.active) return;
+            pulseTimer = setInterval(() => {
+                playPulse();
+            }, 8000);
+        }
+
+        function stopPulse() {
+            clearInterval(pulseTimer);
+            pulseTimer = null;
+        }
+
+        // --- RAIN STATIC ---
+        function startStatic() {
+            // White noise via buffer
+            const bufferSize = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1);
+            }
+
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.loop = true;
+
+            // Bandpass filter for rain-like texture
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 3000;
+            filter.Q.value = 0.5;
+
+            // Second filter for shaping
+            const hipass = audioCtx.createBiquadFilter();
+            hipass.type = 'highpass';
+            hipass.frequency.value = 800;
+
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0.04; // very quiet
+
+            // Slow LFO on filter for movement
+            const lfo = audioCtx.createOscillator();
+            lfo.type = 'sine';
+            lfo.frequency.value = 0.08;
+            const lfoGain = audioCtx.createGain();
+            lfoGain.gain.value = 800;
+            lfo.connect(lfoGain);
+            lfoGain.connect(filter.frequency);
+
+            source.connect(hipass);
+            hipass.connect(filter);
+            filter.connect(gain);
+            gain.connect(masterGain);
+            lfo.start();
+            source.start();
+
+            nodes.static = { source, lfo, gain, main: gain };
+        }
+
+        function stopStatic() {
+            if (!nodes.static) return;
+            nodes.static.gain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5);
+            setTimeout(() => {
+                try { nodes.static.source.stop(); } catch(e){}
+                try { nodes.static.lfo.stop(); } catch(e){}
+                nodes.static = null;
+            }, 2000);
+        }
+
+        // ============================================================
+        //  LAYER CONTROL
+        // ============================================================
+
+        function startLayer(name) {
+            switch(name) {
+                case 'drone': startDrone(); break;
+                case 'chirps': scheduleChirp(); break;
+                case 'pulse': playPulse(); schedulePulse(); break;
+                case 'static': startStatic(); break;
+            }
+        }
+
+        function stopLayer(name) {
+            switch(name) {
+                case 'drone': stopDrone(); break;
+                case 'chirps': stopChirps(); break;
+                case 'pulse': stopPulse(); break;
+                case 'static': stopStatic(); break;
+            }
+        }
+
+        // ============================================================
+        //  UI WIRING
+        // ============================================================
+
+        const activateBtn = document.getElementById('activate-btn');
+        const controlsEl = document.getElementById('controls');
+        const volumeSlider = document.getElementById('volume-slider');
+        const volumeValue = document.getElementById('volume-value');
+        const ringEl = document.getElementById('ring');
+
+        // Activate
+        activateBtn.addEventListener('click', () => {
+            initAudio();
+            state.active = true;
+
+            activateBtn.classList.add('hidden');
+            controlsEl.classList.add('visible');
+            ringEl.classList.add('active');
+
+            // Start all enabled layers
+            Object.keys(state.layers).forEach(name => {
+                if (state.layers[name]) startLayer(name);
+            });
+
+            updateMood();
+        });
+
+        // Toggle buttons
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const layer = btn.dataset.layer;
+                state.layers[layer] = !state.layers[layer];
+                btn.classList.toggle('on', state.layers[layer]);
+
+                if (state.active) {
+                    if (state.layers[layer]) {
+                        startLayer(layer);
+                    } else {
+                        stopLayer(layer);
+                    }
+                }
+
+                // Update ring glow based on active layers
+                const anyActive = Object.values(state.layers).some(v => v);
+                ringEl.classList.toggle('active', anyActive);
+
+                updateMood();
+            });
+        });
+
+        // Volume
+        volumeSlider.addEventListener('input', (e) => {
+            state.volume = e.target.value / 100;
+            volumeValue.textContent = e.target.value;
+            if (masterGain) {
+                masterGain.gain.setTargetAtTime(state.volume, audioCtx.currentTime, 0.05);
+            }
+        });
+
+        // ============================================================
+        //  BG PARTICLES
+        // ============================================================
+        const canvas = document.getElementById('bg');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        function initParticles() {
+            particles = [];
+            const count = Math.min(60, Math.floor((canvas.width * canvas.height) / 20000));
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.2,
+                    vy: (Math.random() - 0.5) * 0.15,
+                    size: Math.random() * 1.5 + 0.5,
+                    alpha: Math.random() * 0.15 + 0.02
+                });
+            }
+        }
+        initParticles();
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 255, 0, ${p.alpha})`;
+                ctx.fill();
+            });
+
+            requestAnimationFrame(drawParticles);
+        }
+        drawParticles();
+
+        // Init mood display
+        updateMood();
+    })();
+    </script>
+</body>
+</html>

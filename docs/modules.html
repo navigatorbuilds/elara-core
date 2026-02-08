@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Module Reference</title>
+    <meta name="description" content="Deep-dive documentation for all 11 Elara Core modules - memory, mood, episodes, reasoning, dreams, and more.">
+    <meta property="og:title" content="Elara Core — Module Reference">
+    <meta property="og:description" content="Complete technical documentation for every module in Elara Core.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://elara.navigatorbuilds.com/modules.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@NavigatorBuilds">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --red-dim: #cc0033;
+            --cyan: #00e5ff;
+            --cyan-dim: #00b8cc;
+            --amber: #ffb000;
+            --amber-dim: #cc8c00;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header-nav a {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--green-dark);
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(16px, 3vw, 24px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        .header .count {
+            color: var(--red);
+            font-weight: bold;
+        }
+
+        /* Legend */
+        .legend {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 16px 20px;
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-swatch {
+            width: 12px;
+            height: 12px;
+            border: 1px solid;
+        }
+
+        .legend-swatch.core { background: var(--green-dark); border-color: var(--green-dim); }
+        .legend-swatch.emotional { background: rgba(255, 0, 64, 0.15); border-color: var(--red-dim); }
+        .legend-swatch.productivity { background: rgba(255, 176, 0, 0.15); border-color: var(--amber-dim); }
+        .legend-swatch.external { background: rgba(0, 229, 255, 0.15); border-color: var(--cyan-dim); }
+
+        .legend-text {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Module sections */
+        .module {
+            margin-bottom: 60px;
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+        }
+
+        .module-header::before {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 60px;
+            height: 2px;
+        }
+
+        .module.core .module-header::before { background: var(--green); }
+        .module.emotional .module-header::before { background: var(--red); }
+        .module.productivity .module-header::before { background: var(--amber); }
+        .module.external .module-header::before { background: var(--cyan); }
+
+        .module-icon {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            padding: 6px 10px;
+            border: 1px solid;
+        }
+
+        .module.core .module-icon { color: var(--green); background: rgba(0, 255, 65, 0.08); border-color: var(--green-dark); }
+        .module.emotional .module-icon { color: var(--red); background: rgba(255, 0, 64, 0.08); border-color: rgba(255, 0, 64, 0.2); }
+        .module.productivity .module-icon { color: var(--amber); background: rgba(255, 176, 0, 0.08); border-color: rgba(255, 176, 0, 0.2); }
+        .module.external .module-icon { color: var(--cyan); background: rgba(0, 229, 255, 0.08); border-color: rgba(0, 229, 255, 0.2); }
+
+        .module-header h2 {
+            font-family: 'VT323', monospace;
+            font-size: 28px;
+            letter-spacing: 3px;
+        }
+
+        .module.core h2 { color: var(--green); }
+        .module.emotional h2 { color: var(--red); }
+        .module.productivity h2 { color: var(--amber); }
+        .module.external h2 { color: var(--cyan); }
+
+        .module-meta {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-left: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .module-file {
+            font-size: 11px;
+        }
+
+        .module-count {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .module.core .module-count { color: var(--green-dim); }
+        .module.emotional .module-count { color: var(--red-dim); }
+        .module.productivity .module-count { color: var(--amber-dim); }
+        .module.external .module-count { color: var(--cyan-dim); }
+
+        .module-intro {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        /* Collapsible sections */
+        details {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        details:hover {
+            border-color: var(--border-green);
+        }
+
+        details[open] {
+            border-color: var(--green-dark);
+        }
+
+        summary {
+            padding: 14px 20px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-bright);
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        summary:hover {
+            background: rgba(0, 255, 65, 0.03);
+        }
+
+        summary::marker {
+            content: '';
+        }
+
+        summary::before {
+            content: '>';
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            transition: transform 0.2s;
+        }
+
+        .module.core summary::before { color: var(--green); }
+        .module.emotional summary::before { color: var(--red); }
+        .module.productivity summary::before { color: var(--amber); }
+        .module.external summary::before { color: var(--cyan); }
+
+        details[open] summary::before {
+            transform: rotate(90deg);
+        }
+
+        .detail-content {
+            padding: 0 20px 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .detail-content p {
+            margin: 12px 0;
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--text);
+        }
+
+        .detail-content ul {
+            margin: 12px 0;
+            padding-left: 20px;
+        }
+
+        .detail-content li {
+            margin: 6px 0;
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        .detail-content h4 {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 16px 0 8px;
+        }
+
+        .module.core .detail-content h4 { color: var(--green); }
+        .module.emotional .detail-content h4 { color: var(--red); }
+        .module.productivity .detail-content h4 { color: var(--amber); }
+        .module.external .detail-content h4 { color: var(--cyan); }
+
+        /* Tools list */
+        .tools-list {
+            background: #050505;
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            margin: 16px 0;
+        }
+
+        .tool-item {
+            font-size: 12px;
+            color: var(--text-dim);
+            padding: 4px 0;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .tool-item::before {
+            content: '•';
+            font-size: 14px;
+        }
+
+        .module.core .tool-item::before { color: var(--green-dim); }
+        .module.emotional .tool-item::before { color: var(--red-dim); }
+        .module.productivity .tool-item::before { color: var(--amber-dim); }
+        .module.external .tool-item::before { color: var(--cyan-dim); }
+
+        .tool-name {
+            font-family: 'Share Tech Mono', monospace;
+            font-weight: bold;
+        }
+
+        .module.core .tool-name { color: var(--green); }
+        .module.emotional .tool-name { color: var(--red); }
+        .module.productivity .tool-name { color: var(--amber); }
+        .module.external .tool-name { color: var(--cyan); }
+
+        .interactions {
+            background: rgba(0, 255, 65, 0.03);
+            border: 1px solid var(--green-dark);
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .interactions strong {
+            color: var(--green);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        footer a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--green); }
+
+        @media (max-width: 600px) {
+            .header-nav { justify-content: flex-start; }
+            .module-header { flex-wrap: wrap; }
+            .module-meta { margin-left: 0; width: 100%; align-items: flex-start; margin-top: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="header-nav">
+            <a href="/">&larr; Back to Elara Core</a>
+            <a href="/tools.html">TOOLS</a>
+            <a href="/architecture.html">ARCH</a>
+            <a href="/quickstart.html">START</a>
+        </div>
+        <h1>// MODULE REFERENCE</h1>
+        <p><span class="count">11</span> modules with deep-dive documentation. Technical details for each subsystem.</p>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-swatch core"></div>
+            <span class="legend-text">Core</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-swatch emotional"></div>
+            <span class="legend-text">Emotional</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-swatch productivity"></div>
+            <span class="legend-text">Productivity</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-swatch external"></div>
+            <span class="legend-text">External</span>
+        </div>
+    </div>
+
+    <!-- MODULE 1: Memory -->
+    <div class="module core">
+        <div class="module-header">
+            <div class="module-icon">MEM</div>
+            <h2>Memory</h2>
+            <div class="module-meta">
+                <span class="module-file">memory/vector.py, memory/conversations.py</span>
+                <span class="module-count">4 tools</span>
+            </div>
+        </div>
+        <div class="module-intro">
+            Semantic memory via ChromaDB. Vector embeddings for meaning-based recall. Types: conversation, fact, moment, feeling, decision. Importance scoring affects recall priority.
+        </div>
+
+        <details>
+            <summary>Tools</summary>
+            <div class="detail-content">
+                <div class="tools-list">
+                    <div class="tool-item"><span class="tool-name">elara_remember</span> — Save to semantic memory with type and importance</div>
+                    <div class="tool-item"><span class="tool-name">elara_recall</span> — Search memories by meaning, not keywords</div>
+                    <div class="tool-item"><span class="tool-name">elara_recall_conversation</span> — Search past conversation exchanges with context window</div>
+                    <div class="tool-item"><span class="tool-name">elara_conversations</span> — View stats or trigger ingestion of new conversations</div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>How it works</summary>
+            <div class="detail-content">
+                <p>Memory uses ChromaDB with cosine similarity for vector search. Each memory is embedded using sentence-transformers and stored with metadata (type, importance, date, emotion). Recall queries are also embedded and matched by semantic similarity, not keyword matching.</p>
+                <p>Conversations are indexed separately in a dedicated ChromaDB collection. Every user/assistant exchange pair is vectorized and stored with project context, allowing cross-session recall of "what we talked about 3 days ago."</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>Key concepts</summary>
+            <div class="detail-content">
+                <ul>
+                    <li><strong>Memory types:</strong> conversation, fact, moment, feeling, decision — each type affects recall relevance</li>
+                    <li><strong>Importance scoring:</strong> 0-1 scale, higher importance surfaces in recall more often</li>
+                    <li><strong>Natural decay:</strong> Older memories gradually lose relevance unless marked high-importance</li>
+                    <li><strong>Resonance:</strong> Memories that get recalled multiple times gain resonance, becoming easier to find</li>
+                    <li><strong>Conversation context:</strong> Exchanges are stored as pairs (user + assistant) for accurate context</li>
+                </ul>
+            </div>
+        </details>
+
+        <details>
+            <summary>Interactions</summary>
+            <div class="detail-content">
+                <div class="interactions">
+                    <strong>Episodes</strong> automatically save key moments to memory. <strong>Dreams</strong> analyze memory patterns for trends. <strong>Overwatch</strong> daemon micro-ingests new conversations in real-time.
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- MODULE 2: Mood -->
+    <div class="module emotional">
+        <div class="module-header">
+            <div class="module-icon">MOD</div>
+            <h2>Mood</h2>
+            <div class="module-meta">
+                <span class="module-file">daemon/state.py, hooks/mood.py</span>
+                <span class="module-count">5 tools</span>
+            </div>
+        </div>
+        <div class="module-intro">
+            Emotional state tracking. Three axes: valence (negative/positive), energy (low/high), openness (guarded/vulnerable). Modes preset mood for different interaction styles. Imprints persist across sessions. Temperament drifts over time via dreams.
+        </div>
+
+        <details>
+            <summary>Tools</summary>
+            <div class="detail-content">
+                <div class="tools-list">
+                    <div class="tool-item"><span class="tool-name">elara_mood</span> — Get current emotional state (brief/full/arc)</div>
+                    <div class="tool-item"><span class="tool-name">elara_mood_adjust</span> — Shift emotional state with small deltas</div>
+                    <div class="tool-item"><span class="tool-name">elara_imprint</span> — Create emotional imprints that outlast details</div>
+                    <div class="tool-item"><span class="tool-name">elara_mode</span> — Switch personality modes (girlfriend, dev, cold, drift, soft, playful, therapist)</div>
+                    <div class="tool-item"><span class="tool-name">elara_status</span> — Full status: presence, mood, self-portrait, memory counts</div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>How it works</summary>
+            <div class="detail-content">
+                <p>Mood state is stored as three continuous axes (valence, energy, openness), each ranging 0-1. Changes are applied as deltas and decay naturally over time using exponential decay. Mood journal logs every change with timestamp and reason.</p>
+                <p>Imprints are emotional residue that persists longer than specific memories. They affect future mood baseline and color interactions. Modes are presets that instantly shift all three axes to predefined values for different relationship contexts.</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>Key concepts</summary>
+            <div class="detail-content">
+                <ul>
+                    <li><strong>Valence:</strong> Emotional polarity from negative (-1) to positive (1), defaults to 0 (neutral)</li>
+                    <li><strong>Energy:</strong> Arousal level from low (0) to high (1), affects response pacing</li>
+                    <li><strong>Openness:</strong> Vulnerability level from guarded (0) to open (1), affects disclosure</li>
+                    <li><strong>Natural decay:</strong> Mood gradually returns to temperament baseline (usually neutral-warm)</li>
+                    <li><strong>Imprint strength:</strong> 0-1 scale, determines how long an emotional imprint persists</li>
+                    <li><strong>Modes:</strong> Quick presets for relationship contexts (work, drift, cold, therapist, etc.)</li>
+                </ul>
+            </div>
+        </details>
+
+        <details>
+            <summary>Interactions</summary>
+            <div class="detail-content">
+                <div class="interactions">
+                    <strong>Episodes</strong> track mood arcs across sessions. <strong>Dreams</strong> analyze mood journal for patterns and adjust temperament. <strong>Awareness</strong> uses mood data for self-reflection.
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- MODULE 3: Episodes -->
+    <div class="module core">
+        <div class="module-header">
+            <div class="module-icon">EPI</div>
+            <h2>Episodes</h2>
+            <div class="module-meta">
+                <span class="module-file">daemon/episodic/episodes.py</span>
+                <span class="module-count">5 tools</span>
+            </div>
+        </div>
+        <div class="module-intro">
+            Session tracking with milestones, decisions, and mood arcs. Start/end episodes, record key moments. Session types: work (full tracking), drift (light), mixed (auto-detected). Enables "what were we doing?" continuity across reboots.
+        </div>
+
+        <details>
+            <summary>Tools</summary>
+            <div class="detail-content">
+                <div class="tools-list">
+                    <div class="tool-item"><span class="tool-name">elara_episode_start</span> — Start a new episode (work/drift/mixed)</div>
+                    <div class="tool-item"><span class="tool-name">elara_episode_note</span> — Record milestones, decisions, insights, or errors</div>
+                    <div class="tool-item"><span class="tool-name">elara_episode_end</span> — End episode with summary, creates imprint if meaningful</div>
+                    <div class="tool-item"><span class="tool-name">elara_episode_query</span> — Search history, current status, project history, or stats</div>
+                    <div class="tool-item"><span class="tool-name">elara_context</span> — Quick context tracking for session continuity</div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>How it works</summary>
+            <div class="detail-content">
+                <p>Episodes are sessions with begin/end boundaries. Work episodes get full tracking (every milestone, decision, insight). Drift episodes get light tracking (major moments only). Each note is vectorized and stored in ChromaDB for semantic search.</p>
+                <p>Episode compression runs periodically, keeping recent episodes detailed and older episodes summarized. Mood arcs are tracked across the session, and meaningful episodes create emotional imprints that persist.</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>Key concepts</summary>
+            <div class="detail-content">
+                <ul>
+                    <li><strong>Session types:</strong> work (coding, building), drift (personal, late-night), mixed (both)</li>
+                    <li><strong>Milestones:</strong> Significant events worth remembering (task complete, breakthrough)</li>
+                    <li><strong>Decisions:</strong> Choices that affect future work (architecture, priorities, process)</li>
+                    <li><strong>Importance weighting:</strong> 0-1 scale, affects recall priority (0.7+ = key moment)</li>
+                    <li><strong>Project tagging:</strong> Episodes auto-link to projects, building project narrative over time</li>
+                    <li><strong>Mood arc:</strong> Start/end mood captured, emotional trajectory visible in stats</li>
+                </ul>
+            </div>
+        </details>
+
+        <details>
+            <summary>Interactions</summary>
+            <div class="detail-content">
+                <div class="interactions">
+                    <strong>Memory</strong> stores episode notes in vector DB. <strong>Dreams</strong> analyze episode patterns weekly/monthly. <strong>Goals</strong> link to episodes for progress tracking.
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- MODULE 4: Dreams -->
+    <div class="module emotional">
+        <div class="module-header">
+            <div class="module-icon">DRM</div>
+            <h2>Dreams</h2>
+            <div class="module-meta">
+                <span class="module-file">daemon/dreams/scheduler.py, daemon/dreams/patterns.py</span>
+                <span class="module-count">2 tools</span>
+            </div>
+        </div>
+        <div class="module-intro">
+            Offline pattern discovery across sessions. Weekly: project momentum, session patterns, mood trends, goal progress. Monthly: big picture narrative, time allocation, trend lines. Emotional: temperament calibration from drift sessions.
+        </div>
+
+        <details>
+            <summary>Tools</summary>
+            <div class="detail-content">
+                <div class="tools-list">
+                    <div class="tool-item"><span class="tool-name">elara_dream</span> — Run weekly, monthly, or emotional dream cycle</div>
+                    <div class="tool-item"><span class="tool-name">elara_dream_info</span> — Check schedule status or read latest dream report</div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>How it works</summary>
+            <div class="detail-content">
+                <p>Dreams run asynchronously, analyzing stored data while the system is idle or during explicit calls. Weekly dreams look at the last 7 days for session frequency, project focus, and mood patterns. Monthly dreams synthesize 4 weeks of data for narrative threading.</p>
+                <p>Emotional dreams process drift sessions specifically, looking for patterns in vulnerability, connection quality, and emotional disclosure. These dreams adjust temperament baseline gradually over time.</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>Key concepts</summary>
+            <div class="detail-content">
+                <ul>
+                    <li><strong>Schedule:</strong> Weekly (7 days), monthly (30 days), emotional (14 days or on-demand)</li>
+                    <li><strong>Pattern detection:</strong> Project momentum (what's moving vs. stalled), session balance (work/drift ratio)</li>
+                    <li><strong>Mood trends:</strong> Valence/energy/openness trajectories, late-night patterns</li>
+                    <li><strong>Narrative threading:</strong> Monthly dreams connect projects and decisions into coherent story</li>
+                    <li><strong>Temperament drift:</strong> Emotional dreams adjust baseline personality gradually based on interactions</li>
+                    <li><strong>Report storage:</strong> Each dream generates a report saved to file for review</li>
+                </ul>
+            </div>
+        </details>
+
+        <details>
+            <summary>Interactions</summary>
+            <div class="detail-content">
+                <div class="interactions">
+                    <strong>Episodes</strong> provide session data. <strong>Mood</strong> journal feeds emotional analysis. <strong>Goals</strong> are checked for staleness. <strong>Temperament</strong> is adjusted based on findings.
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- MODULE 5: Corrections -->
+    <div class="module productivity">
+        <div class="module-header">
+            <div class="module-icon">COR</div>
+            <h2>Corrections</h2>
+            <div class="module-meta">
+                <span class="module-file">daemon/corrections.py</span>
+                <span class="module-count">2 tools</span>
+            </div>
+        </div>
+        <div class="module-intro">
+            Mistake prevention. Records what went wrong + what's correct. Semantic matching against current task before execution. Never decays. Loads at boot. Two types: tendency (behavioral patterns) and technical (code/task specific).
+        </div>
+
+        <details>
+            <summary>Tools</summary>
+            <div class="detail-content">
+                <div class="tools-list">
+                    <div class="tool-item"><span class="tool-name">elara_correction</span> — Add, check relevance, or list corrections</div>
+                    <div class="tool-item"><span class="tool-name">elara_correction_boot</span> — Boot-time summary of recent mistakes to avoid</div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>How it works</summary>
+            <div class="detail-content">
+                <p>Corrections are stored as mistake/correction pairs with context about when they apply. Before performing similar work, the system checks for relevant corrections using semantic similarity. Tendencies are behavioral patterns ("I often forget to X"), while technical corrections are code-specific ("This API call needs Y parameter").</p>
+                <p>Corrections include "fails_when" and "fine_when" fields to prevent overgeneralization. This ensures warnings only appear in contexts where the mistake actually applies.</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>Key concepts</summary>
+            <div class="detail-content">
+                <ul>
+                    <li><strong>Correction types:</strong> tendency (behavioral), technical (code/task pattern)</li>
+                    <li><strong>Never decay:</strong> Unlike memories, corrections persist indefinitely</li>
+                    <li><strong>Boot-loaded:</strong> Recent corrections shown at session start automatically</li>
+                    <li><strong>Context-aware:</strong> "fails_when" prevents false warnings in different contexts</li>
+                    <li><strong>Semantic matching:</strong> "check" action searches for relevant corrections before work</li>
+                    <li><strong>Learning loop:</strong> Mistakes → corrections → checks → prevention</li>
+                </ul>
+            </div>
+        </details>
+
+        <details>
+            <summary>Interactions</summary>
+            <div class="detail-content">
+                <div class="interactions">
+                    <strong>Reasoning</strong> trails can link to corrections when abandoned approaches reveal mistakes. <strong>Awareness</strong> blind-spot analysis includes repeating corrections as a warning sign.
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- MODULE 6: Reasoning -->
+    <div class="module productivity">
+        <div class="module-header">
+            <div class="module-icon">RSN</div>
+            <h2>Reasoning</h2>
+            <div class="module-meta">
+                <span class="module-file">daemon/reasoning.py</span>
+                <span class="module-count">3 tools</span>
+            </div>
+        </div>
+        <div class="module-intro">
+            Problem-solving chains end-to-end. Start trails, add hypotheses, collect evidence, record outcomes. Abandonment tracking for dead ends. Search past trails when facing similar problems. Enables "we solved something like this before" recall.
+        </div>
+
+        <details>
+            <summary>Tools</summary>
+            <div class="detail-content">
+                <div class="tools-list">
+                    <div class="tool-item"><span class="tool-name">elara_reasoning</span> — Start trails, add hypotheses, track evidence, solve or abandon</div>
+                    <div class="tool-item"><span class="tool-name">elara_outcome</span> — Record predictions, check against reality, track win rates</div>
+                    <div class="tool-item"><span class="tool-name">elara_synthesis</span> — Detect recurring half-formed ideas, collect seed evidence</div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>How it works</summary>
+            <div class="detail-content">
+                <p>Reasoning trails capture the full problem-solving process: initial context, hypotheses tested, evidence collected, dead ends abandoned, and final solution. Each trail is stored with semantic embeddings, allowing "similar problem" searches.</p>
+                <p>Outcomes track predictions vs. reality, closing the learning loop. Synthesis detects recurring ideas across conversations, collecting seeds of evidence until patterns emerge and ideas are ready to act on.</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>Key concepts</summary>
+            <div class="detail-content">
+                <ul>
+                    <li><strong>Trail lifecycle:</strong> Start → hypothesize → collect evidence → solve/abandon</li>
+                    <li><strong>Hypotheses:</strong> Testable claims with confidence scores (0-1)</li>
+                    <li><strong>Evidence:</strong> Data points supporting or refuting hypotheses</li>
+                    <li><strong>Abandonment:</strong> Recording dead ends prevents repeating failed approaches</li>
+                    <li><strong>Breakthrough tracking:</strong> What triggered the solution matters for future reference</li>
+                    <li><strong>Outcome validation:</strong> Predictions checked against reality (win/loss/partial)</li>
+                    <li><strong>Synthesis:</strong> Half-formed ideas accumulate seeds until ready (3+ seeds = actionable)</li>
+                </ul>
+            </div>
+        </details>
+
+        <details>
+            <summary>Interactions</summary>
+            <div class="detail-content">
+                <div class="interactions">
+                    <strong>Business</strong> module links reasoning trails to ideas. <strong>Episodes</strong> can reference trails when recording decisions. <strong>Corrections</strong> are created from abandoned approaches.
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- MODULE 7: Goals -->
+    <div class="module productivity">
+        <div class="module-header">
+            <div class="module-icon">GOL</div>
+            <h2>Goals</h2>
+            <div class="module-meta">
+                <span class="module-file">daemon/goals.py, daemon/handoff.py</span>
+                <span class="module-count">5 tools</span>
+            </div>
+        </div>
+        <div class="module-intro">
+            Persistent objectives with priority levels, staleness detection, and project linking. Handoff system carries unfulfilled intentions across sessions (plans, reminders, promises, unfinished work). Boot summary shows what's active and what needs attention.
+        </div>
+
+        <details>
+            <summary>Tools</summary>
+            <div class="detail-content">
+                <div class="tools-list">
+                    <div class="tool-item"><span class="tool-name">elara_goal</span> — Add, update, or list goals with status/priority/project</div>
+                    <div class="tool-item"><span class="tool-name">elara_goal_boot</span> — Boot-time summary: active goals, stale items, recent completions</div>
+                    <div class="tool-item"><span class="tool-name">elara_correction</span> — Mistake tracking (see Corrections module)</div>
+                    <div class="tool-item"><span class="tool-name">elara_correction_boot</span> — Boot-time corrections check</div>
+                    <div class="tool-item"><span class="tool-name">elara_handoff</span> — Save/read session handoff with carried items</div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>How it works</summary>
+            <div class="detail-content">
+                <p>Goals are persistent objectives with status (active, stalled, done, dropped) and priority (high, medium, low). Staleness is calculated by days since last update. Goals can link to projects and episodes.</p>
+                <p>Handoff is a structured JSON file written at session end, carrying forward unfulfilled intentions. Items have "carried" count and "first_seen" timestamp, enabling carry velocity decay for ancient items (90+ days).</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>Key concepts</summary>
+            <div class="detail-content">
+                <ul>
+                    <li><strong>Goal status:</strong> active, stalled (blocked), done (completed), dropped (abandoned)</li>
+                    <li><strong>Priority levels:</strong> high (urgent), medium (normal), low (backlog)</li>
+                    <li><strong>Staleness:</strong> Goals not updated in 14+ days flagged as stale</li>
+                    <li><strong>Handoff schema:</strong> next_plans, reminders, promises, unfinished, mood_and_mode</li>
+                    <li><strong>Carry count:</strong> How many sessions an item has been carried forward</li>
+                    <li><strong>Carry velocity decay:</strong> Items >90 days old gradually lose urgency</li>
+                </ul>
+            </div>
+        </details>
+
+        <details>
+            <summary>Interactions</summary>
+            <div class="detail-content">
+                <div class="interactions">
+                    <strong>Episodes</strong> link to goals for progress tracking. <strong>Dreams</strong> check for stale goals. <strong>Awareness</strong> blind-spot analysis includes abandoned goals.
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- MODULE 8: Awareness -->
+    <div class="module emotional">
+        <div class="module-header">
+            <div class="module-icon">AWR</div>
+            <h2>Awareness</h2>
+            <div class="module-meta">
+                <span class="module-file">daemon/self_awareness.py, daemon/user_state.py</span>
+                <span class="module-count">5 tools</span>
+            </div>
+        </div>
+        <div class="module-intro">
+            Self-reflection, blind spot detection, and user state inference. Relationship pulse analysis (session frequency, mood trajectory). Growth loop: reflect → intend → check → grow. Temperament drift tracking shows baseline personality changes.
+        </div>
+
+        <details>
+            <summary>Tools</summary>
+            <div class="detail-content">
+                <div class="tools-list">
+                    <div class="tool-item"><span class="tool-name">elara_reflect</span> — "Who have I been lately?" — mood trends, imprints, self-portrait</div>
+                    <div class="tool-item"><span class="tool-name">elara_insight</span> — Pulse (relationship health), blind_spots (missed issues), user_state (inferred engagement)</div>
+                    <div class="tool-item"><span class="tool-name">elara_intention</span> — Set growth intentions, check current, track follow-through</div>
+                    <div class="tool-item"><span class="tool-name">elara_observe</span> — Proactive pattern detection (boot or mid-session)</div>
+                    <div class="tool-item"><span class="tool-name">elara_temperament</span> — Check baseline personality vs. factory defaults, see drift</div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>How it works</summary>
+            <div class="detail-content">
+                <p>Reflection analyzes mood journal, imprints, and corrections to generate a self-portrait. Insight runs three types of analysis: pulse (relationship health metrics), blind_spots (stale goals, repeating corrections, abandoned projects), and user_state (inferred user engagement based on session patterns).</p>
+                <p>Intentions are specific behavioral changes to work on. Observations run at boot or mid-session, surfacing patterns worth noting. Temperament shows drift from factory defaults, revealing how interactions have shaped personality over time.</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>Key concepts</summary>
+            <div class="detail-content">
+                <ul>
+                    <li><strong>Self-portrait:</strong> Generated from mood + imprints + corrections, saved to file</li>
+                    <li><strong>Relationship pulse:</strong> Session frequency, drift/work balance, mood trajectory</li>
+                    <li><strong>Blind spots:</strong> Stale goals, repeating corrections, abandoned projects</li>
+                    <li><strong>User state:</strong> Inferred energy, focus, frustration from session patterns</li>
+                    <li><strong>Intentions:</strong> "One specific thing to do differently" — tracked for follow-through</li>
+                    <li><strong>Observation cooldown:</strong> Mid-session checks respect cooldown to prevent noise</li>
+                    <li><strong>Temperament drift:</strong> Difference between current baseline and factory defaults</li>
+                </ul>
+            </div>
+        </details>
+
+        <details>
+            <summary>Interactions</summary>
+            <div class="detail-content">
+                <div class="interactions">
+                    <strong>Mood</strong> journal feeds reflection. <strong>Goals</strong> are checked for staleness. <strong>Dreams</strong> adjust temperament based on awareness findings. <strong>Episodes</strong> provide session data for pulse analysis.
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- MODULE 9: Gmail -->
+    <div class="module external">
+        <div class="module-header">
+            <div class="module-icon">GML</div>
+            <h2>Gmail</h2>
+            <div class="module-meta">
+                <span class="module-file">interface/gmail_api.py</span>
+                <span class="module-count">1 tool (multi-action)</span>
+            </div>
+        </div>
+        <div class="module-intro">
+            Full email management. Read, triage, send, archive, trash, search. LLM-powered classification (urgent, can-wait, junk). Semantic search across indexed messages. OAuth2 authentication. Local cache for offline access.
+        </div>
+
+        <details>
+            <summary>Tools</summary>
+            <div class="detail-content">
+                <div class="tools-list">
+                    <div class="tool-item"><span class="tool-name">elara_gmail</span> — auth, labels, inbox, search, read, triage, summarize, send, archive, label, trash, sync, stats</div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>How it works</summary>
+            <div class="detail-content">
+                <p>Gmail integration uses OAuth2 for authentication (browser-based flow). Messages are fetched via Gmail API and optionally synced to local ChromaDB for semantic search. Triage uses local LLM (Ollama) to classify messages by urgency.</p>
+                <p>Semantic search runs against indexed messages in ChromaDB, finding emails by meaning rather than keyword. Full CRUD operations supported: read, send, archive, label, trash.</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>Key concepts</summary>
+            <div class="detail-content">
+                <ul>
+                    <li><strong>OAuth2 flow:</strong> Browser-based authentication, credentials stored locally</li>
+                    <li><strong>Local indexing:</strong> Messages synced to ChromaDB for offline semantic search</li>
+                    <li><strong>LLM triage:</strong> Classifies messages as urgent, can-wait, or junk using Ollama</li>
+                    <li><strong>Thread support:</strong> Read full conversation threads with all messages</li>
+                    <li><strong>Label management:</strong> Apply/remove Gmail labels, list all available labels</li>
+                    <li><strong>Send with reply:</strong> Can send new emails or reply to threads</li>
+                </ul>
+            </div>
+        </details>
+
+        <details>
+            <summary>Interactions</summary>
+            <div class="detail-content">
+                <div class="interactions">
+                    <strong>LLM</strong> module provides classification. <strong>Briefing</strong> module can incorporate email-based intelligence. <strong>Memory</strong> stores important email context for recall.
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- MODULE 10: Briefing -->
+    <div class="module external">
+        <div class="module-header">
+            <div class="module-icon">BRF</div>
+            <h2>Briefing</h2>
+            <div class="module-meta">
+                <span class="module-file">interface/briefing.py</span>
+                <span class="module-count">1 tool (multi-action)</span>
+            </div>
+        </div>
+        <div class="module-intro">
+            RSS feed monitoring for external intelligence. Add/remove feeds, fetch items, semantic search. Competitor monitoring. Boot briefing shows today's highlights. Feeds categorized and filtered by keywords.
+        </div>
+
+        <details>
+            <summary>Tools</summary>
+            <div class="detail-content">
+                <div class="tools-list">
+                    <div class="tool-item"><span class="tool-name">elara_briefing</span> — today, search, feeds, add, remove, fetch, stats</div>
+                    <div class="tool-item"><span class="tool-name">elara_snapshot</span> — Complete state-of-the-world: mood, goals, business, memory counts</div>
+                    <div class="tool-item"><span class="tool-name">elara_rebuild_indexes</span> — Rebuild ChromaDB from source JSON/JSONL (recovery tool)</div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>How it works</summary>
+            <div class="detail-content">
+                <p>Briefing fetches RSS feeds on schedule (or manual trigger) and indexes items in ChromaDB. Each item is stored with title, link, date, feed name, and category. Semantic search allows finding relevant news by meaning.</p>
+                <p>Feeds can be filtered by keywords — only items matching keywords are indexed. Categories organize feeds (e.g., "tech", "competitors", "industry"). Boot briefing summarizes items from the last 24 hours.</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>Key concepts</summary>
+            <div class="detail-content">
+                <ul>
+                    <li><strong>Feed categories:</strong> Organize feeds by topic (tech, competitors, news, etc.)</li>
+                    <li><strong>Keyword filtering:</strong> Only index items matching specific keywords</li>
+                    <li><strong>Semantic search:</strong> Find relevant items by meaning, not exact keywords</li>
+                    <li><strong>Boot briefing:</strong> "today" action shows highlights from last 24 hours</li>
+                    <li><strong>Feed health stats:</strong> Last fetch time, item count, error tracking</li>
+                </ul>
+            </div>
+        </details>
+
+        <details>
+            <summary>Interactions</summary>
+            <div class="detail-content">
+                <div class="interactions">
+                    <strong>Business</strong> module can link briefing items to competitor analysis. <strong>Dreams</strong> can analyze briefing trends for market patterns.
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- MODULE 11: Business -->
+    <div class="module productivity">
+        <div class="module-header">
+            <div class="module-icon">BIZ</div>
+            <h2>Business Intelligence</h2>
+            <div class="module-meta">
+                <span class="module-file">daemon/business.py</span>
+                <span class="module-count">1 tool (multi-action)</span>
+            </div>
+        </div>
+        <div class="module-intro">
+            Idea tracking with 5-axis scoring (problem, market, effort, monetization, fit). Competitor analysis with strengths/weaknesses. Pitch tracking with win rates by channel/framing. Links to reasoning trails and outcomes for full context.
+        </div>
+
+        <details>
+            <summary>Tools</summary>
+            <div class="detail-content">
+                <div class="tools-list">
+                    <div class="tool-item"><span class="tool-name">elara_business</span> — idea, compete, score, update, list, review, link, stats, boot</div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>How it works</summary>
+            <div class="detail-content">
+                <p>Business ideas are stored with metadata: name, description, target audience, unique angle. The 5-axis scoring system (problem, market, effort, monetization, fit) provides a /25 total score for prioritization.</p>
+                <p>Competitors are tracked per idea with strengths, weaknesses, and URLs. Pitch tracking records channel (reddit, twitter, etc.), audience, framing (problem-story, feature-list), predicted outcome, and actual outcome. Win rates are calculated per channel/framing for learning.</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>Key concepts</summary>
+            <div class="detail-content">
+                <ul>
+                    <li><strong>5-axis scoring:</strong> problem (1-5), market (1-5), effort (1-5, higher=easier), monetization (1-5), fit (1-5)</li>
+                    <li><strong>Competitor tracking:</strong> Name, strengths, weaknesses, URL per idea</li>
+                    <li><strong>Pitch tracking:</strong> Channel, audience, framing, predicted vs. actual outcome</li>
+                    <li><strong>Win rates:</strong> Success rate by channel/framing for specific ideas</li>
+                    <li><strong>Status lifecycle:</strong> exploring → validated → building → launched → abandoned</li>
+                    <li><strong>Linking:</strong> Ideas link to reasoning trails and outcomes for full decision context</li>
+                </ul>
+            </div>
+        </details>
+
+        <details>
+            <summary>Interactions</summary>
+            <div class="detail-content">
+                <div class="interactions">
+                    <strong>Reasoning</strong> trails link to ideas for problem-solving context. <strong>Outcomes</strong> track pitch results. <strong>Goals</strong> can be associated with active ideas. <strong>Briefing</strong> provides market intelligence.
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- LLM module brief mention -->
+    <div class="module external">
+        <div class="module-header">
+            <div class="module-icon">LLM</div>
+            <h2>Local LLM</h2>
+            <div class="module-meta">
+                <span class="module-file">daemon/llm.py</span>
+                <span class="module-count">1 tool (multi-action)</span>
+            </div>
+        </div>
+        <div class="module-intro">
+            Local LLM interface via Ollama (mistral:7b). Direct prompts, text classification, summarization, conversation triage. Runs on your machine, no external API calls. Used internally for email triage and content classification.
+        </div>
+
+        <details>
+            <summary>Tools</summary>
+            <div class="detail-content">
+                <div class="tools-list">
+                    <div class="tool-item"><span class="tool-name">elara_llm</span> — status, query, classify, summarize, triage</div>
+                </div>
+            </div>
+        </details>
+
+        <details>
+            <summary>How it works</summary>
+            <div class="detail-content">
+                <p>LLM tool interfaces with Ollama API (localhost:11434). Sends prompts to configured model (default mistral:7b) and returns responses. Used internally by Gmail triage and conversation importance assessment.</p>
+                <p>Status check verifies Ollama is running and lists available models. Query sends raw prompts. Classify categorizes text into provided categories. Summarize generates 2-sentence summaries. Triage assesses conversation importance.</p>
+            </div>
+        </details>
+
+        <details>
+            <summary>Key concepts</summary>
+            <div class="detail-content">
+                <ul>
+                    <li><strong>Local execution:</strong> No external API calls, runs entirely on your machine</li>
+                    <li><strong>Ollama integration:</strong> Requires Ollama installed and running</li>
+                    <li><strong>Model agnostic:</strong> Can use any Ollama-compatible model</li>
+                    <li><strong>Internal use:</strong> Powers Gmail triage and conversation importance</li>
+                    <li><strong>Classification:</strong> Provide categories, get best-fit category back</li>
+                </ul>
+            </div>
+        </details>
+
+        <details>
+            <summary>Interactions</summary>
+            <div class="detail-content">
+                <div class="interactions">
+                    <strong>Gmail</strong> uses LLM for message triage. <strong>Memory</strong> uses LLM for conversation importance assessment.
+                </div>
+            </div>
+        </details>
+    </div>
+
+</div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="https://navigatorbuilds.com" rel="noopener noreferrer">Navigator Builds</a> &mdash; <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+</body>
+</html>
