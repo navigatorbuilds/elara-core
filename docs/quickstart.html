@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Quickstart Guide</title>
+    <meta name="description" content="Get Elara Core running in under 2 minutes. Step-by-step setup for Claude Code, Cursor, Windsurf, and other MCP clients.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header-nav a {
+            font-size: 13px;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--green-dark);
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(14px, 2.5vw, 22px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        .header .time {
+            color: var(--amber);
+        }
+
+        /* Steps */
+        .step {
+            margin-bottom: 50px;
+            position: relative;
+            padding-left: 60px;
+        }
+
+        .step-number {
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 24px;
+            color: var(--red);
+            width: 44px;
+            height: 44px;
+            border: 1px solid rgba(255, 0, 64, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step h2 {
+            font-family: 'VT323', monospace;
+            font-size: 26px;
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .step p {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: #050505;
+            border: 1px solid var(--border-green);
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            color: var(--green);
+            line-height: 1.8;
+        }
+
+        .code-block .comment {
+            color: var(--text-dim);
+        }
+
+        .code-block .cmd {
+            color: var(--cyan);
+        }
+
+        .code-block .output {
+            color: var(--text-dim);
+            font-style: italic;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            padding: 3px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--green-dark);
+            color: var(--green);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 0;
+        }
+
+        .tab {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-bottom: none;
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tab.active {
+            background: #050505;
+            color: var(--green);
+            border-color: var(--border-green);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Note boxes */
+        .note {
+            background: rgba(255, 176, 0, 0.04);
+            border-left: 3px solid var(--amber);
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .note strong {
+            color: var(--amber);
+        }
+
+        .success {
+            background: rgba(0, 255, 65, 0.04);
+            border-left: 3px solid var(--green);
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .success strong {
+            color: var(--green);
+        }
+
+        /* Divider */
+        .divider {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 12px;
+            margin: 40px 0;
+            letter-spacing: 4px;
+        }
+
+        /* What's next */
+        .next-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .next-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 16px;
+            text-decoration: none;
+            transition: border-color 0.2s;
+        }
+
+        .next-card:hover {
+            border-color: var(--green-dark);
+        }
+
+        .next-card h3 {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: var(--cyan);
+            margin-bottom: 6px;
+        }
+
+        .next-card p {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        footer a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--green); }
+
+        @media (max-width: 600px) {
+            .step { padding-left: 0; padding-top: 50px; }
+            .step-number { top: 0; left: 0; }
+            .tabs { flex-wrap: wrap; }
+            .next-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="header-nav">
+            <a href="/">&larr; Elara Core</a>
+            <a href="/tools.html">34 Tools</a>
+        </div>
+        <h1>// QUICKSTART</h1>
+        <p>From zero to persistent AI memory in <span class="time">under 2 minutes</span>.</p>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="step">
+        <div class="step-number">1</div>
+        <h2>Install</h2>
+        <p>Requires Python 3.10+. Works on Linux, macOS, and Windows WSL.</p>
+
+        <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <code>pip install elara-core</code>
+        </div>
+
+        <div class="note">
+            <strong>Windows:</strong> Make sure Python is in your PATH. If <code>pip</code> isn't recognized, use <code>python -m pip install elara-core</code>.
+        </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step">
+        <div class="step-number">2</div>
+        <h2>Initialize</h2>
+        <p>Creates the data directory (<code>~/.elara/</code>) and default config.</p>
+
+        <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">copy</button>
+            <code><span class="cmd">elara</span> init</code>
+        </div>
+
+        <div class="code-block">
+            <code><span class="output">Created /home/user/.elara/</span><br><span class="output">Default config written. Ready to serve.</span></code>
+        </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step">
+        <div class="step-number">3</div>
+        <h2>Connect to your MCP client</h2>
+        <p>Pick your editor. Each connects differently.</p>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('claude')">Claude Code</button>
+            <button class="tab" onclick="showTab('cursor')">Cursor</button>
+            <button class="tab" onclick="showTab('windsurf')">Windsurf</button>
+            <button class="tab" onclick="showTab('cline')">Cline</button>
+        </div>
+
+        <div id="tab-claude" class="tab-content active">
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                <code><span class="cmd">claude</span> mcp add elara -- elara serve</code>
+            </div>
+            <p>Done. Restart Claude Code and you'll see 34 tools loaded.</p>
+        </div>
+
+        <div id="tab-cursor" class="tab-content">
+            <p>Add to <code>.cursor/mcp.json</code> in your project root:</p>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                <code>{<br>  "mcpServers": {<br>    "elara": {<br>      "command": "elara",<br>      "args": ["serve"]<br>    }<br>  }<br>}</code>
+            </div>
+            <p>Restart Cursor. Check MCP panel for "elara" connection.</p>
+        </div>
+
+        <div id="tab-windsurf" class="tab-content">
+            <p>Add to <code>~/.codeium/windsurf/mcp_config.json</code>:</p>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                <code>{<br>  "mcpServers": {<br>    "elara": {<br>      "command": "elara",<br>      "args": ["serve"]<br>    }<br>  }<br>}</code>
+            </div>
+            <p>Restart Windsurf. Elara tools appear in the Cascade panel.</p>
+        </div>
+
+        <div id="tab-cline" class="tab-content">
+            <p>In VS Code: Cline Settings &rarr; MCP Servers &rarr; Add:</p>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                <code>{<br>  "elara": {<br>    "command": "elara",<br>    "args": ["serve"]<br>  }<br>}</code>
+            </div>
+            <p>The Cline extension will auto-detect the 34 tools.</p>
+        </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step">
+        <div class="step-number">4</div>
+        <h2>Verify</h2>
+        <p>Ask your AI something that uses memory. If it works, you'll see tool calls like these:</p>
+
+        <div class="code-block">
+            <code><span class="comment"># Try any of these:</span><br><br>"Remember that I prefer dark themes"<br><span class="output">&rarr; elara_remember("User prefers dark themes", memory_type="fact")</span><br><br>"What do you remember about me?"<br><span class="output">&rarr; elara_recall("user preferences and facts")</span><br><br>"How are you feeling?"<br><span class="output">&rarr; elara_mood(detail="brief")</span></code>
+        </div>
+
+        <div class="success">
+            <strong>That's it.</strong> Your AI now has persistent memory, mood, episodic tracking, and 31 more tools. It remembers you tomorrow.
+        </div>
+    </div>
+
+    <div class="divider">- - - - - - - - [ WHAT'S NEXT ] - - - - - - - -</div>
+
+    <div class="next-grid">
+        <a href="/tools.html" class="next-card">
+            <h3>Tool Reference</h3>
+            <p>All 34 tools documented with descriptions and action modes.</p>
+        </a>
+        <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer" class="next-card">
+            <h3>Source Code</h3>
+            <p>Star the repo, read the architecture, file issues.</p>
+        </a>
+        <a href="https://medium.com/@aivelikivodja/part-3-i-gave-my-ai-persistent-memory-0c1505335bfc" target="_blank" rel="noopener noreferrer" class="next-card">
+            <h3>The Story</h3>
+            <p>How 70 sessions in 6 days became 19K lines on PyPI.</p>
+        </a>
+    </div>
+</div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="https://navigatorbuilds.com" rel="noopener noreferrer">Navigator Builds</a> &mdash; <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+<script>
+    function showTab(name) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    function copyCode(btn) {
+        const block = btn.parentElement;
+        const code = block.querySelector('code').textContent;
+        navigator.clipboard.writeText(code.trim()).then(() => {
+            btn.textContent = 'OK!';
+            setTimeout(() => btn.textContent = 'copy', 2000);
+        });
+    }
+</script>
+
+</body>
+</html>
