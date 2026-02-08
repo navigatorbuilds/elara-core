@@ -65,7 +65,7 @@ Elara gives your AI assistant a sense of continuity across sessions. It remember
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**[Full tool reference →](https://elara.navigatorbuilds.com/tools.html)**
+**[Full tool reference →](https://elara.navigatorbuilds.com/tools.html)** · **[Quickstart guide →](https://elara.navigatorbuilds.com/quickstart.html)**
 
 ## Prerequisites
 
