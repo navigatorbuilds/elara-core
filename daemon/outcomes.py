@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Optional, List, Dict
 
 from core.paths import get_paths
+from daemon.events import bus, Events
 from daemon.schemas import Outcome, load_validated, save_validated, ElaraNotFoundError, ElaraValidationError
 
 logger = logging.getLogger("elara.outcomes")
@@ -62,8 +63,8 @@ def _load_all_outcomes() -> List[Dict]:
             try:
                 model = load_validated(p, Outcome)
                 outcomes.append(model.model_dump())
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to load outcome %s: %s", p.name, e)
     return outcomes
 
 
@@ -98,6 +99,7 @@ def record_outcome(
         checked=None,
     ).model_dump()
     _save_outcome(outcome)
+    bus.emit(Events.OUTCOME_RECORDED, {"outcome_id": outcome_id, "decision": decision[:200]}, source="outcomes")
     return outcome
 
 
@@ -126,6 +128,7 @@ def check_outcome(
     outcome["checked"] = datetime.now().isoformat()
 
     _save_outcome(outcome)
+    bus.emit(Events.OUTCOME_CHECKED, {"outcome_id": outcome_id, "assessment": assessment}, source="outcomes")
     return outcome
 
 

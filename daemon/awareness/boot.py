@@ -44,8 +44,8 @@ def boot_check() -> Optional[str]:
                     observations.append("Mood has been trending down.")
                 if e_trend == "falling":
                     observations.append("Energy has been dropping.")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to read reflection at boot: %s", e)
 
     # Check pulse
     if PULSE_FILE.exists():
@@ -58,8 +58,8 @@ def boot_check() -> Optional[str]:
                 signals = pulse_data.get("signals", [])
                 for s in signals[:2]:
                     observations.append(s)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to read pulse at boot: %s", e)
 
     # Check blind spots
     if BLIND_SPOTS_FILE.exists():
@@ -72,8 +72,8 @@ def boot_check() -> Optional[str]:
                 high = [s for s in bs_data.get("spots", []) if s["severity"] == "high"]
                 if high:
                     observations.append(f"{len(high)} high-priority blind spot(s).")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to read blind spots at boot: %s", e)
 
     # Check intention
     intention = get_intention()
@@ -86,8 +86,8 @@ def boot_check() -> Optional[str]:
         dream_notice = dream_boot_check()
         if dream_notice:
             observations.append(dream_notice)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to check dream schedule at boot: %s", e)
 
     # Check emotional dream tone hints
     try:
@@ -113,8 +113,8 @@ def boot_check() -> Optional[str]:
                     if big:
                         shifts = [f"{k} {v:+.03f}" for k, v in big]
                         observations.append(f"Temperament shifted: {', '.join(shifts)}")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to read emotional dream data at boot: %s", e)
 
     if not observations:
         return None

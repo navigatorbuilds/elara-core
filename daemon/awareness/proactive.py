@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Optional, Dict, List
 
 from core.paths import get_paths
+from daemon.events import bus, Events
 
 logger = logging.getLogger("elara.awareness.proactive")
 
@@ -313,8 +314,8 @@ def get_boot_observations() -> List[Dict]:
             obs = checker()
             if obs:
                 observations.append(obs)
-        except Exception:
-            pass  # Never crash on observation generation
+        except Exception as e:
+            logger.warning("Boot observation checker %s failed: %s", checker.__name__, e)
 
     return observations
 
@@ -342,8 +343,8 @@ def get_mid_session_observations() -> List[Dict]:
             obs = checker()
             if obs and obs["type"] not in already_surfaced:
                 observations.append(obs)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Mid-session observation checker %s failed: %s", checker.__name__, e)
 
     return observations
 
@@ -354,6 +355,7 @@ def surface_observation(observation: Dict) -> str:
     This is what I actually say to the user.
     """
     _record_observation(observation["type"])
+    bus.emit(Events.OBSERVATION_SURFACED, {"type": observation["type"], "severity": observation.get("severity", "")}, source="proactive")
     return observation["message"]
 
 

@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import List
 
 from core.paths import get_paths
+from daemon.events import bus, Events
 
 logger = logging.getLogger("elara.awareness.reflect")
 
@@ -70,6 +71,7 @@ def reflect() -> dict:
     latest = REFLECTIONS_DIR / "latest.json"
     latest.write_text(json.dumps(reflection, indent=2))
 
+    bus.emit(Events.REFLECTION_COMPLETED, {"portrait": reflection.get("portrait", "")[:200]}, source="reflect")
     return reflection
 
 
@@ -139,7 +141,8 @@ def _is_late_night(ts: str) -> bool:
     try:
         hour = datetime.fromisoformat(ts).hour
         return hour >= 22 or hour < 6
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to parse timestamp for late night check: %s", e)
         return False
 
 

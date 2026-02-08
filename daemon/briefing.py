@@ -178,8 +178,8 @@ def ingest_item(
         existing = collection.get(ids=[item_id])
         if existing and existing["ids"]:
             return False
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to check duplicate briefing item %s: %s", item_id, e)
 
     # Score against keywords
     text = f"{title} {summary}"
@@ -357,7 +357,8 @@ def generate_daily_briefing(n: int = 10) -> Dict:
             where={"fetched": {"$gte": cutoff}},
             limit=50,
         )
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to get recent briefing items by date filter: %s", e)
         # Fallback: get most recent by query
         results = collection.query(
             query_texts=["latest news updates developments"],

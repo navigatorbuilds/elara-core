@@ -53,7 +53,8 @@ def is_authorized() -> bool:
         from google.oauth2.credentials import Credentials
         creds = Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
         return creds.valid or (creds.expired and creds.refresh_token)
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to check Gmail authorization: %s", e)
         return False
 
 
@@ -506,8 +507,8 @@ def index_messages(messages: List[Dict[str, Any]]) -> int:
             existing = collection.get(ids=[doc_id])
             if existing and existing["ids"]:
                 continue
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to check duplicate Gmail message %s: %s", msg.get("id", "?"), e)
 
         text = f"From: {msg.get('from', '')} Subject: {msg.get('subject', '')} {msg.get('snippet', '')}"
         now = datetime.now().isoformat()

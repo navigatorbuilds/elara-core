@@ -22,6 +22,7 @@ except ImportError:
     CHROMA_AVAILABLE = False
 
 from core.paths import get_paths
+from daemon.events import bus, Events
 from daemon.schemas import Synthesis, SynthesisSeed, load_validated, save_validated, ElaraNotFoundError, ElaraValidationError
 
 logger = logging.getLogger("elara.synthesis")
@@ -74,8 +75,8 @@ def _load_all_syntheses() -> List[Dict]:
             try:
                 model = load_validated(p, Synthesis)
                 syntheses.append(model.model_dump())
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to load synthesis %s: %s", p.name, e)
     return syntheses
 
 
@@ -169,8 +170,8 @@ def _index_synthesis(synth: Dict):
             documents=[text],
             metadatas=[metadata],
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to index synthesis %s: %s", synth.get("synthesis_id", "?"), e)
 
 
 # ============================================================================
@@ -209,6 +210,7 @@ def create_synthesis(
 
     _save_synthesis(synth)
     _index_synthesis(synth)
+    bus.emit(Events.SYNTHESIS_CREATED, {"synthesis_id": synthesis_id, "concept": concept}, source="synthesis")
     return synth
 
 
@@ -241,6 +243,7 @@ def add_seed(
 
     _save_synthesis(synth)
     _index_synthesis(synth)
+    bus.emit(Events.SEED_ADDED, {"synthesis_id": synthesis_id, "seed_count": len(synth["seeds"])}, source="synthesis")
     return synth
 
 
@@ -346,7 +349,8 @@ def check_for_recurring_ideas(exchanges: List[Dict], min_matches: int = 3) -> Li
                             except ElaraNotFoundError:
                                 pass
 
-        except Exception:
+        except Exception as e:
+            logger.warning("Failed to check recurring ideas in exchange: %s", e)
             continue
 
     return reinforced
@@ -365,8 +369,8 @@ def index_seed(synthesis_id: str, quote: str, seed_index: int):
             documents=[quote],
             metadatas=[{"synthesis_id": synthesis_id}],
         )
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("Failed to index seed %s: %s", seed_id, e)
 
 
 def reindex_all_seeds():

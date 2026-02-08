@@ -48,7 +48,8 @@ def _gather_signals() -> dict:
         signals["long_session"] = full.get("flags", {}).get("long_session", False)
         signals["imprint_count"] = len(full.get("imprints", []))
         signals["available"].append("full_state")
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to gather mood signal: %s", e)
         signals["missing"].append("mood")
 
     # --- Presence signals ---
@@ -58,7 +59,8 @@ def _gather_signals() -> dict:
         signals["absence_minutes"] = pstats.get("absence_minutes")
         signals["session_minutes"] = pstats.get("session_minutes")
         signals["available"].append("presence")
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to gather presence signal: %s", e)
         signals["missing"].append("presence")
 
     # --- Episode signals ---
@@ -78,7 +80,8 @@ def _gather_signals() -> dict:
         durations = [ep.get("duration_minutes", 0) for ep in recent if ep.get("duration_minutes")]
         signals["avg_session_minutes"] = sum(durations) / len(durations) if durations else 0
         signals["available"].append("episodes")
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to gather episode signal: %s", e)
         signals["missing"].append("episodes")
 
     # --- Goal signals ---
@@ -90,7 +93,8 @@ def _gather_signals() -> dict:
         signals["active_goal_count"] = len(active)
         signals["high_priority_goals"] = len([g for g in active if g.get("priority") == "high"])
         signals["available"].append("goals")
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to gather goal signal: %s", e)
         signals["missing"].append("goals")
 
     # --- Time context ---
