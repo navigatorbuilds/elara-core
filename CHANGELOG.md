@@ -2,6 +2,48 @@
 
 All notable changes to Elara Core.
 
+## [0.9.2] — 2026-02-08
+
+### Added
+- 34-page documentation site at elara.navigatorbuilds.com
+- Interactive playground (try Elara without installing)
+- Memory visualizer (canvas-based network animation)
+- Interactive config generator with live JSON preview
+- 6 community persona templates + recommendation quiz
+- Typing speed test for MCP tool commands
+- Ambient soundscape generator (Web Audio API)
+- Matrix rain screensaver
+- Cinematic origin story + CRT boot intro
+- Development timeline with 16 milestones
+- Competitor comparison (vs mem0, Letta, ChatGPT Memory)
+- Module deep-dive documentation
+- Python API reference with real signatures
+- Printable CLI cheat sheet
+- Use case showcase (6 examples)
+- Before/after comparison page
+- Migration guide (from mem0, ChatGPT, Obsidian)
+- Performance benchmarks page
+- FAQ/troubleshooting page
+- Contributing guide
+- Privacy policy (zero telemetry)
+- License explainer (BSL-1.1 in plain language)
+- Client-side search (lunr.js)
+- Cmd+K command palette for doc navigation
+- PWA support (offline caching, installable)
+- Atom feed for releases
+- 5 SVG sticker designs + gallery
+- Public roadmap (4 phases)
+- Status dashboard with live badges
+- GitHub Actions CI (tests + link checker)
+- Dependabot for auto dependency updates
+- GitHub issue/PR templates
+- FUNDING.yml for Sponsors
+- security.txt (RFC 9116) + humans.txt
+- GitHub Discussions with welcome post + templates
+- 15 custom issue labels for all modules
+- 3 good-first-issue starter issues
+- PRs to 2 awesome-mcp-servers lists
+
 ## [0.9.1] — 2026-02-08
 
 ### Added
