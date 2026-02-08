@@ -13,7 +13,7 @@ from daemon.schemas import (
     Hypothesis, ReasoningTrail, Outcome,
     Competitor, IdeaScore, BusinessIdea, SynthesisSeed, Synthesis,
     Presence, ContextConfig, Context, UserStateSignal, Intention, DreamStatus,
-    Milestone, Decision, Episode, EpisodeIndex,
+    Milestone, Decision, Episode, EpisodeIndex, GmailCache,
     # Functions
     save_validated, load_validated, save_validated_list, load_validated_list,
     atomic_write_json,
@@ -30,7 +30,7 @@ from daemon.schemas import (
 SCHEMA_NO_ARGS = [
     MoodVector, Consolidation, SessionFlags, CurrentSession, IdeaScore,
     Presence, ContextConfig, Context, UserStateSignal, Intention,
-    DreamStatus, EpisodeIndex,
+    DreamStatus, EpisodeIndex, GmailCache,
 ]
 
 # Models with required fields — provide minimal kwargs

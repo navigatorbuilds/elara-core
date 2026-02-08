@@ -429,6 +429,17 @@ class EpisodeIndex(ElaraModel):
 
 
 # ============================================================================
+# GMAIL
+# ============================================================================
+
+class GmailCache(ElaraModel):
+    """Gmail sync state: ~/.claude/elara-gmail-cache.json"""
+    last_history_id: Optional[str] = None
+    last_sync: Optional[str] = None
+    indexed_count: int = 0
+
+
+# ============================================================================
 # UTILITY — validated load/save helpers
 # ============================================================================
 

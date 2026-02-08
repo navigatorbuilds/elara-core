@@ -240,6 +240,25 @@ class ElaraPaths:
         return self._root / "elara-briefing.log"
 
     # ------------------------------------------------------------------
+    # Gmail
+    # ------------------------------------------------------------------
+    @property
+    def gmail_credentials(self) -> Path:
+        return self._root / "elara-gmail-credentials.json"
+
+    @property
+    def gmail_token(self) -> Path:
+        return self._root / "elara-gmail-token.json"
+
+    @property
+    def gmail_db(self) -> Path:
+        return self._root / "elara-gmail-db"
+
+    @property
+    def gmail_cache(self) -> Path:
+        return self._root / "elara-gmail-cache.json"
+
+    # ------------------------------------------------------------------
     # Overwatch
     # ------------------------------------------------------------------
     @property
@@ -302,6 +321,7 @@ class ElaraPaths:
             self.synthesis_db,
             self.business_dir,
             self.briefing_db,
+            self.gmail_db,
             self.messages_dir,
         ]
         for d in dirs:
