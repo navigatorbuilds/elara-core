@@ -22,7 +22,7 @@
     <loc>https://elara.navigatorbuilds.com/compare.html</loc>
     <lastmod>2026-02-08</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://elara.navigatorbuilds.com/configure.html</loc>
@@ -46,7 +46,7 @@
     <loc>https://elara.navigatorbuilds.com/architecture.html</loc>
     <lastmod>2026-02-08</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://elara.navigatorbuilds.com/changelog.html</loc>
@@ -64,13 +64,13 @@
     <loc>https://elara.navigatorbuilds.com/faq.html</loc>
     <lastmod>2026-02-08</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://elara.navigatorbuilds.com/search.html</loc>
     <lastmod>2026-02-08</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://elara.navigatorbuilds.com/roadmap.html</loc>
@@ -82,10 +82,22 @@
     <loc>https://elara.navigatorbuilds.com/personas.html</loc>
     <lastmod>2026-02-08</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://elara.navigatorbuilds.com/privacy.html</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://elara.navigatorbuilds.com/api.html</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://elara.navigatorbuilds.com/migrate.html</loc>
     <lastmod>2026-02-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
