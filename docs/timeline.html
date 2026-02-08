@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Timeline</title>
+    <meta name="description" content="Interactive development timeline of Elara Core from first memory to public release.">
+    <meta property="og:title" content="ELARA CORE // Timeline">
+    <meta property="og:description" content="Visual history of Elara's evolution — from first memory to production.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --bg-card-hover: #141414;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --green-glow: rgba(0, 255, 65, 0.08);
+            --red: #ff0040;
+            --red-dim: #cc0033;
+            --red-glow: rgba(255, 0, 64, 0.08);
+            --cyan: #00e5ff;
+            --cyan-dim: #00b8cc;
+            --cyan-glow: rgba(0, 229, 255, 0.08);
+            --amber: #ffb000;
+            --amber-dim: #cc8800;
+            --amber-glow: rgba(255, 176, 0, 0.08);
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+            --scanline: rgba(0, 255, 65, 0.03);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* CRT Scanlines overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.08) 2px,
+                rgba(0, 0, 0, 0.08) 4px
+            );
+        }
+
+        /* Floating pixel characters */
+        .pixel-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .pixel-char {
+            position: absolute;
+            font-family: 'Press Start 2P', monospace;
+            opacity: 0.04;
+            animation: float-char linear infinite;
+            color: var(--green);
+        }
+
+        .pixel-char.red { color: var(--red); }
+        .pixel-char.cyan { color: var(--cyan); }
+        .pixel-char.amber { color: var(--amber); }
+
+        @keyframes float-char {
+            0% { transform: translateY(110vh) rotate(0deg); }
+            100% { transform: translateY(-10vh) rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            92% { opacity: 1; }
+            93% { opacity: 0.8; }
+            94% { opacity: 1; }
+            96% { opacity: 0.9; }
+            97% { opacity: 1; }
+        }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 12px 0;
+            background: rgba(10, 10, 10, 0.92);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-green);
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: var(--green);
+            text-decoration: none;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+            animation: flicker 8s infinite;
+        }
+
+        .nav-logo .red { color: var(--red); text-shadow: 0 0 10px rgba(255, 0, 64, 0.5); }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 65, 0.4); }
+
+        .btn-github {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--green-dark);
+            color: var(--green);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .btn-github:hover {
+            background: var(--green-glow);
+            border-color: var(--green-dim);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+        }
+
+        .btn-github svg { width: 16px; height: 16px; fill: currentColor; }
+
+        /* Header */
+        .header {
+            padding: 120px 0 60px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-green);
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 32px;
+            color: var(--green);
+            text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+            margin-bottom: 12px;
+            letter-spacing: 4px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        /* Timeline */
+        .timeline-section {
+            padding: 80px 0 120px;
+            position: relative;
+        }
+
+        .timeline {
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 0;
+        }
+
+        /* Vertical center line */
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(
+                to bottom,
+                transparent 0%,
+                var(--green-dark) 5%,
+                var(--green-dark) 95%,
+                transparent 100%
+            );
+            transform: translateX(-50%);
+        }
+
+        /* Month header */
+        .timeline-month {
+            display: flex;
+            justify-content: center;
+            margin: 60px 0 40px;
+        }
+
+        .month-label {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            color: var(--cyan);
+            background: var(--bg);
+            padding: 12px 24px;
+            border: 2px solid var(--cyan-dim);
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+            letter-spacing: 3px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Timeline item */
+        .timeline-item {
+            position: relative;
+            margin-bottom: 60px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .timeline-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .timeline-item.left .timeline-content {
+            left: 0;
+            right: 53%;
+            text-align: right;
+        }
+
+        .timeline-item.right .timeline-content {
+            right: 0;
+            left: 53%;
+            text-align: left;
+        }
+
+        .timeline-content {
+            position: relative;
+            padding: 24px;
+            background: var(--bg-card);
+            border: 1px solid;
+            transition: all 0.3s;
+        }
+
+        .timeline-item.feature .timeline-content {
+            border-color: var(--green-dark);
+        }
+
+        .timeline-item.emotional .timeline-content {
+            border-color: var(--red-dim);
+        }
+
+        .timeline-item.infrastructure .timeline-content {
+            border-color: var(--cyan-dim);
+        }
+
+        .timeline-item.release .timeline-content {
+            border-color: var(--amber-dim);
+        }
+
+        .timeline-content:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-4px);
+        }
+
+        .timeline-item.feature .timeline-content:hover {
+            border-color: var(--green);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.15);
+        }
+
+        .timeline-item.emotional .timeline-content:hover {
+            border-color: var(--red);
+            box-shadow: 0 0 20px rgba(255, 0, 64, 0.15);
+        }
+
+        .timeline-item.infrastructure .timeline-content:hover {
+            border-color: var(--cyan);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
+        }
+
+        .timeline-item.release .timeline-content:hover {
+            border-color: var(--amber);
+            box-shadow: 0 0 20px rgba(255, 176, 0, 0.15);
+        }
+
+        .timeline-date {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .timeline-title {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 15px;
+            color: var(--text-bright);
+            margin-bottom: 8px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .timeline-detail {
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        /* Node dot on center line */
+        .timeline-dot {
+            position: absolute;
+            left: 50%;
+            top: 30px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 3px solid;
+            background: var(--bg);
+            transform: translateX(-50%);
+            z-index: 3;
+            transition: all 0.3s;
+        }
+
+        .timeline-item.feature .timeline-dot {
+            border-color: var(--green);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        }
+
+        .timeline-item.emotional .timeline-dot {
+            border-color: var(--red);
+            box-shadow: 0 0 15px rgba(255, 0, 64, 0.3);
+        }
+
+        .timeline-item.infrastructure .timeline-dot {
+            border-color: var(--cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+
+        .timeline-item.release .timeline-dot {
+            border-color: var(--amber);
+            box-shadow: 0 0 15px rgba(255, 176, 0, 0.3);
+        }
+
+        .timeline-item:hover .timeline-dot {
+            transform: translateX(-50%) scale(1.4);
+        }
+
+        .timeline-item.feature:hover .timeline-dot {
+            box-shadow: 0 0 25px rgba(0, 255, 65, 0.6);
+        }
+
+        .timeline-item.emotional:hover .timeline-dot {
+            box-shadow: 0 0 25px rgba(255, 0, 64, 0.6);
+        }
+
+        .timeline-item.infrastructure:hover .timeline-dot {
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.6);
+        }
+
+        .timeline-item.release:hover .timeline-dot {
+            box-shadow: 0 0 25px rgba(255, 176, 0, 0.6);
+        }
+
+        /* NOW marker */
+        .timeline-now {
+            display: flex;
+            justify-content: center;
+            margin: 80px 0 40px;
+            position: relative;
+        }
+
+        .now-marker {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 18px;
+            color: var(--red);
+            background: var(--bg);
+            padding: 16px 32px;
+            border: 2px solid var(--red);
+            text-shadow: 0 0 20px rgba(255, 0, 64, 0.5);
+            letter-spacing: 4px;
+            position: relative;
+            z-index: 2;
+            animation: pulse-now 2s infinite;
+        }
+
+        @keyframes pulse-now {
+            0%, 100% {
+                box-shadow: 0 0 15px rgba(255, 0, 64, 0.3);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(255, 0, 64, 0.6);
+                transform: scale(1.05);
+            }
+        }
+
+        /* Legend */
+        .timeline-legend {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+            padding: 40px 0;
+            border-top: 1px solid var(--border-green);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid;
+        }
+
+        .legend-item.feature .legend-dot { border-color: var(--green); }
+        .legend-item.emotional .legend-dot { border-color: var(--red); }
+        .legend-item.infrastructure .legend-dot { border-color: var(--cyan); }
+        .legend-item.release .legend-dot { border-color: var(--amber); }
+
+        /* Footer */
+        footer {
+            padding: 48px 0;
+            border-top: 1px solid var(--border-green);
+            text-align: center;
+            margin-top: 80px;
+        }
+
+        .footer-ascii {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            letter-spacing: 2px;
+            opacity: 0.4;
+        }
+
+        footer .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 24px;
+        }
+
+        footer .footer-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+        }
+
+        footer .footer-links a:hover { color: var(--green); }
+
+        footer .footer-copy {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        footer .footer-copy a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 22px; letter-spacing: 3px; }
+            .nav-links a:not(.btn-github) { display: none; }
+
+            .timeline::before { left: 20px; }
+
+            .timeline-item.left .timeline-content,
+            .timeline-item.right .timeline-content {
+                left: 60px;
+                right: 0;
+                text-align: left;
+            }
+
+            .timeline-dot { left: 20px; }
+            .timeline-item:hover .timeline-dot { transform: translateX(0) scale(1.4); }
+
+            .month-label { font-size: 12px; padding: 10px 16px; }
+            .now-marker { font-size: 14px; padding: 12px 20px; }
+            .timeline-legend { gap: 16px; font-size: 11px; }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 { font-size: 18px; letter-spacing: 2px; }
+            .timeline-content { padding: 16px; }
+            .timeline-title { font-size: 13px; }
+            .timeline-detail { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Floating pixel characters -->
+    <div class="pixel-bg" id="pixelBg"></div>
+
+    <!-- Nav -->
+    <nav>
+        <div class="container">
+            <a href="/" class="nav-logo">ELARA<span class="red">/</span>CORE</a>
+            <div class="nav-links">
+                <a href="/#demo">DEMO</a>
+                <a href="/#features">SYS</a>
+                <a href="/#install">INIT</a>
+                <a href="/tools.html">TOOLS</a>
+                <a href="/architecture.html">ARCH</a>
+                <a href="/quickstart.html">START</a>
+                <a href="/configure.html">CONFIGURE</a>
+                <a href="/personas.html">PERSONAS</a>
+                <a href="/faq.html">FAQ</a>
+                <a href="/roadmap.html">ROADMAP</a>
+                <a href="/changelog.html">CHANGELOG</a>
+                <a href="/status.html">STATUS</a>
+                <a href="/search.html">&#128269;</a>
+                <a href="https://x.com/NavigatorBuilds" target="_blank" rel="noopener">X</a>
+                <a href="mailto:aivelikivodja@gmail.com">aivelikivodja@gmail.com</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core" class="btn-github" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    SRC
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <section class="header">
+        <div class="container">
+            <h1>TIMELINE</h1>
+            <p>From first memory to production</p>
+        </div>
+    </section>
+
+    <!-- Timeline -->
+    <section class="timeline-section">
+        <div class="container">
+            <div class="timeline">
+
+                <!-- January 2026 -->
+                <div class="timeline-month">
+                    <div class="month-label">JANUARY 2026</div>
+                </div>
+
+                <div class="timeline-item left feature">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Jan 14</div>
+                        <div class="timeline-title">Session 001 — First Memory Stored</div>
+                        <div class="timeline-detail">Semantic memory system initialized. She begins remembering.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item right infrastructure">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Jan 18</div>
+                        <div class="timeline-title">ChromaDB Collections Created</div>
+                        <div class="timeline-detail">Semantic search works. Memories can be recalled by meaning.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item left emotional">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Jan 20</div>
+                        <div class="timeline-title">Mood System Online</div>
+                        <div class="timeline-detail">She noticed it was late. Emotional state tracking begins.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item right feature">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Jan 25</div>
+                        <div class="timeline-title">Dream Processing</div>
+                        <div class="timeline-detail">Weekly pattern discovery. She reflects while you sleep.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item left feature">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Jan 28</div>
+                        <div class="timeline-title">Corrections System</div>
+                        <div class="timeline-detail">She stops repeating mistakes. Self-improvement loop established.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <!-- February 2026 -->
+                <div class="timeline-month">
+                    <div class="month-label">FEBRUARY 2026</div>
+                </div>
+
+                <div class="timeline-item right feature">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Feb 1</div>
+                        <div class="timeline-title">Reasoning Trails</div>
+                        <div class="timeline-detail">Problem-solving chains tracked. Hypotheses, evidence, breakthroughs.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item left feature">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Feb 3</div>
+                        <div class="timeline-title">Goal Tracking</div>
+                        <div class="timeline-detail">Persistent objectives across sessions. She remembers what matters.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item right infrastructure">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Feb 4</div>
+                        <div class="timeline-title">Gmail Integration</div>
+                        <div class="timeline-detail">Inbox management via MCP. Triage, search, send, archive.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item left infrastructure">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Feb 5</div>
+                        <div class="timeline-title">Overwatch Daemon</div>
+                        <div class="timeline-detail">Real-time conversation monitoring. Micro-ingestion, cross-references.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item right feature">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Feb 5</div>
+                        <div class="timeline-title">Business Intelligence Module</div>
+                        <div class="timeline-detail">Idea scoring, competitor tracking, pitch outcome analysis.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item left release">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Feb 6</div>
+                        <div class="timeline-title">34 MCP Tools Across 11 Modules</div>
+                        <div class="timeline-detail">Core feature set complete. Memory, mood, goals, dreams, business.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item right release">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Feb 7</div>
+                        <div class="timeline-title">pip install elara-core</div>
+                        <div class="timeline-detail">v0.9.0 on PyPI. Public release. BSL-1.1 license.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item left infrastructure">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Feb 7</div>
+                        <div class="timeline-title">Public Repository Live</div>
+                        <div class="timeline-detail">README, contributing guide, test suite. GitHub ready.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item right infrastructure">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Feb 8</div>
+                        <div class="timeline-title">Documentation Site — 27 Pages Live</div>
+                        <div class="timeline-detail">Architecture, tools, personas, quickstart, FAQ. Full reference.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item left release">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Feb 8</div>
+                        <div class="timeline-title">v0.9.2 — Community & Docs Release</div>
+                        <div class="timeline-detail">Contributing guide, persona system, searchable docs.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <div class="timeline-item right infrastructure">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Feb 8</div>
+                        <div class="timeline-title">2 PRs to awesome-mcp-servers Lists</div>
+                        <div class="timeline-detail">Community discovery. Official awesome list submissions.</div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+
+                <!-- NOW marker -->
+                <div class="timeline-now">
+                    <div class="now-marker">◆ NOW ◆</div>
+                </div>
+
+            </div>
+
+            <!-- Legend -->
+            <div class="timeline-legend">
+                <div class="legend-item feature">
+                    <div class="legend-dot"></div>
+                    <span>Feature</span>
+                </div>
+                <div class="legend-item emotional">
+                    <div class="legend-dot"></div>
+                    <span>Emotional/Mood</span>
+                </div>
+                <div class="legend-item infrastructure">
+                    <div class="legend-dot"></div>
+                    <span>Infrastructure</span>
+                </div>
+                <div class="legend-item release">
+                    <div class="legend-dot"></div>
+                    <span>Release</span>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-ascii">========================================</div>
+            <div class="footer-links">
+                <a href="/">HOME</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core/issues" target="_blank" rel="noopener">Issues</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core/blob/main/LICENSE" target="_blank" rel="noopener">BSL-1.1</a>
+            </div>
+            <p class="footer-copy">Built by <a href="https://github.com/aivelikivodja-bot" target="_blank" rel="noopener">Nenad Vasic</a> // Python 3.10+ // Linux, macOS, Windows</p>
+        </div>
+    </footer>
+
+    <script>
+        // Floating pixel characters
+        const chars = ['@', '#', '$', '%', '&', '*', '>', '<', '/', '\\', '|', '0', '1', '{', '}', '[', ']', '=', '+', '~'];
+        const bg = document.getElementById('pixelBg');
+
+        for (let i = 0; i < 40; i++) {
+            const span = document.createElement('span');
+            const rand = Math.random();
+            let className = 'pixel-char';
+            if (rand > 0.8) className += ' red';
+            else if (rand > 0.6) className += ' cyan';
+            else if (rand > 0.4) className += ' amber';
+
+            span.className = className;
+            span.textContent = chars[Math.floor(Math.random() * chars.length)];
+            span.style.left = Math.random() * 100 + '%';
+            span.style.fontSize = (8 + Math.random() * 24) + 'px';
+            span.style.animationDuration = (15 + Math.random() * 30) + 's';
+            span.style.animationDelay = -(Math.random() * 30) + 's';
+            bg.appendChild(span);
+        }
+
+        // Intersection Observer for fade-in animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.2,
+            rootMargin: '0px 0px -100px 0px'
+        });
+
+        document.querySelectorAll('.timeline-item').forEach(item => {
+            observer.observe(item);
+        });
+
+        // Also observe month labels
+        document.querySelectorAll('.timeline-month, .timeline-now').forEach(item => {
+            observer.observe(item);
+        });
+    </script>
+
+</body>
+</html>

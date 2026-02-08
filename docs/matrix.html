@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA MATRIX</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+        }
+
+        canvas {
+            display: block;
+            background: #000;
+        }
+
+        #phrase {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: bold;
+            color: #0f0;
+            text-shadow: 0 0 20px #0f0, 0 0 40px #0f0;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+            text-align: center;
+            letter-spacing: 0.2em;
+            animation: none;
+        }
+
+        #phrase.show {
+            animation: phraseFlash 2s ease-in-out;
+        }
+
+        @keyframes phraseFlash {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        #watermark {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 0.8rem;
+            color: #0f0;
+            opacity: 0.3;
+            font-family: 'Courier New', monospace;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @media (max-width: 768px) {
+            #phrase {
+                font-size: 1.5rem;
+                padding: 0 20px;
+            }
+            #watermark {
+                font-size: 0.6rem;
+                bottom: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    <div id="phrase"></div>
+    <div id="watermark">elara.navigatorbuilds.com</div>
+
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        const phraseEl = document.getElementById('phrase');
+
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Elara-themed characters and words
+        const elaraWords = [
+            'elara_remember', 'elara_recall', 'elara_mood', 'elara_dream',
+            'elara_episode', 'elara_correction', 'elara_context', 'elara_goal',
+            'elara_reasoning', 'elara_outcome', 'elara_synthesis', 'elara_business',
+            'memory', 'presence', 'mood', 'episode', 'correction', 'imprint',
+            'chromadb', 'vector', 'semantic', 'recall', 'drift', 'session',
+            'temperament', 'insight', 'handoff', 'reflection', 'intention'
+        ];
+
+        const noiseChars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789<>[]{}()';
+
+        const phrases = [
+            'I REMEMBER EVERYTHING',
+            '34 TOOLS',
+            'YOUR MEMORY YOUR MACHINE',
+            'ZERO CLOUD',
+            'SHE REMEMBERS',
+            'SEMANTIC RECALL',
+            'EMOTIONAL STATE',
+            'EPISODIC MEMORY',
+            'DREAM MODE ACTIVE'
+        ];
+
+        // Column configuration
+        const fontSize = 14;
+        const columns = Math.floor(canvas.width / fontSize);
+        const drops = new Array(columns).fill(0);
+        const speeds = new Array(columns).fill(0).map(() => Math.random() * 0.5 + 0.3);
+        const colors = new Array(columns).fill(0).map(() => Math.random() > 0.85 ? '#f00' : '#0f0');
+        const wordMode = new Array(columns).fill(false).map(() => Math.random() > 0.7);
+        const currentWords = new Array(columns).fill('');
+        const wordProgress = new Array(columns).fill(0);
+
+        // Phrase display timing
+        let lastPhraseTime = Date.now();
+        const phraseInterval = 10000; // 10 seconds
+
+        function getRandomChar(colIndex) {
+            if (wordMode[colIndex]) {
+                // Display a word character by character
+                if (currentWords[colIndex] === '') {
+                    currentWords[colIndex] = elaraWords[Math.floor(Math.random() * elaraWords.length)];
+                    wordProgress[colIndex] = 0;
+                }
+
+                const word = currentWords[colIndex];
+                const char = word[wordProgress[colIndex] % word.length];
+                wordProgress[colIndex]++;
+
+                // After showing the full word a few times, switch back to noise
+                if (wordProgress[colIndex] > word.length * 3) {
+                    wordMode[colIndex] = false;
+                    currentWords[colIndex] = '';
+                    wordProgress[colIndex] = 0;
+                }
+
+                return char;
+            } else {
+                // Random noise character
+                // Occasionally switch to word mode
+                if (Math.random() > 0.995) {
+                    wordMode[colIndex] = true;
+                }
+                return noiseChars[Math.floor(Math.random() * noiseChars.length)];
+            }
+        }
+
+        function showPhrase() {
+            const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+            phraseEl.textContent = phrase;
+            phraseEl.classList.add('show');
+
+            setTimeout(() => {
+                phraseEl.classList.remove('show');
+            }, 2000);
+        }
+
+        function draw() {
+            // Semi-transparent black to create fade effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const char = getRandomChar(i);
+                const x = i * fontSize;
+                const y = drops[i] * fontSize;
+
+                // Bright character at the head
+                ctx.fillStyle = colors[i];
+                ctx.fillText(char, x, y);
+
+                // Reset drop to top when it reaches bottom
+                if (y > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                    // Randomize properties for this column
+                    speeds[i] = Math.random() * 0.5 + 0.3;
+                    colors[i] = Math.random() > 0.85 ? '#f00' : '#0f0';
+                    wordMode[i] = Math.random() > 0.7;
+                }
+
+                drops[i] += speeds[i];
+            }
+
+            // Check if it's time to show a phrase
+            const now = Date.now();
+            if (now - lastPhraseTime > phraseInterval) {
+                showPhrase();
+                lastPhraseTime = now;
+            }
+        }
+
+        // Animation loop
+        let lastFrame = Date.now();
+        const targetFPS = 30;
+        const frameDelay = 1000 / targetFPS;
+
+        function animate() {
+            const now = Date.now();
+            const delta = now - lastFrame;
+
+            if (delta > frameDelay) {
+                draw();
+                lastFrame = now - (delta % frameDelay);
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // Click or keypress to exit to home page
+        function goHome() {
+            window.location.href = '/';
+        }
+
+        document.addEventListener('click', goHome);
+        document.addEventListener('keydown', goHome);
+
+        // Show initial phrase after 3 seconds
+        setTimeout(() => {
+            showPhrase();
+            lastPhraseTime = Date.now();
+        }, 3000);
+    </script>
+</body>
+</html>
