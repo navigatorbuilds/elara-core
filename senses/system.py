@@ -1,3 +1,7 @@
+# Copyright (c) 2026 Nenad Vasic. All rights reserved.
+# Licensed under the Business Source License 1.1 (BSL-1.1)
+# See LICENSE file in the project root for full license text.
+
 """
 Elara System Senses
 Awareness of the machine I live on - CPU, memory, battery, etc.
