@@ -836,6 +836,109 @@
         .demo-terminal .ap-start-button {
             color: var(--green) !important;
         }
+
+        /* Asciinema showcase section */
+        .showcase { padding: 80px 0 60px; }
+
+        .showcase .section-header { margin-bottom: 32px; }
+
+        .showcase-player-wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            border: 1px solid var(--red-dim);
+            background: #050505;
+            overflow: hidden;
+            box-shadow: 0 0 25px rgba(255, 0, 64, 0.1), 0 0 60px rgba(255, 0, 64, 0.04), 0 4px 40px rgba(0, 0, 0, 0.6);
+            position: relative;
+        }
+
+        .showcase-player-wrap::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 1;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 0, 64, 0.015) 2px,
+                rgba(255, 0, 64, 0.015) 4px
+            );
+        }
+
+        .showcase-bar {
+            background: #111;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--red-dim);
+            position: relative;
+            z-index: 2;
+        }
+
+        .showcase-bar .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--text-dim);
+        }
+        .showcase-bar .dot:nth-child(1) { background: var(--red); }
+        .showcase-bar .dot:nth-child(2) { background: var(--amber); }
+        .showcase-bar .dot:nth-child(3) { background: var(--green); }
+
+        .showcase-bar span {
+            margin-left: 12px;
+            color: var(--text-dim);
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .showcase-player-wrap #showcase-player {
+            position: relative;
+            z-index: 2;
+        }
+
+        .showcase-player-wrap asciinema-player {
+            display: block;
+        }
+
+        .showcase-player-wrap .ap-wrapper {
+            background: #050505 !important;
+        }
+
+        .showcase-player-wrap .ap-player {
+            background: #050505 !important;
+        }
+
+        .showcase-player-wrap .ap-control-bar {
+            background: #111 !important;
+            border-top: 1px solid rgba(255, 0, 64, 0.2) !important;
+        }
+
+        .showcase-player-wrap .ap-start-button svg {
+            fill: var(--red) !important;
+        }
+
+        .showcase-player-wrap .ap-start-button {
+            color: var(--red) !important;
+        }
+
+        .showcase-note {
+            max-width: 900px;
+            margin: 16px auto 0;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            font-style: italic;
+        }
+
+        .showcase-note span {
+            color: var(--red-dim);
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.8.0/dist/bundle/asciinema-player.css" />
 </head>
@@ -877,6 +980,26 @@
                 <a href="/compare.html" class="btn-red">SEE THE DIFFERENCE</a>
                 <a href="https://github.com/aivelikivodja-bot/elara-core" class="btn-red" target="_blank" rel="noopener">VIEW SOURCE</a>
             </div>
+        </div>
+    </section>
+
+    <!-- Asciinema Showcase -->
+    <section class="showcase" id="showcase">
+        <div class="container">
+            <div class="section-header">
+                <h2>// SEE IT IN ACTION</h2>
+                <p>A real session. No scripts. No edits.</p>
+            </div>
+            <div class="showcase-player-wrap">
+                <div class="showcase-bar">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <span>elara // terminal recording</span>
+                </div>
+                <div id="showcase-player"></div>
+            </div>
+            <p class="showcase-note"><span>30-second demo:</span> Elara remembers your last session, recalls a bug, applies the fix.</p>
         </div>
     </section>
 
@@ -1366,6 +1489,18 @@
             terminalFontFamily: "'Share Tech Mono', monospace",
             idleTimeLimit: 2,
             pauseOnMarkers: false,
+        });
+
+        // Showcase player — hero section demo
+        AsciinemaPlayer.create('demo.cast', document.getElementById('showcase-player'), {
+            theme: 'monokai',
+            cols: 100,
+            rows: 30,
+            autoPlay: false,
+            speed: 1.5,
+            fit: 'width',
+            terminalFontFamily: "'Share Tech Mono', monospace",
+            idleTimeLimit: 2,
         });
     </script>
 
