@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Contributing</title>
+    <meta name="description" content="Contributing to Elara Core — setup, testing, project structure, code style, and how to submit changes.">
+    <meta property="og:title" content="Elara Core — Contributing">
+    <meta property="og:description" content="Help build a better memory system.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://elara.navigatorbuilds.com/contributing.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@NavigatorBuilds">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-nav a {
+            font-size: 13px;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--green-dark);
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(14px, 2.5vw, 22px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        /* Section headers */
+        .section-header {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(10px, 1.8vw, 14px);
+            color: var(--red);
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+            padding-top: 10px;
+        }
+
+        .section-desc {
+            color: var(--text-dim);
+            font-size: 13px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section {
+            margin-bottom: 50px;
+        }
+
+        /* Content blocks */
+        .content p {
+            margin-bottom: 16px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .content ul, .content ol {
+            margin: 16px 0 16px 24px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .content li {
+            margin-bottom: 8px;
+        }
+
+        .content strong {
+            color: var(--green-dim);
+        }
+
+        .content a {
+            color: var(--cyan);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .content a:hover {
+            border-bottom-color: var(--cyan);
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: #050505;
+            border: 1px solid var(--border-green);
+            padding: 14px 18px;
+            margin: 16px 0;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: var(--green);
+            line-height: 1.8;
+            display: block;
+            white-space: pre;
+        }
+
+        .code-block .comment {
+            color: var(--text-dim);
+        }
+
+        .code-block .path {
+            color: var(--amber);
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            padding: 3px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--green-dark);
+            color: var(--green);
+        }
+
+        /* Inline code */
+        .content code {
+            font-family: 'Share Tech Mono', monospace;
+            background: rgba(0, 255, 65, 0.06);
+            color: var(--green-dim);
+            padding: 2px 6px;
+            font-size: 13px;
+            border: 1px solid rgba(0, 51, 0, 0.4);
+        }
+
+        /* Note boxes */
+        .note {
+            background: rgba(255, 176, 0, 0.04);
+            border-left: 3px solid var(--amber);
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .note strong {
+            color: var(--amber);
+        }
+
+        .tip {
+            background: rgba(0, 229, 255, 0.04);
+            border-left: 3px solid var(--cyan);
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .tip strong {
+            color: var(--cyan);
+        }
+
+        /* Structure tree */
+        .structure {
+            background: #050505;
+            border: 1px solid var(--border-green);
+            padding: 14px 18px;
+            margin: 16px 0;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: var(--green);
+            line-height: 1.8;
+            overflow-x: auto;
+        }
+
+        .structure .comment {
+            color: var(--text-dim);
+        }
+
+        /* CTA Box */
+        .cta-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 24px;
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .cta-box h3 {
+            font-family: 'VT323', monospace;
+            font-size: 24px;
+            color: var(--amber);
+            margin-bottom: 10px;
+        }
+
+        .cta-box p {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+
+        .cta-box a {
+            color: var(--green-dim);
+            text-decoration: none;
+            border: 1px solid var(--green-dark);
+            padding: 8px 20px;
+            display: inline-block;
+            transition: all 0.2s;
+            margin: 4px;
+        }
+
+        .cta-box a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        footer a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--green); }
+
+        @media (max-width: 600px) {
+            .header h1 { font-size: 14px; }
+            .section-header { font-size: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="header-nav">
+            <a href="/">&larr; Elara Core</a>
+            <div class="nav-links">
+                <a href="/tools.html">TOOLS</a>
+                <a href="/architecture.html">ARCH</a>
+                <a href="/quickstart.html">START</a>
+                <a href="/configure.html">CONFIGURE</a>
+                <a href="/personas.html">PERSONAS</a>
+                <a href="/faq.html">FAQ</a>
+                <a href="/contributing.html">CONTRIBUTE</a>
+                <a href="/roadmap.html">ROADMAP</a>
+                <a href="/changelog.html">CHANGELOG</a>
+                <a href="/status.html">STATUS</a>
+                <a href="/search.html">&#128269;</a>
+            </div>
+        </div>
+        <h1>// CONTRIBUTING</h1>
+        <p>Help build a better memory system. Here's how to get started.</p>
+    </div>
+
+    <!-- ============ SETUP ============ -->
+    <div class="section" id="setup">
+        <div class="section-header">[ SETUP ]</div>
+        <div class="section-desc">Get the codebase running locally.</div>
+
+        <div class="content">
+            <p>Fork the repo and clone your fork:</p>
+
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                <code>git clone https://github.com/aivelikivodja-bot/elara-core.git
+cd elara-core
+python3 -m venv venv
+source venv/bin/activate
+pip install -e ".[dev]"</code>
+            </div>
+
+            <p>The <code>[dev]</code> install includes pytest, coverage tools, and other dev dependencies.</p>
+        </div>
+    </div>
+
+    <!-- ============ RUNNING TESTS ============ -->
+    <div class="section" id="tests">
+        <div class="section-header">[ RUNNING TESTS ]</div>
+        <div class="section-desc">Verify everything works before making changes.</div>
+
+        <div class="content">
+            <p>Run the full test suite:</p>
+
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                <code>pytest tests/ -v</code>
+            </div>
+
+            <p>All 91 tests should pass. Tests use isolated temp directories — no real data is touched.</p>
+
+            <div class="tip">
+                <strong>Tip:</strong> Run <code>pytest --cov=core --cov=daemon --cov=elara_mcp</code> to see coverage reports. We aim for 80%+ coverage on new code.
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ PROJECT STRUCTURE ============ -->
+    <div class="section" id="structure">
+        <div class="section-header">[ PROJECT STRUCTURE ]</div>
+        <div class="section-desc">Where things live and what they do.</div>
+
+        <div class="content">
+            <div class="structure">elara-core/
+├── core/           <span class="comment"># Core library (paths, schemas, Elara class)</span>
+├── daemon/         <span class="comment"># State engine (mood, presence, emotions, decay)</span>
+├── elara_mcp/      <span class="comment"># MCP server + tool definitions</span>
+│   └── tools/      <span class="comment"># 34 tools across 11 modules</span>
+├── tests/          <span class="comment"># Test suite (pytest)</span>
+├── docs/           <span class="comment"># GitHub Pages site</span>
+└── pyproject.toml  <span class="comment"># Package config</span></div>
+
+            <p><strong>Key modules:</strong></p>
+            <ul>
+                <li><code>core/</code> — Data paths, JSON schemas, base Elara API</li>
+                <li><code>daemon/</code> — Mood engine, presence tracking, emotional state</li>
+                <li><code>elara_mcp/tools/</code> — Individual MCP tool implementations</li>
+                <li><code>tests/</code> — Unit and integration tests</li>
+            </ul>
+
+            <div class="note">
+                <strong>Note:</strong> The MCP server entry point is <code>elara_mcp/server.py</code>. Tools are auto-discovered from the <code>tools/</code> directory.
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ MAKING CHANGES ============ -->
+    <div class="section" id="changes">
+        <div class="section-header">[ MAKING CHANGES ]</div>
+        <div class="section-desc">Workflow for contributing code.</div>
+
+        <div class="content">
+            <ol>
+                <li><strong>Fork the repo</strong> and create a branch from <code>main</code></li>
+                <li><strong>Write tests</strong> for new functionality (test-driven is encouraged)</li>
+                <li><strong>Run the test suite</strong> before submitting — all tests must pass</li>
+                <li><strong>Keep commits focused</strong> — one logical change per commit</li>
+                <li><strong>Open a PR</strong> with a clear description of what changed and why</li>
+            </ol>
+
+            <div class="tip">
+                <strong>Commit messages:</strong> Use imperative mood ("Add feature" not "Added feature"). First line under 50 chars, body text wrapped at 72 if needed.
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ WHAT TO WORK ON ============ -->
+    <div class="section" id="what">
+        <div class="section-header">[ WHAT TO WORK ON ]</div>
+        <div class="section-desc">Areas that welcome contributions.</div>
+
+        <div class="content">
+            <p>Check the <a href="https://github.com/aivelikivodja-bot/elara-core/issues" target="_blank" rel="noopener noreferrer">issue tracker</a> for open items. Good first issues are labeled accordingly.</p>
+
+            <p><strong>Areas that welcome contributions:</strong></p>
+            <ul>
+                <li><strong>New MCP tools</strong> — Extend existing modules or propose new ones</li>
+                <li><strong>Test coverage</strong> — More edge cases, integration tests</li>
+                <li><strong>Documentation</strong> — Usage examples, guides, better docstrings</li>
+                <li><strong>Bug fixes</strong> — Check the issues list</li>
+            </ul>
+
+            <div class="cta-box">
+                <h3>Good First Issues</h3>
+                <p>New to the codebase? Start here.</p>
+                <a href="https://github.com/aivelikivodja-bot/elara-core/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22" target="_blank" rel="noopener noreferrer">View Issues &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ CODE STYLE ============ -->
+    <div class="section" id="style">
+        <div class="section-header">[ CODE STYLE ]</div>
+        <div class="section-desc">Conventions we follow.</div>
+
+        <div class="content">
+            <ul>
+                <li><strong>Python 3.12+</strong> — We use modern f-string syntax and type hints</li>
+                <li><strong>Type hints</strong> where they add clarity (not required everywhere)</li>
+                <li><strong>Docstrings</strong> on public functions (Google style preferred)</li>
+                <li><strong>No unnecessary dependencies</strong> — Keep the install lightweight</li>
+            </ul>
+
+            <p>We don't enforce strict linting, but aim for readability. If your code is clear and tested, it'll likely be accepted.</p>
+
+            <div class="note">
+                <strong>Formatting:</strong> We don't use Black or strict formatters. Just keep it clean and consistent with surrounding code.
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ REPORTING ISSUES ============ -->
+    <div class="section" id="issues">
+        <div class="section-header">[ REPORTING ISSUES ]</div>
+        <div class="section-desc">How to file bugs and feature requests.</div>
+
+        <div class="content">
+            <p>Use the issue templates on GitHub:</p>
+            <ul>
+                <li><a href="https://github.com/aivelikivodja-bot/elara-core/issues/new?template=bug_report.yml" target="_blank" rel="noopener noreferrer">Bug Report</a> — Something broken? Tell us what happened.</li>
+                <li><a href="https://github.com/aivelikivodja-bot/elara-core/issues/new?template=feature_request.yml" target="_blank" rel="noopener noreferrer">Feature Request</a> — Got an idea? Pitch it here.</li>
+            </ul>
+
+            <p>Include your OS, Python version, and the full error message if applicable.</p>
+
+            <div class="tip">
+                <strong>Before filing:</strong> Check the <a href="/faq.html">FAQ</a> — many common issues are already solved there.
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ ASKING QUESTIONS ============ -->
+    <div class="section" id="questions">
+        <div class="section-header">[ ASKING QUESTIONS ]</div>
+        <div class="section-desc">Need help or clarification?</div>
+
+        <div class="content">
+            <p>Use <a href="https://github.com/aivelikivodja-bot/elara-core/discussions" target="_blank" rel="noopener noreferrer">GitHub Discussions</a> for questions, ideas, and general conversation about the project.</p>
+
+            <p>Issues are for bugs and feature requests. Discussions are for everything else.</p>
+        </div>
+    </div>
+
+    <!-- ============ LICENSE ============ -->
+    <div class="section" id="license">
+        <div class="section-header">[ LICENSE ]</div>
+        <div class="section-desc">What you're agreeing to by contributing.</div>
+
+        <div class="content">
+            <p>By contributing, you agree that your contributions will be licensed under the <strong>BSL-1.1 license</strong> (Business Source License 1.1).</p>
+
+            <p>This means the code is <strong>source-available</strong> but not fully open-source — commercial use requires a separate license during the protected period. After 4 years, it converts to Apache 2.0.</p>
+
+            <p>See the <a href="https://github.com/aivelikivodja-bot/elara-core/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">LICENSE file</a> for full details.</p>
+        </div>
+    </div>
+
+    <!-- ============ CTA ============ -->
+    <div class="cta-box">
+        <h3>Ready to Contribute?</h3>
+        <p>Fork the repo, make your changes, and open a PR.</p>
+        <a href="https://github.com/aivelikivodja-bot/elara-core/fork" target="_blank" rel="noopener noreferrer">Fork on GitHub &rarr;</a>
+        <a href="https://github.com/aivelikivodja-bot/elara-core/discussions" target="_blank" rel="noopener noreferrer">Ask Questions &rarr;</a>
+    </div>
+
+</div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="/quickstart.html">Quickstart</a> &mdash; <a href="/tools.html">Tools</a> &mdash; <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+<script>
+    function copyCode(btn) {
+        const block = btn.parentElement;
+        const code = block.querySelector('code').textContent;
+        navigator.clipboard.writeText(code.trim()).then(() => {
+            btn.textContent = 'OK!';
+            setTimeout(() => btn.textContent = 'copy', 2000);
+        });
+    }
+</script>
+
+</body>
+</html>
