@@ -67,6 +67,28 @@ Elara gives your AI assistant a sense of continuity across sessions. It remember
 
 **[Full tool reference →](https://elara.navigatorbuilds.com/tools.html)** · **[Quickstart guide →](https://elara.navigatorbuilds.com/quickstart.html)**
 
+## Documentation
+
+Complete documentation is available at **[elara.navigatorbuilds.com](https://elara.navigatorbuilds.com)**.
+
+| Page | Description |
+|------|-------------|
+| [Quickstart](https://elara.navigatorbuilds.com/quickstart.html) | Installation & setup guide |
+| [Tools Reference](https://elara.navigatorbuilds.com/tools.html) | All 34 MCP tools |
+| [Architecture](https://elara.navigatorbuilds.com/architecture.html) | Interactive system diagram |
+| [API Reference](https://elara.navigatorbuilds.com/api.html) | Python API docs |
+| [Configure](https://elara.navigatorbuilds.com/configure.html) | Interactive config generator |
+| [Personas](https://elara.navigatorbuilds.com/personas.html) | Community persona templates |
+| [Before & After](https://elara.navigatorbuilds.com/compare.html) | See the difference |
+| [Examples](https://elara.navigatorbuilds.com/examples.html) | Copy-paste examples |
+| [Migration](https://elara.navigatorbuilds.com/migrate.html) | Coming from mem0/ChatGPT/etc |
+| [FAQ](https://elara.navigatorbuilds.com/faq.html) | Troubleshooting |
+| [Roadmap](https://elara.navigatorbuilds.com/roadmap.html) | Public roadmap |
+| [Changelog](https://elara.navigatorbuilds.com/changelog.html) | Version history |
+| [Privacy](https://elara.navigatorbuilds.com/privacy.html) | Zero-telemetry policy |
+| [Status](https://elara.navigatorbuilds.com/status.html) | Build & community badges |
+| [Search](https://elara.navigatorbuilds.com/search.html) | Search all docs |
+
 ## Prerequisites
 
 - **Python 3.10+** — [Download here](https://www.python.org/downloads/)
@@ -183,6 +205,12 @@ export ELARA_DATA_DIR=~/.claude
 ```
 
 The `elara-` prefix is preserved in all filenames for backward compatibility.
+
+## Community
+
+- **[GitHub Discussions](https://github.com/aivelikivodja-bot/elara-core/discussions)** — Questions, ideas, showcase
+- **[Issues](https://github.com/aivelikivodja-bot/elara-core/issues)** — Bug reports and feature requests
+- **[Contributing](CONTRIBUTING.md)** — How to contribute
 
 ## Badge
 
