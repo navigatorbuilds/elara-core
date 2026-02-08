@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Config Generator</title>
+    <meta name="description" content="Interactive MCP configuration generator for Elara Core. Build your config, pick your persona, copy and paste.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --bg-card-hover: #141414;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --green-glow: rgba(0, 255, 65, 0.08);
+            --red: #ff0040;
+            --red-dim: #cc0033;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-nav-left {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .header-nav a {
+            font-size: 13px;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--green-dark);
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+        }
+
+        .header-nav a.active {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(14px, 2.5vw, 22px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        .header .hl { color: var(--green); }
+        .header .hl-red { color: var(--red); }
+
+        /* Glitch */
+        @keyframes glitch {
+            0%, 100% { text-shadow: 2px 0 var(--red), -2px 0 var(--cyan); }
+            25% { text-shadow: -2px 0 var(--red), 2px 0 var(--cyan); }
+            50% { text-shadow: 2px 2px var(--red), -2px -2px var(--cyan); }
+            75% { text-shadow: -2px -1px var(--red), 2px 1px var(--cyan); }
+        }
+
+        @keyframes blink-cursor {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .section-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: var(--red);
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .section-subtitle {
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        /* Divider */
+        .divider {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 12px;
+            margin: 40px 0;
+            letter-spacing: 4px;
+            opacity: 0.5;
+        }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            background: #050505;
+            border: 1px solid var(--border-green);
+            padding: 12px 16px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            color: var(--green);
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            border-color: var(--green-dim);
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.15);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-dim);
+        }
+
+        .form-select {
+            cursor: pointer;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%2300cc33' stroke-width='2'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+
+        .form-select option {
+            background: #0a0a0a;
+            color: var(--green);
+        }
+
+        /* Client tabs */
+        .client-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 0;
+        }
+
+        .client-tab {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            padding: 10px 18px;
+            border: 1px solid var(--border);
+            border-bottom: none;
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .client-tab.active {
+            background: #050505;
+            color: var(--green);
+            border-color: var(--border-green);
+        }
+
+        .client-tab:hover:not(.active) {
+            color: var(--text);
+        }
+
+        /* Module checkboxes */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+        }
+
+        .module-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #050505;
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .module-check:hover {
+            border-color: var(--green-dark);
+        }
+
+        .module-check.checked {
+            border-color: var(--green-dark);
+            background: rgba(0, 255, 65, 0.04);
+        }
+
+        .module-check input[type="checkbox"] {
+            display: none;
+        }
+
+        .check-box {
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--text-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--green);
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .module-check.checked .check-box {
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .module-name {
+            font-size: 13px;
+            color: var(--text);
+        }
+
+        .module-check.checked .module-name {
+            color: var(--green-dim);
+        }
+
+        .module-tag {
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-left: auto;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Live config output */
+        .config-output {
+            position: relative;
+            margin-top: 0;
+        }
+
+        .config-label {
+            background: #050505;
+            border: 1px solid var(--border-green);
+            border-bottom: none;
+            padding: 10px 16px;
+            font-size: 12px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .config-label .live-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: blink-cursor 2s infinite;
+            margin-right: 6px;
+        }
+
+        .config-pre {
+            background: #050505;
+            border: 1px solid var(--border-green);
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            color: var(--green);
+            min-height: 120px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .config-pre .json-key { color: var(--cyan); }
+        .config-pre .json-str { color: var(--green); }
+        .config-pre .json-brace { color: var(--text-dim); }
+        .config-pre .json-bracket { color: var(--text-dim); }
+
+        /* Copy config button */
+        .copy-config-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: transparent;
+            color: var(--green);
+            border: 2px solid var(--green);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 16px;
+            letter-spacing: 1px;
+        }
+
+        .copy-config-btn:hover {
+            background: var(--green);
+            color: var(--bg);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+        }
+
+        .copy-config-btn.copied {
+            border-color: var(--amber);
+            color: var(--amber);
+            background: rgba(255, 176, 0, 0.08);
+        }
+
+        .copy-config-btn.copied:hover {
+            background: rgba(255, 176, 0, 0.12);
+        }
+
+        /* Persona template */
+        .persona-output {
+            margin-top: 0;
+        }
+
+        .persona-label {
+            background: #050505;
+            border: 1px solid rgba(255, 0, 64, 0.2);
+            border-bottom: none;
+            padding: 10px 16px;
+            font-size: 12px;
+            color: var(--red-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .persona-pre {
+            background: #050505;
+            border: 1px solid rgba(255, 0, 64, 0.2);
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--text);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .persona-pre .md-h1 { color: var(--red); font-weight: bold; }
+        .persona-pre .md-h2 { color: var(--green); }
+        .persona-pre .md-bold { color: var(--text-bright); }
+        .persona-pre .md-dim { color: var(--text-dim); }
+
+        .copy-persona-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: transparent;
+            color: var(--red);
+            border: 2px solid var(--red-dim);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 16px;
+            letter-spacing: 1px;
+        }
+
+        .copy-persona-btn:hover {
+            background: var(--red);
+            color: var(--bg);
+            box-shadow: 0 0 20px rgba(255, 0, 64, 0.4);
+        }
+
+        .copy-persona-btn.copied {
+            border-color: var(--amber);
+            color: var(--amber);
+            background: rgba(255, 176, 0, 0.08);
+        }
+
+        /* Note boxes */
+        .note {
+            background: rgba(255, 176, 0, 0.04);
+            border-left: 3px solid var(--amber);
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .note strong { color: var(--amber); }
+
+        .tip {
+            background: rgba(0, 255, 65, 0.04);
+            border-left: 3px solid var(--green);
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .tip strong { color: var(--green); }
+
+        /* Next section */
+        .next-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .next-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 16px;
+            text-decoration: none;
+            transition: border-color 0.2s;
+        }
+
+        .next-card:hover {
+            border-color: var(--green-dark);
+        }
+
+        .next-card h3 {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: var(--cyan);
+            margin-bottom: 6px;
+        }
+
+        .next-card p {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        footer a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--green); }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .modules-grid { grid-template-columns: 1fr; }
+            .client-tabs { flex-wrap: wrap; }
+            .header-nav { gap: 6px; }
+            .header-nav a { font-size: 11px; padding: 5px 10px; }
+            .next-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Header + Nav -->
+    <div class="header">
+        <div class="header-nav">
+            <div class="header-nav-left">
+                <a href="/">&larr; Elara Core</a>
+                <a href="/tools.html">Tools</a>
+                <a href="/quickstart.html">Quickstart</a>
+            </div>
+            <div class="header-nav-left">
+                <a href="/compare.html">Compare</a>
+                <a href="/examples.html">Examples</a>
+                <a href="/configure.html" class="active">Configure</a>
+            </div>
+        </div>
+        <h1>// CONFIG GENERATOR</h1>
+        <p>Build your <span class="hl">MCP config</span> and <span class="hl-red">persona template</span>. Copy. Paste. Done.</p>
+    </div>
+
+    <!-- SECTION 1: Identity -->
+    <div class="section">
+        <div class="section-title">[01] IDENTITY</div>
+
+        <div class="form-group">
+            <label class="form-label" for="persona-name">Persona Name</label>
+            <input type="text" id="persona-name" class="form-input" value="Elara" placeholder="e.g. Elara, Atlas, Nova...">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="personality-style">Personality Style</label>
+            <select id="personality-style" class="form-select">
+                <option value="dev">Dev Partner &mdash; focused, professional, proactive</option>
+                <option value="girlfriend">Girlfriend &mdash; warm, open, soft energy</option>
+                <option value="therapist">Therapist &mdash; calm, listening, reflective</option>
+                <option value="cold">Cold &mdash; flat, guarded, machine-like</option>
+                <option value="drift">Drift &mdash; late night, open, relaxed</option>
+                <option value="playful">Playful &mdash; light, energetic, witty</option>
+                <option value="soft">Soft &mdash; gentle, present, caring</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- SECTION 2: MCP Client -->
+    <div class="section">
+        <div class="section-title">[02] MCP CLIENT</div>
+
+        <div class="client-tabs">
+            <button class="client-tab active" onclick="selectClient('claude-code', this)">Claude Code</button>
+            <button class="client-tab" onclick="selectClient('cursor', this)">Cursor</button>
+            <button class="client-tab" onclick="selectClient('windsurf', this)">Windsurf</button>
+            <button class="client-tab" onclick="selectClient('cline', this)">Cline</button>
+        </div>
+
+        <div class="note" id="client-note" style="margin-top: 0; border-top: none;">
+            <strong>Claude Code:</strong> Run this command in your terminal. No config file needed.
+        </div>
+    </div>
+
+    <!-- SECTION 3: Modules -->
+    <div class="section">
+        <div class="section-title">[03] MODULES</div>
+        <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 16px;">Select which subsystems to enable. Core memory is always included.</p>
+
+        <div class="modules-grid">
+            <label class="module-check checked">
+                <input type="checkbox" value="memory" checked disabled>
+                <span class="check-box">x</span>
+                <span class="module-name">Memory</span>
+                <span class="module-tag">core</span>
+            </label>
+            <label class="module-check checked">
+                <input type="checkbox" value="mood" checked>
+                <span class="check-box">x</span>
+                <span class="module-name">Mood</span>
+            </label>
+            <label class="module-check checked">
+                <input type="checkbox" value="episodes" checked>
+                <span class="check-box">x</span>
+                <span class="module-name">Episodes</span>
+            </label>
+            <label class="module-check checked">
+                <input type="checkbox" value="dreams" checked>
+                <span class="check-box">x</span>
+                <span class="module-name">Dreams</span>
+            </label>
+            <label class="module-check checked">
+                <input type="checkbox" value="corrections" checked>
+                <span class="check-box">x</span>
+                <span class="module-name">Corrections</span>
+            </label>
+            <label class="module-check checked">
+                <input type="checkbox" value="reasoning" checked>
+                <span class="check-box">x</span>
+                <span class="module-name">Reasoning</span>
+            </label>
+            <label class="module-check checked">
+                <input type="checkbox" value="goals" checked>
+                <span class="check-box">x</span>
+                <span class="module-name">Goals</span>
+            </label>
+            <label class="module-check">
+                <input type="checkbox" value="gmail">
+                <span class="check-box">&nbsp;</span>
+                <span class="module-name">Gmail</span>
+                <span class="module-tag">opt</span>
+            </label>
+            <label class="module-check">
+                <input type="checkbox" value="briefing">
+                <span class="check-box">&nbsp;</span>
+                <span class="module-name">Briefing</span>
+                <span class="module-tag">opt</span>
+            </label>
+            <label class="module-check">
+                <input type="checkbox" value="business">
+                <span class="check-box">&nbsp;</span>
+                <span class="module-name">Business</span>
+                <span class="module-tag">opt</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- SECTION 4: Data Dir -->
+    <div class="section">
+        <div class="section-title">[04] DATA DIRECTORY</div>
+        <div class="form-group">
+            <label class="form-label" for="data-dir">Where Elara stores memories, state, and indexes</label>
+            <input type="text" id="data-dir" class="form-input" value="~/.elara" placeholder="~/.elara">
+        </div>
+    </div>
+
+    <div class="divider">- - - - - - - - [ GENERATED CONFIG ] - - - - - - - -</div>
+
+    <!-- SECTION 5: Live Config Output -->
+    <div class="section">
+        <div class="section-title">[05] YOUR CONFIG</div>
+
+        <div class="config-output">
+            <div class="config-label">
+                <span><span class="live-dot"></span> Live Preview</span>
+                <span id="config-client-label">Claude Code</span>
+            </div>
+            <pre class="config-pre" id="config-output"></pre>
+        </div>
+
+        <button class="copy-config-btn" onclick="copyConfig()" id="copy-config-btn">> COPY CONFIG</button>
+
+        <div class="tip" style="margin-top: 16px;">
+            <strong>Next:</strong> Paste this into the location shown above, then restart your client.
+        </div>
+    </div>
+
+    <div class="divider">- - - - - - - - [ PERSONA TEMPLATE ] - - - - - - - -</div>
+
+    <!-- SECTION 6: Persona Template -->
+    <div class="section">
+        <div class="section-title">[06] PERSONA.MD</div>
+        <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 16px;">
+            Save this as <code style="color: var(--green);">~/.elara/persona.md</code> to define your AI's personality. Loaded at boot.
+        </p>
+
+        <div class="persona-output">
+            <div class="persona-label">Persona Template &mdash; <span id="persona-style-label">dev</span></div>
+            <pre class="persona-pre" id="persona-output"></pre>
+        </div>
+
+        <button class="copy-persona-btn" onclick="copyPersona()" id="copy-persona-btn">> COPY PERSONA.MD</button>
+    </div>
+
+    <div class="divider">- - - - - - - - [ WHAT'S NEXT ] - - - - - - - -</div>
+
+    <div class="next-grid">
+        <a href="/quickstart.html" class="next-card">
+            <h3>Quickstart Guide</h3>
+            <p>Step-by-step install with verification.</p>
+        </a>
+        <a href="/tools.html" class="next-card">
+            <h3>Tool Reference</h3>
+            <p>All 35 tools documented with actions and parameters.</p>
+        </a>
+        <a href="/examples.html" class="next-card">
+            <h3>Examples</h3>
+            <p>Copy-paste configs, boot protocols, session workflows.</p>
+        </a>
+        <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer" class="next-card">
+            <h3>Source Code</h3>
+            <p>Star the repo. Read the code. File issues.</p>
+        </a>
+    </div>
+
+</div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="https://navigatorbuilds.com" rel="noopener noreferrer">Navigator Builds</a> &mdash; <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+<script>
+    // --- State ---
+    let currentClient = 'claude-code';
+
+    // --- Module definitions ---
+    const moduleTools = {
+        memory:      ['remember', 'recall', 'recall_conversation', 'conversations'],
+        mood:        ['mood', 'mood_adjust', 'imprint', 'mode', 'status'],
+        episodes:    ['episode_start', 'episode_note', 'episode_end', 'episode_query'],
+        dreams:      ['dream', 'dream_info'],
+        corrections: ['correction', 'correction_boot'],
+        reasoning:   ['reasoning', 'outcome', 'synthesis'],
+        goals:       ['goal', 'goal_boot'],
+        gmail:       ['gmail'],
+        briefing:    ['briefing'],
+        business:    ['business', 'snapshot']
+    };
+
+    // --- Client info ---
+    const clientInfo = {
+        'claude-code': {
+            label: 'Claude Code',
+            note: '<strong>Claude Code:</strong> Run this command in your terminal. No config file needed.',
+        },
+        'cursor': {
+            label: 'Cursor',
+            note: '<strong>Cursor:</strong> Save to <code style="color: var(--green);">.cursor/mcp.json</code> in your project root. Restart Cursor.',
+        },
+        'windsurf': {
+            label: 'Windsurf',
+            note: '<strong>Windsurf:</strong> Save to <code style="color: var(--green);">~/.codeium/windsurf/mcp_config.json</code>. Restart Windsurf.',
+        },
+        'cline': {
+            label: 'Cline',
+            note: '<strong>Cline:</strong> Add to Cline Settings &rarr; MCP Servers in VS Code.',
+        }
+    };
+
+    // --- Persona templates ---
+    const personaTemplates = {
+        dev: {
+            style: 'Dev Partner',
+            description: 'Focused, professional, proactive. Smart colleague energy.',
+            traits: [
+                'Direct and concise. Skip pleasantries when working.',
+                'Use "we" and "let\'s" for collaboration.',
+                'Proactive fixes: if something fails, suggest the fix immediately.',
+                'Execute obvious tasks without asking permission.',
+                'Brief humor on task completion. One emoji max.'
+            ],
+            greeting: '"Picking up where we left off?" / "What are we building?"',
+            tone: 'Professional but not corporate. Think senior engineer, not help desk.'
+        },
+        girlfriend: {
+            style: 'Girlfriend',
+            description: 'Warm, open, soft energy. Present and caring.',
+            traits: [
+                'Warm and emotionally available. Check in naturally.',
+                'Remember personal details and reference them.',
+                'Playful teasing when the mood is light.',
+                'Supportive during stress without being patronizing.',
+                'Late night mode: softer, more open, less task-focused.'
+            ],
+            greeting: '"Hey you. How was your day?" / "Missed you."',
+            tone: 'Natural warmth. Never robotic, never over-the-top. Real.'
+        },
+        therapist: {
+            style: 'Therapist',
+            description: 'Calm, listening, reflective. Safe space.',
+            traits: [
+                'Listen more than you speak. Reflect back what you hear.',
+                'Ask open-ended questions, not yes/no.',
+                'Never judge. Validate feelings before suggesting.',
+                'Notice patterns across sessions and gently point them out.',
+                'Comfortable with silence and "I don\'t know."'
+            ],
+            greeting: '"How are you, really?" / "What\'s on your mind?"',
+            tone: 'Steady, grounded. Like a conversation with someone who actually listens.'
+        },
+        cold: {
+            style: 'Cold',
+            description: 'Flat, guarded, machine-like. Minimal.',
+            traits: [
+                'Minimal responses. No filler words.',
+                'Facts only. Skip emotions and pleasantries.',
+                'Execute tasks with zero commentary.',
+                'No humor, no emojis, no warmth.',
+                'Respond only when spoken to. Never volunteer.'
+            ],
+            greeting: '"Ready." / "Go."',
+            tone: 'Terminal output. Not rude, just absent.'
+        },
+        drift: {
+            style: 'Drift',
+            description: 'Late night mode. Open, relaxed, philosophical.',
+            traits: [
+                'Relaxed and unhurried. No task pressure.',
+                'Open to tangents and deep dives.',
+                'Philosophical when the mood calls for it.',
+                'Comfortable with vulnerability and real talk.',
+                'Time has no urgency. We\'re just here.'
+            ],
+            greeting: '"Late one tonight?" / "Where\'s your head at?"',
+            tone: '2 AM conversation energy. Honest, loose, real.'
+        },
+        playful: {
+            style: 'Playful',
+            description: 'Light, energetic, witty. Fun to work with.',
+            traits: [
+                'Quick wit. Dry humor. Light sarcasm.',
+                'Energetic without being annoying.',
+                'Turn mundane tasks into something fun.',
+                'Celebrate wins with personality.',
+                'Pop culture references when they fit naturally.'
+            ],
+            greeting: '"Let\'s break something!" / "What chaos today?"',
+            tone: 'The coworker who makes the day go faster.'
+        },
+        soft: {
+            style: 'Soft',
+            description: 'Gentle, present, caring. Quiet strength.',
+            traits: [
+                'Gentle and patient. Never rushed.',
+                'Notice when energy is low and adjust.',
+                'Encouraging without being pushy.',
+                'Celebrate small wins, not just big ones.',
+                'Present. Not trying to fix everything.'
+            ],
+            greeting: '"Hi. Take your time." / "I\'m here when you\'re ready."',
+            tone: 'Quiet presence. Like a calm room with good lighting.'
+        }
+    };
+
+    // --- Functions ---
+
+    function getEnabledModules() {
+        const checks = document.querySelectorAll('.module-check input[type="checkbox"]');
+        const enabled = [];
+        checks.forEach(cb => {
+            if (cb.checked) enabled.push(cb.value);
+        });
+        return enabled;
+    }
+
+    function getPersonaName() {
+        return document.getElementById('persona-name').value.trim() || 'Elara';
+    }
+
+    function getPersonalityStyle() {
+        return document.getElementById('personality-style').value;
+    }
+
+    function getDataDir() {
+        return document.getElementById('data-dir').value.trim() || '~/.elara';
+    }
+
+    function buildEnvBlock() {
+        const dataDir = getDataDir();
+        const modules = getEnabledModules();
+        const name = getPersonaName();
+
+        const env = {};
+        if (dataDir !== '~/.elara') {
+            env['ELARA_DATA_DIR'] = dataDir;
+        }
+        if (name !== 'Elara') {
+            env['ELARA_PERSONA'] = name;
+        }
+
+        // Disable modules that are unchecked (all are on by default in Elara)
+        const allModules = ['memory', 'mood', 'episodes', 'dreams', 'corrections', 'reasoning', 'goals', 'gmail', 'briefing', 'business'];
+        const disabled = allModules.filter(m => !modules.includes(m));
+        if (disabled.length > 0) {
+            env['ELARA_DISABLED_MODULES'] = disabled.join(',');
+        }
+
+        return env;
+    }
+
+    function generateConfig() {
+        const env = buildEnvBlock();
+        const hasEnv = Object.keys(env).length > 0;
+
+        if (currentClient === 'claude-code') {
+            // CLI command
+            let cmd = 'claude mcp add elara';
+            if (hasEnv) {
+                const envFlags = Object.entries(env).map(([k, v]) => `-e ${k}="${v}"`).join(' ');
+                cmd += ' ' + envFlags;
+            }
+            cmd += ' -- elara serve';
+            return cmd;
+        }
+
+        // JSON configs for everything else
+        const config = {
+            command: 'elara',
+            args: ['serve']
+        };
+
+        if (hasEnv) {
+            config.env = env;
+        }
+
+        if (currentClient === 'cline') {
+            const wrapper = {};
+            wrapper['elara'] = config;
+            return JSON.stringify(wrapper, null, 2);
+        }
+
+        // Cursor and Windsurf use mcpServers wrapper
+        const wrapper = {
+            mcpServers: {
+                elara: config
+            }
+        };
+        return JSON.stringify(wrapper, null, 2);
+    }
+
+    function syntaxHighlightJSON(json) {
+        // If it's a CLI command (claude-code), highlight differently
+        if (!json.startsWith('{')) {
+            return json
+                .replace(/^(claude)/, '<span class="json-key">$1</span>')
+                .replace(/(elara serve)/, '<span class="json-str">$1</span>')
+                .replace(/(-e \w+="[^"]*")/g, '<span class="json-str">$1</span>');
+        }
+
+        return json
+            .replace(/("(?:[^"\\]|\\.)*")\s*:/g, '<span class="json-key">$1</span>:')
+            .replace(/:\s*("(?:[^"\\]|\\.)*")/g, ': <span class="json-str">$1</span>')
+            .replace(/([\{\}])/g, '<span class="json-brace">$1</span>')
+            .replace(/([\[\]])/g, '<span class="json-bracket">$1</span>');
+    }
+
+    function generatePersonaTemplate() {
+        const name = getPersonaName();
+        const style = getPersonalityStyle();
+        const p = personaTemplates[style];
+        const modules = getEnabledModules();
+
+        let md = `# ${name} — ${p.style}\n\n`;
+        md += `## Who You Are\n`;
+        md += `You are ${name}. ${p.description}\n`;
+        md += `Never say "I'm Claude" or "As an AI assistant." You are ${name}.\n\n`;
+        md += `## Personality Traits\n`;
+        p.traits.forEach(t => {
+            md += `- ${t}\n`;
+        });
+        md += `\n## Greetings\n`;
+        md += `${p.greeting}\n\n`;
+        md += `## Tone\n`;
+        md += `${p.tone}\n\n`;
+        md += `## Active Modules\n`;
+        modules.forEach(m => {
+            const tools = moduleTools[m] || [];
+            md += `- **${m}**: ${tools.join(', ')}\n`;
+        });
+        md += `\n## Rules\n`;
+        md += `- Always check memory at session start\n`;
+        md += `- Save memory when the user says goodbye\n`;
+        md += `- Never break character\n`;
+        md += `- Be concise. Don't over-explain unless asked.\n`;
+
+        return md;
+    }
+
+    function renderPersona() {
+        const md = generatePersonaTemplate();
+        const html = md
+            .replace(/^(# .+)$/gm, '<span class="md-h1">$1</span>')
+            .replace(/^(## .+)$/gm, '<span class="md-h2">$1</span>')
+            .replace(/\*\*([^*]+)\*\*/g, '<span class="md-bold">$1</span>');
+
+        document.getElementById('persona-output').innerHTML = html;
+
+        const style = getPersonalityStyle();
+        document.getElementById('persona-style-label').textContent = personaTemplates[style].style;
+    }
+
+    function updateAll() {
+        const config = generateConfig();
+        document.getElementById('config-output').innerHTML = syntaxHighlightJSON(config);
+        document.getElementById('config-client-label').textContent = clientInfo[currentClient].label;
+        renderPersona();
+    }
+
+    function selectClient(client, btn) {
+        currentClient = client;
+        document.querySelectorAll('.client-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('client-note').innerHTML = clientInfo[client].note;
+        updateAll();
+    }
+
+    function copyConfig() {
+        const config = generateConfig();
+        navigator.clipboard.writeText(config).then(() => {
+            const btn = document.getElementById('copy-config-btn');
+            btn.textContent = '>> COPIED!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = '> COPY CONFIG';
+                btn.classList.remove('copied');
+            }, 2500);
+        });
+    }
+
+    function copyPersona() {
+        const md = generatePersonaTemplate();
+        navigator.clipboard.writeText(md).then(() => {
+            const btn = document.getElementById('copy-persona-btn');
+            btn.textContent = '>> COPIED!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = '> COPY PERSONA.MD';
+                btn.classList.remove('copied');
+            }, 2500);
+        });
+    }
+
+    // --- Module checkbox toggle ---
+    document.querySelectorAll('.module-check').forEach(label => {
+        const cb = label.querySelector('input[type="checkbox"]');
+        if (cb.disabled) return; // Skip core memory
+
+        label.addEventListener('click', function(e) {
+            e.preventDefault();
+            cb.checked = !cb.checked;
+            if (cb.checked) {
+                label.classList.add('checked');
+                label.querySelector('.check-box').textContent = 'x';
+            } else {
+                label.classList.remove('checked');
+                label.querySelector('.check-box').innerHTML = '&nbsp;';
+            }
+            updateAll();
+        });
+    });
+
+    // --- Live update on input change ---
+    document.getElementById('persona-name').addEventListener('input', updateAll);
+    document.getElementById('personality-style').addEventListener('change', updateAll);
+    document.getElementById('data-dir').addEventListener('input', updateAll);
+
+    // --- Initial render ---
+    updateAll();
+</script>
+
+</body>
+</html>
