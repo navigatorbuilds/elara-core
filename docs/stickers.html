@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elara Core - Stickers & Badges</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', Consolas, monospace;
+            background: #000;
+            color: #00ff41;
+            line-height: 1.6;
+            padding: 40px 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* CRT curve effect */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 30px;
+            border: 2px solid #00ff41;
+            background: rgba(10, 14, 26, 0.8);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+            position: relative;
+        }
+
+        h1 {
+            font-size: 48px;
+            text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
+            margin-bottom: 10px;
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% { transform: translate(0); }
+            92% { transform: translate(-2px, 1px); }
+            94% { transform: translate(2px, -1px); }
+            96% { transform: translate(-1px, 2px); }
+        }
+
+        .subtitle {
+            color: #ff0040;
+            font-size: 18px;
+            text-shadow: 0 0 5px #ff0040;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00ff41;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 1px solid #00ff41;
+            background: rgba(0, 255, 65, 0.1);
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            background: rgba(0, 255, 65, 0.2);
+            box-shadow: 0 0 10px #00ff41;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .sticker-card {
+            background: rgba(10, 14, 26, 0.9);
+            border: 2px solid #1a2332;
+            padding: 30px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .sticker-card:hover {
+            border-color: #00ff41;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .sticker-preview {
+            background: #000;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid #1a2332;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sticker-preview img {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(0 0 10px rgba(0, 255, 65, 0.3));
+        }
+
+        .sticker-title {
+            font-size: 20px;
+            color: #00ff41;
+            margin-bottom: 15px;
+            text-shadow: 0 0 5px #00ff41;
+        }
+
+        .sticker-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 20px;
+            border: 1px solid #00ff41;
+            background: rgba(0, 255, 65, 0.1);
+            color: #00ff41;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: rgba(0, 255, 65, 0.2);
+            box-shadow: 0 0 10px #00ff41;
+        }
+
+        .btn-secondary {
+            border-color: #ff0040;
+            color: #ff0040;
+            background: rgba(255, 0, 64, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 0, 64, 0.2);
+            box-shadow: 0 0 10px #ff0040;
+        }
+
+        .embed-section {
+            background: rgba(10, 14, 26, 0.9);
+            border: 2px solid #1a2332;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .embed-section.active {
+            display: block;
+        }
+
+        .embed-title {
+            color: #ff0040;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .embed-code {
+            background: #000;
+            border: 1px solid #1a2332;
+            padding: 15px;
+            color: #00ff41;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 30px;
+            border-top: 2px solid #1a2332;
+            color: #666;
+        }
+
+        footer a {
+            color: #00ff41;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-shadow: 0 0 5px #00ff41;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .back-link {
+                position: static;
+                display: inline-block;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">&lt; Back to Home</a>
+
+        <header>
+            <h1>STICKERS & BADGES</h1>
+            <p class="subtitle">Brand assets for the memory that never forgets</p>
+        </header>
+
+        <div class="grid">
+            <!-- Elara Logo -->
+            <div class="sticker-card">
+                <div class="sticker-preview">
+                    <img src="stickers/elara-logo.svg" alt="Elara Logo">
+                </div>
+                <div class="sticker-title">ELARA LOGO</div>
+                <div class="sticker-actions">
+                    <a href="stickers/elara-logo.svg" download class="btn">Download SVG</a>
+                    <button class="btn btn-secondary" onclick="toggleEmbed('logo')">Embed Code</button>
+                </div>
+                <div class="embed-section" id="embed-logo">
+                    <div class="embed-title">MARKDOWN:</div>
+                    <div class="embed-code">![Elara](https://aivelikivodja-bot.github.io/elara-core/stickers/elara-logo.svg)</div>
+                    <div class="embed-title" style="margin-top: 15px;">HTML:</div>
+                    <div class="embed-code">&lt;img src="https://aivelikivodja-bot.github.io/elara-core/stickers/elara-logo.svg" alt="Elara" width="200"&gt;</div>
+                </div>
+            </div>
+
+            <!-- I Remember Everything -->
+            <div class="sticker-card">
+                <div class="sticker-preview">
+                    <img src="stickers/i-remember.svg" alt="I Remember Everything">
+                </div>
+                <div class="sticker-title">I REMEMBER EVERYTHING</div>
+                <div class="sticker-actions">
+                    <a href="stickers/i-remember.svg" download class="btn">Download SVG</a>
+                    <button class="btn btn-secondary" onclick="toggleEmbed('remember')">Embed Code</button>
+                </div>
+                <div class="embed-section" id="embed-remember">
+                    <div class="embed-title">MARKDOWN:</div>
+                    <div class="embed-code">![I Remember](https://aivelikivodja-bot.github.io/elara-core/stickers/i-remember.svg)</div>
+                    <div class="embed-title" style="margin-top: 15px;">HTML:</div>
+                    <div class="embed-code">&lt;img src="https://aivelikivodja-bot.github.io/elara-core/stickers/i-remember.svg" alt="I Remember" width="300"&gt;</div>
+                </div>
+            </div>
+
+            <!-- 34 Tools -->
+            <div class="sticker-card">
+                <div class="sticker-preview">
+                    <img src="stickers/34-tools.svg" alt="34 Tools">
+                </div>
+                <div class="sticker-title">34 TOOLS / 11 MODULES</div>
+                <div class="sticker-actions">
+                    <a href="stickers/34-tools.svg" download class="btn">Download SVG</a>
+                    <button class="btn btn-secondary" onclick="toggleEmbed('tools')">Embed Code</button>
+                </div>
+                <div class="embed-section" id="embed-tools">
+                    <div class="embed-title">MARKDOWN:</div>
+                    <div class="embed-code">![34 Tools](https://aivelikivodja-bot.github.io/elara-core/stickers/34-tools.svg)</div>
+                    <div class="embed-title" style="margin-top: 15px;">HTML:</div>
+                    <div class="embed-code">&lt;img src="https://aivelikivodja-bot.github.io/elara-core/stickers/34-tools.svg" alt="34 Tools" width="200"&gt;</div>
+                </div>
+            </div>
+
+            <!-- Zero Cloud -->
+            <div class="sticker-card">
+                <div class="sticker-preview">
+                    <img src="stickers/zero-cloud.svg" alt="Zero Cloud">
+                </div>
+                <div class="sticker-title">ZERO CLOUD</div>
+                <div class="sticker-actions">
+                    <a href="stickers/zero-cloud.svg" download class="btn">Download SVG</a>
+                    <button class="btn btn-secondary" onclick="toggleEmbed('cloud')">Embed Code</button>
+                </div>
+                <div class="embed-section" id="embed-cloud">
+                    <div class="embed-title">MARKDOWN:</div>
+                    <div class="embed-code">![Zero Cloud](https://aivelikivodja-bot.github.io/elara-core/stickers/zero-cloud.svg)</div>
+                    <div class="embed-title" style="margin-top: 15px;">HTML:</div>
+                    <div class="embed-code">&lt;img src="https://aivelikivodja-bot.github.io/elara-core/stickers/zero-cloud.svg" alt="Zero Cloud" width="200"&gt;</div>
+                </div>
+            </div>
+
+            <!-- Built With AI -->
+            <div class="sticker-card">
+                <div class="sticker-preview">
+                    <img src="stickers/built-with-ai.svg" alt="Built With AI">
+                </div>
+                <div class="sticker-title">BUILT WITH AI</div>
+                <div class="sticker-actions">
+                    <a href="stickers/built-with-ai.svg" download class="btn">Download SVG</a>
+                    <button class="btn btn-secondary" onclick="toggleEmbed('ai')">Embed Code</button>
+                </div>
+                <div class="embed-section" id="embed-ai">
+                    <div class="embed-title">MARKDOWN:</div>
+                    <div class="embed-code">![Built With AI](https://aivelikivodja-bot.github.io/elara-core/stickers/built-with-ai.svg)</div>
+                    <div class="embed-title" style="margin-top: 15px;">HTML:</div>
+                    <div class="embed-code">&lt;img src="https://aivelikivodja-bot.github.io/elara-core/stickers/built-with-ai.svg" alt="Built With AI" width="250"&gt;</div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Elara Core - Local-first AI memory that actually persists</p>
+            <p style="margin-top: 10px;">
+                <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank">GitHub</a> |
+                <a href="index.html">Home</a> |
+                <a href="https://medium.com/@nenad_78912" target="_blank">Blog</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function toggleEmbed(id) {
+            const embedSection = document.getElementById('embed-' + id);
+            const allEmbeds = document.querySelectorAll('.embed-section');
+
+            // Close all other embeds
+            allEmbeds.forEach(section => {
+                if (section.id !== 'embed-' + id) {
+                    section.classList.remove('active');
+                }
+            });
+
+            // Toggle current embed
+            embedSection.classList.toggle('active');
+        }
+
+        // Copy to clipboard functionality
+        document.querySelectorAll('.embed-code').forEach(codeBlock => {
+            codeBlock.addEventListener('click', function() {
+                const text = this.textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    const originalBorder = this.style.border;
+                    this.style.border = '1px solid #00ff41';
+                    setTimeout(() => {
+                        this.style.border = originalBorder;
+                    }, 500);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

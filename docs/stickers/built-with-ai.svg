@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 80" width="250" height="80">
+  <defs>
+    <filter id="partnerGlow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Rounded rectangle background -->
+  <rect x="2" y="2" width="246" height="76" rx="10" fill="#0a0e1a" stroke="#1a2332" stroke-width="2"/>
+
+  <!-- Human dot (green) -->
+  <circle cx="40" cy="40" r="12" fill="#00ff41" filter="url(#partnerGlow)"/>
+  <text x="40" y="46"
+        font-family="'Courier New', Consolas, monospace"
+        font-size="16"
+        font-weight="bold"
+        fill="#0a0e1a"
+        text-anchor="middle">H</text>
+
+  <!-- Connection line -->
+  <line x1="52" y1="40" x2="188" y2="40"
+        stroke="#1a2332"
+        stroke-width="2"
+        stroke-dasharray="5 5"
+        opacity="0.6"/>
+
+  <!-- AI dot (red) -->
+  <circle cx="210" cy="40" r="12" fill="#ff0040" filter="url(#partnerGlow)"/>
+  <text x="210" y="46"
+        font-family="'Courier New', Consolas, monospace"
+        font-size="16"
+        font-weight="bold"
+        fill="#0a0e1a"
+        text-anchor="middle">AI</text>
+
+  <!-- BUILT WITH AI text -->
+  <text x="125" y="68"
+        font-family="'Courier New', Consolas, monospace"
+        font-size="14"
+        font-weight="bold"
+        fill="#00ff41"
+        text-anchor="middle"
+        opacity="0.9">BUILT WITH AI</text>
+</svg>

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" width="200" height="80">
+  <defs>
+    <filter id="statsGlow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark rounded rectangle -->
+  <rect x="2" y="2" width="196" height="76" rx="10" fill="#0a0e1a" stroke="#1a2332" stroke-width="2"/>
+
+  <!-- Red accent line -->
+  <line x1="20" y1="50" x2="180" y2="50" stroke="#ff0040" stroke-width="2" opacity="0.8"/>
+
+  <!-- 34 TOOLS text -->
+  <text x="100" y="35"
+        font-family="'Courier New', Consolas, monospace"
+        font-size="28"
+        font-weight="bold"
+        fill="#00ff41"
+        text-anchor="middle"
+        filter="url(#statsGlow)">34 TOOLS</text>
+
+  <!-- 11 MODULES text -->
+  <text x="100" y="68"
+        font-family="'Courier New', Consolas, monospace"
+        font-size="14"
+        fill="#00ff41"
+        text-anchor="middle"
+        opacity="0.7">11 MODULES</text>
+</svg>

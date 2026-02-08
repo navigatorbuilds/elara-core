@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <filter id="cloudGlow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark circle background -->
+  <circle cx="100" cy="100" r="95" fill="#0a0e1a" stroke="#1a2332" stroke-width="2"/>
+
+  <!-- Cloud icon -->
+  <path d="M 140 90 Q 150 80 160 85 Q 165 70 175 75 Q 180 60 190 70 Q 200 75 195 90 L 140 90 Z"
+        transform="translate(-90, 20)"
+        fill="#666"
+        opacity="0.6"/>
+  <ellipse cx="55" cy="95" rx="20" ry="15" fill="#666" opacity="0.6"/>
+  <ellipse cx="75" cy="90" rx="25" ry="18" fill="#666" opacity="0.6"/>
+  <ellipse cx="100" cy="92" rx="22" ry="16" fill="#666" opacity="0.6"/>
+  <ellipse cx="125" cy="95" rx="20" ry="15" fill="#666" opacity="0.6"/>
+  <ellipse cx="145" cy="98" rx="18" ry="14" fill="#666" opacity="0.6"/>
+
+  <!-- Red X -->
+  <line x1="50" y1="70" x2="150" y2="120"
+        stroke="#ff0040"
+        stroke-width="8"
+        stroke-linecap="round"
+        filter="url(#cloudGlow)"/>
+  <line x1="150" y1="70" x2="50" y2="120"
+        stroke="#ff0040"
+        stroke-width="8"
+        stroke-linecap="round"
+        filter="url(#cloudGlow)"/>
+
+  <!-- ZERO CLOUD text -->
+  <text x="100" y="160"
+        font-family="'Courier New', Consolas, monospace"
+        font-size="18"
+        font-weight="bold"
+        fill="#00ff41"
+        text-anchor="middle"
+        filter="url(#cloudGlow)">ZERO CLOUD</text>
+</svg>

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100" width="300" height="100">
+  <defs>
+    <pattern id="scanlines" patternUnits="userSpaceOnUse" width="2" height="2">
+      <rect width="2" height="1" fill="#000" opacity="0.1"/>
+    </pattern>
+    <filter id="textGlow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Rounded rectangle background -->
+  <rect x="2" y="2" width="296" height="96" rx="12" fill="#0a0e1a" stroke="#00ff41" stroke-width="2"/>
+
+  <!-- Scanline overlay -->
+  <rect x="2" y="2" width="296" height="96" rx="12" fill="url(#scanlines)"/>
+
+  <!-- Terminal prompt -->
+  <text x="20" y="50" font-family="'Courier New', Consolas, monospace" font-size="24" font-weight="bold" fill="#00ff41" filter="url(#textGlow)">
+    &gt; I remember
+  </text>
+  <text x="20" y="75" font-family="'Courier New', Consolas, monospace" font-size="24" font-weight="bold" fill="#00ff41" filter="url(#textGlow)">
+    everything.
+  </text>
+
+  <!-- Cursor blink -->
+  <rect x="180" y="60" width="12" height="20" fill="#00ff41" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0;0.8" dur="1.2s" repeatCount="indefinite"/>
+  </rect>
+</svg>

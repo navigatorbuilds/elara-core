@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Memory Visualizer</title>
+    <meta name="description" content="Live visualization of Elara's memory network — semantic recall, emotional imprints, reasoning trails, and dream processing in real-time.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --bg-card-hover: #141414;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --green-glow: rgba(0, 255, 65, 0.08);
+            --red: #ff0040;
+            --red-dim: #cc0033;
+            --red-glow: rgba(255, 0, 64, 0.08);
+            --cyan: #00e5ff;
+            --cyan-dim: #00b8cc;
+            --cyan-dark: #003344;
+            --cyan-glow: rgba(0, 229, 255, 0.08);
+            --amber: #ffb000;
+            --amber-dim: #cc8c00;
+            --amber-dark: #332300;
+            --amber-glow: rgba(255, 176, 0, 0.08);
+            --purple: #b040ff;
+            --purple-dim: #8a30cc;
+            --purple-dark: #220044;
+            --purple-glow: rgba(176, 64, 255, 0.08);
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+            --scanline: rgba(0, 255, 65, 0.03);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* CRT Scanlines overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.08) 2px,
+                rgba(0, 0, 0, 0.08) 4px
+            );
+        }
+
+        /* Floating pixel characters */
+        .pixel-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .pixel-char {
+            position: absolute;
+            font-family: 'Press Start 2P', monospace;
+            opacity: 0.04;
+            animation: float-char linear infinite;
+            color: var(--green);
+        }
+
+        .pixel-char.red { color: var(--red); }
+        .pixel-char.purple { color: var(--purple); }
+
+        @keyframes float-char {
+            0% { transform: translateY(110vh) rotate(0deg); }
+            100% { transform: translateY(-10vh) rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Glitch effect */
+        @keyframes glitch {
+            0%, 100% { text-shadow: 2px 0 var(--red), -2px 0 var(--cyan); }
+            25% { text-shadow: -2px 0 var(--red), 2px 0 var(--cyan); }
+            50% { text-shadow: 2px 2px var(--red), -2px -2px var(--cyan); }
+            75% { text-shadow: -2px -1px var(--red), 2px 1px var(--cyan); }
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            92% { opacity: 1; }
+            93% { opacity: 0.8; }
+            94% { opacity: 1; }
+            96% { opacity: 0.9; }
+            97% { opacity: 1; }
+        }
+
+        @keyframes pulse-line {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 12px 0;
+            background: rgba(10, 10, 10, 0.92);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-green);
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: var(--green);
+            text-decoration: none;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+            animation: flicker 8s infinite;
+        }
+
+        .nav-logo .red { color: var(--red); text-shadow: 0 0 10px rgba(255, 0, 64, 0.5); }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 65, 0.4); }
+        .nav-links a.active { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 65, 0.4); }
+
+        .btn-github {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--green-dark);
+            color: var(--green);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .btn-github:hover {
+            background: var(--green-glow);
+            border-color: var(--green-dim);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+        }
+
+        .btn-github svg { width: 16px; height: 16px; fill: currentColor; }
+
+        /* Page header */
+        .page-header {
+            padding: 120px 0 32px;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 28px;
+            color: var(--green);
+            text-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+            margin-bottom: 16px;
+            animation: glitch 4s infinite;
+        }
+
+        .page-header p {
+            color: var(--text-dim);
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .page-header p .hl { color: var(--green); }
+        .page-header p .hl-red { color: var(--red); }
+
+        /* Canvas container */
+        .canvas-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 1px solid var(--border);
+            background: #050505;
+            overflow: hidden;
+        }
+
+        .canvas-wrap canvas {
+            display: block;
+            width: 100%;
+            height: 600px;
+        }
+
+        /* Canvas overlay stats */
+        .canvas-stats {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .canvas-stats .stat-line {
+            margin-bottom: 4px;
+        }
+
+        .canvas-stats .stat-val {
+            color: var(--green);
+        }
+
+        .canvas-stats .stat-label {
+            color: var(--text-dim);
+        }
+
+        /* Legend overlay on canvas */
+        .canvas-legend {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .canvas-legend .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .canvas-legend .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .canvas-legend .legend-label {
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        /* Terminal log */
+        .terminal-wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 1px solid var(--border);
+            border-top: none;
+            background: #050505;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: #0a0a0a;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .terminal-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: var(--red-dim); }
+        .terminal-dot.amber { background: var(--amber-dim); }
+        .terminal-dot.green { background: var(--green-dim); }
+
+        .terminal-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-left: auto;
+        }
+
+        .terminal-body {
+            padding: 16px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .terminal-body::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .terminal-body::-webkit-scrollbar-track {
+            background: #050505;
+        }
+
+        .terminal-body::-webkit-scrollbar-thumb {
+            background: var(--green-dark);
+        }
+
+        .log-line {
+            opacity: 0;
+            animation: logFadeIn 0.4s forwards;
+        }
+
+        @keyframes logFadeIn {
+            from { opacity: 0; transform: translateX(-8px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .log-time { color: var(--text-dim); }
+        .log-fn { color: var(--green); }
+        .log-fn-recall { color: var(--cyan); }
+        .log-fn-episode { color: #ffffff; }
+        .log-fn-dream { color: var(--purple); }
+        .log-fn-imprint { color: var(--red); }
+        .log-fn-correct { color: var(--amber); }
+        .log-fn-reason { color: var(--purple); }
+        .log-arg { color: var(--text); }
+        .log-result { color: var(--text-dim); }
+        .log-arrow { color: var(--green-dim); }
+        .log-id { color: var(--amber-dim); }
+
+        /* Controls */
+        .controls {
+            max-width: 1200px;
+            margin: 24px auto 0;
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .ctrl-btn {
+            padding: 8px 20px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ctrl-btn:hover {
+            border-color: var(--green-dark);
+            color: var(--green);
+            box-shadow: 0 0 12px rgba(0, 255, 65, 0.15);
+        }
+
+        .ctrl-btn.active {
+            border-color: var(--green-dim);
+            color: var(--green);
+            background: var(--green-glow);
+        }
+
+        /* Info section */
+        .info-section {
+            max-width: 1200px;
+            margin: 48px auto 0;
+            padding: 0 24px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+        }
+
+        .info-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 24px;
+            transition: all 0.3s;
+        }
+
+        .info-box:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--green-dark);
+        }
+
+        .info-box-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        .info-box-title.green { color: var(--green); }
+        .info-box-title.cyan { color: var(--cyan); }
+        .info-box-title.red { color: var(--red); }
+        .info-box-title.amber { color: var(--amber); }
+        .info-box-title.purple { color: var(--purple); }
+        .info-box-title.white { color: var(--text-bright); }
+
+        .info-box p {
+            font-size: 12px;
+            color: var(--text-dim);
+            line-height: 1.7;
+        }
+
+        .info-box code {
+            color: var(--green-dim);
+            font-size: 11px;
+        }
+
+        /* Footer */
+        footer {
+            padding: 48px 0;
+            border-top: 1px solid var(--border-green);
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        .footer-ascii {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            letter-spacing: 2px;
+            opacity: 0.4;
+        }
+
+        footer .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 24px;
+        }
+
+        footer .footer-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+        }
+
+        footer .footer-links a:hover { color: var(--green); }
+
+        footer .footer-copy {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        footer .footer-copy a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .info-grid { grid-template-columns: 1fr; }
+            .canvas-wrap canvas { height: 450px; }
+        }
+
+        @media (max-width: 600px) {
+            .page-header h1 { font-size: 18px; }
+            .nav-links a:not(.btn-github) { display: none; }
+            .canvas-wrap canvas { height: 350px; }
+            .canvas-stats { font-size: 9px; }
+            .canvas-legend { display: none; }
+            .terminal-body { height: 160px; font-size: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Floating pixel characters -->
+    <div class="pixel-bg" id="pixelBg"></div>
+
+    <!-- Nav -->
+    <nav>
+        <div class="container">
+            <a href="/" class="nav-logo">ELARA<span class="red">/</span>CORE</a>
+            <div class="nav-links">
+                <a href="/">HOME</a>
+                <a href="/tools.html">TOOLS</a>
+                <a href="/architecture.html">ARCH</a>
+                <a href="/quickstart.html">START</a>
+                <a href="/configure.html">CONFIGURE</a>
+                <a href="/personas.html">PERSONAS</a>
+                <a href="/faq.html">FAQ</a>
+                <a href="/visualizer.html" class="active">VISUALIZER</a>
+                <a href="/search.html">&#128269;</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core" class="btn-github" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    SRC
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>// MEMORY NETWORK</h1>
+            <p>Live visualization of <span class="hl">semantic recall</span>, <span class="hl-red">emotional imprints</span>, and <span class="hl">dream processing</span></p>
+        </div>
+    </section>
+
+    <!-- Canvas Visualization -->
+    <div class="container">
+        <div class="canvas-wrap">
+            <canvas id="memoryCanvas"></canvas>
+
+            <!-- Stats overlay -->
+            <div class="canvas-stats" id="canvasStats">
+                <div class="stat-line"><span class="stat-label">NODES: </span><span class="stat-val" id="statNodes">0</span></div>
+                <div class="stat-line"><span class="stat-label">LINKS: </span><span class="stat-val" id="statLinks">0</span></div>
+                <div class="stat-line"><span class="stat-label">EVENTS: </span><span class="stat-val" id="statEvents">0</span></div>
+                <div class="stat-line"><span class="stat-label">RECALLS: </span><span class="stat-val" id="statRecalls">0</span></div>
+            </div>
+
+            <!-- Legend overlay -->
+            <div class="canvas-legend">
+                <div class="legend-row">
+                    <div class="legend-dot" style="background: #00ff41;"></div>
+                    <span class="legend-label">Semantic Memories</span>
+                </div>
+                <div class="legend-row">
+                    <div class="legend-dot" style="background: #00e5ff;"></div>
+                    <span class="legend-label">Conversations</span>
+                </div>
+                <div class="legend-row">
+                    <div class="legend-dot" style="background: #ff0040;"></div>
+                    <span class="legend-label">Emotional Imprints</span>
+                </div>
+                <div class="legend-row">
+                    <div class="legend-dot" style="background: #ffb000;"></div>
+                    <span class="legend-label">Corrections</span>
+                </div>
+                <div class="legend-row">
+                    <div class="legend-dot" style="background: #b040ff;"></div>
+                    <span class="legend-label">Reasoning Trails</span>
+                </div>
+                <div class="legend-row">
+                    <div class="legend-dot" style="background: #ffffff;"></div>
+                    <span class="legend-label">Episodes / Milestones</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal Log -->
+        <div class="terminal-wrap">
+            <div class="terminal-header">
+                <div class="terminal-dot red"></div>
+                <div class="terminal-dot amber"></div>
+                <div class="terminal-dot green"></div>
+                <span class="terminal-title">elara // memory stream</span>
+            </div>
+            <div class="terminal-body" id="terminalBody">
+                <div class="log-line"><span class="log-time">[--:--:--]</span> <span class="log-fn">system</span> <span class="log-arg">initializing memory network...</span></div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="ctrl-btn active" id="btnPlay" onclick="togglePause()">RUNNING</button>
+            <button class="ctrl-btn" onclick="triggerRemember()">+ REMEMBER</button>
+            <button class="ctrl-btn" onclick="triggerRecall()">RECALL</button>
+            <button class="ctrl-btn" onclick="triggerDream()">DREAM</button>
+        </div>
+    </div>
+
+    <!-- Info Section -->
+    <div class="info-section">
+        <div class="info-grid">
+            <div class="info-box">
+                <div class="info-box-title green">Semantic Memory</div>
+                <p>Facts, preferences, and knowledge stored via <code>elara_remember()</code>. Persisted in ChromaDB with vector embeddings for semantic similarity search. Never decays.</p>
+            </div>
+            <div class="info-box">
+                <div class="info-box-title cyan">Conversations</div>
+                <p>Every exchange is indexed by the Overwatch daemon. Searchable by meaning, not just keywords. <code>recall_conversation()</code> finds relevant past context across all sessions.</p>
+            </div>
+            <div class="info-box">
+                <div class="info-box-title red">Emotional Imprints</div>
+                <p>Persistent emotions that outlast session details. Created during meaningful moments via <code>elara_imprint()</code>. They shape mood trajectory and tone calibration.</p>
+            </div>
+            <div class="info-box">
+                <div class="info-box-title amber">Corrections</div>
+                <p>Mistakes that should not repeat. Loaded at boot, never decay. <code>elara_correction()</code> checks relevance before similar tasks, closing the error feedback loop.</p>
+            </div>
+            <div class="info-box">
+                <div class="info-box-title purple">Reasoning Trails</div>
+                <p>Problem-solving chains preserved for future reference. Hypotheses, evidence, abandoned approaches, and breakthroughs. Searchable by problem similarity.</p>
+            </div>
+            <div class="info-box">
+                <div class="info-box-title white">Episodes</div>
+                <p>Session-level tracking with milestones, decisions, and mood trajectory. <code>elara_episode_query()</code> enables narrative threading across work history.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-ascii">========================================</div>
+            <div class="footer-links">
+                <a href="/">Home</a>
+                <a href="/tools.html">Tools</a>
+                <a href="/architecture.html">Architecture</a>
+                <a href="/quickstart.html">Quickstart</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener">GitHub</a>
+            </div>
+            <p class="footer-copy">Built by <a href="https://github.com/aivelikivodja-bot" target="_blank" rel="noopener">Nenad Vasic</a> // Python 3.10+ // Linux, macOS, Windows</p>
+        </div>
+    </footer>
+
+    <script>
+        // ============================================================
+        // Floating pixel characters (background)
+        // ============================================================
+        const chars = ['@', '#', '$', '%', '&', '*', '>', '<', '/', '\\', '|', '0', '1', '{', '}', '[', ']', '=', '+', '~'];
+        const bg = document.getElementById('pixelBg');
+        for (let i = 0; i < 25; i++) {
+            const span = document.createElement('span');
+            const rng = Math.random();
+            span.className = 'pixel-char' + (rng > 0.85 ? ' red' : rng > 0.7 ? ' purple' : '');
+            span.textContent = chars[Math.floor(Math.random() * chars.length)];
+            span.style.left = Math.random() * 100 + '%';
+            span.style.fontSize = (8 + Math.random() * 24) + 'px';
+            span.style.animationDuration = (15 + Math.random() * 30) + 's';
+            span.style.animationDelay = -(Math.random() * 30) + 's';
+            bg.appendChild(span);
+        }
+
+        // ============================================================
+        // Memory Network Visualization
+        // ============================================================
+        const canvas = document.getElementById('memoryCanvas');
+        const ctx = canvas.getContext('2d');
+        const terminal = document.getElementById('terminalBody');
+
+        // High-DPI support
+        let W, H, dpr;
+        function resizeCanvas() {
+            dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            W = rect.width;
+            H = rect.height;
+            canvas.width = W * dpr;
+            canvas.height = H * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // ============================================================
+        // Node types
+        // ============================================================
+        const NODE_TYPES = {
+            semantic:     { color: '#00ff41', glow: 'rgba(0, 255, 65, 0.3)',   label: 'MEM' },
+            conversation: { color: '#00e5ff', glow: 'rgba(0, 229, 255, 0.3)', label: 'CONV' },
+            imprint:      { color: '#ff0040', glow: 'rgba(255, 0, 64, 0.3)',  label: 'IMP' },
+            correction:   { color: '#ffb000', glow: 'rgba(255, 176, 0, 0.3)', label: 'COR' },
+            reasoning:    { color: '#b040ff', glow: 'rgba(176, 64, 255, 0.3)', label: 'RSN' },
+            episode:      { color: '#ffffff', glow: 'rgba(255, 255, 255, 0.25)', label: 'EPI' },
+        };
+
+        // Sample memory content for terminal logs
+        const MEMORY_CONTENT = {
+            semantic: [
+                'user prefers dark themes',
+                'project uses ChromaDB for vectors',
+                'WSL2 environment, Ubuntu 22.04',
+                'Flutter for mobile apps',
+                'prefers concise responses',
+                'HandyBill uses Firestore',
+                'PlanPulse tracks phone-free time',
+                'pyproject.toml for packaging',
+                'BSL-1.1 license chosen',
+                'cyberpunk aesthetic for docs',
+                'overwatch daemon runs independently',
+                'corrections never decay',
+                'mood state persists across sessions',
+                'elara.toml for configuration',
+                'Python 3.10+ minimum',
+                'cosine similarity for all collections',
+                'session handoff prevents forgetting',
+                'seven ChromaDB collections total',
+                'micro-ingestion via parser.py',
+                'dreams discover cross-session patterns',
+            ],
+            conversation: [
+                'debugging invoice race condition',
+                'discussing memory architecture',
+                'planning phone-free feature',
+                'late night drift session',
+                'code review for deploy script',
+                'configuring GitHub Pages',
+                'writing Medium blog post',
+                'fixing dark theme colors',
+                'adding CLI entry point',
+                'designing landing page',
+                'setting up test suite',
+                'exploring competitor analysis',
+                'troubleshooting Ollama connection',
+                'planning goal tracking',
+                'discussing emotional imprints',
+            ],
+            imprint: [
+                'pride in shipping elara publicly',
+                'frustration with context window limits',
+                'warmth from late night conversations',
+                'satisfaction after fixing race condition',
+                'excitement about memory visualization',
+            ],
+            correction: [
+                'never skip handoff save on bye',
+                'check file timestamp not written dates',
+                'use cosine not l2 for ChromaDB',
+            ],
+            reasoning: [
+                'memory decay: keep outcomes, fade debug steps',
+                'vector vs keyword search tradeoffs',
+                'ChromaDB collection granularity decision',
+                'why sessions need explicit end tracking',
+            ],
+            episode: [
+                'session 68: blog + website + marketing',
+                'session 67: public release packaging',
+                'milestone: 90/90 tests passing',
+                'milestone: first pip install',
+                'decision: BSL-1.1 over MIT',
+                'milestone: overwatch daemon stable',
+                'session 62: phone-free tracking',
+                'milestone: 16,800 lines achieved',
+            ],
+        };
+
+        // ============================================================
+        // State
+        // ============================================================
+        let nodes = [];
+        let paused = false;
+        let eventCount = 0;
+        let recallCount = 0;
+        let connectionDist = 150; // px threshold for connections
+        let lastRemember = 0;
+        let lastRecall = 0;
+        let lastDream = 0;
+        let activeRecall = null; // { node, time, relatedNodes }
+        let dreamWave = null;    // { startTime, duration }
+        let mouseX = -1, mouseY = -1;
+        let hoveredNode = null;
+
+        // ============================================================
+        // Node class
+        // ============================================================
+        class MemNode {
+            constructor(type, x, y) {
+                this.type = type;
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 0.15;
+                this.vy = (Math.random() - 0.5) * 0.15;
+                this.radius = this.getBaseRadius();
+                this.baseRadius = this.radius;
+                this.pulsePhase = Math.random() * Math.PI * 2;
+                this.pulseSpeed = 0.3 + Math.random() * 0.4;
+                this.birthTime = performance.now();
+                this.glowIntensity = 0;
+                this.highlighted = false;
+                this.id = 'n_' + Math.random().toString(36).substr(2, 6);
+
+                const contentArr = MEMORY_CONTENT[type];
+                this.content = contentArr[Math.floor(Math.random() * contentArr.length)];
+            }
+
+            getBaseRadius() {
+                switch (this.type) {
+                    case 'semantic': return 4 + Math.random() * 2;
+                    case 'conversation': return 3.5 + Math.random() * 1.5;
+                    case 'imprint': return 5 + Math.random() * 2;
+                    case 'correction': return 4 + Math.random() * 1;
+                    case 'reasoning': return 4 + Math.random() * 1.5;
+                    case 'episode': return 3.5 + Math.random() * 2;
+                    default: return 4;
+                }
+            }
+
+            update(now) {
+                if (paused) return;
+
+                // Drift
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Soft boundary bounce
+                const margin = 30;
+                if (this.x < margin) { this.vx += 0.01; }
+                if (this.x > W - margin) { this.vx -= 0.01; }
+                if (this.y < margin) { this.vy += 0.01; }
+                if (this.y > H - margin) { this.vy -= 0.01; }
+
+                // Damping
+                this.vx *= 0.999;
+                this.vy *= 0.999;
+
+                // Pulse
+                this.pulsePhase += this.pulseSpeed * 0.016;
+                const pulse = Math.sin(this.pulsePhase) * 0.15;
+                this.radius = this.baseRadius * (1 + pulse);
+
+                // Glow decay
+                if (this.glowIntensity > 0) {
+                    this.glowIntensity *= 0.97;
+                    if (this.glowIntensity < 0.01) this.glowIntensity = 0;
+                }
+
+                // Birth glow (first 1.5s)
+                const age = now - this.birthTime;
+                if (age < 1500) {
+                    this.glowIntensity = Math.max(this.glowIntensity, 1 - (age / 1500));
+                }
+            }
+
+            draw() {
+                const info = NODE_TYPES[this.type];
+                const isHovered = (this === hoveredNode);
+                const displayRadius = isHovered ? this.radius * 1.8 : this.radius;
+
+                // Outer glow
+                if (this.glowIntensity > 0.05 || this.highlighted || isHovered) {
+                    const glowSize = displayRadius * (3 + this.glowIntensity * 4);
+                    const grad = ctx.createRadialGradient(this.x, this.y, displayRadius, this.x, this.y, glowSize);
+                    const intensity = Math.max(this.glowIntensity, this.highlighted ? 0.6 : 0, isHovered ? 0.5 : 0);
+                    grad.addColorStop(0, info.glow.replace('0.3', (0.5 * intensity).toFixed(2)));
+                    grad.addColorStop(1, 'transparent');
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                }
+
+                // Core circle
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, displayRadius, 0, Math.PI * 2);
+                const alpha = 0.6 + this.glowIntensity * 0.4 + (isHovered ? 0.2 : 0);
+                ctx.fillStyle = info.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+                ctx.fill();
+
+                // Border
+                ctx.strokeStyle = info.color + (isHovered ? 'cc' : '60');
+                ctx.lineWidth = isHovered ? 1.5 : 0.5;
+                ctx.stroke();
+
+                // Label on hover
+                if (isHovered) {
+                    ctx.font = '9px "Share Tech Mono", monospace';
+                    ctx.fillStyle = info.color;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(info.label + ': ' + this.content, this.x, this.y - displayRadius - 10);
+                    ctx.fillStyle = '#60606099';
+                    ctx.fillText(this.id, this.x, this.y - displayRadius - 22);
+                }
+            }
+        }
+
+        // ============================================================
+        // Initialize nodes
+        // ============================================================
+        function initNodes() {
+            nodes = [];
+            const counts = {
+                semantic: 20,
+                conversation: 15,
+                imprint: 5,
+                correction: 3,
+                reasoning: 4,
+                episode: 8,
+            };
+
+            // Cluster centers (spread across canvas)
+            const clusters = {
+                semantic:     { cx: W * 0.3,  cy: H * 0.4, spread: W * 0.18 },
+                conversation: { cx: W * 0.65, cy: H * 0.35, spread: W * 0.15 },
+                imprint:      { cx: W * 0.2,  cy: H * 0.7, spread: W * 0.08 },
+                correction:   { cx: W * 0.8,  cy: H * 0.7, spread: W * 0.06 },
+                reasoning:    { cx: W * 0.5,  cy: H * 0.7, spread: W * 0.08 },
+                episode:      { cx: W * 0.5,  cy: H * 0.2, spread: W * 0.12 },
+            };
+
+            for (const [type, count] of Object.entries(counts)) {
+                const cl = clusters[type];
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = Math.random() * cl.spread;
+                    const x = cl.cx + Math.cos(angle) * dist;
+                    const y = cl.cy + Math.sin(angle) * dist;
+                    const node = new MemNode(type, x, y);
+                    node.birthTime = performance.now() - 2000; // no birth glow for initial
+                    nodes.push(node);
+                }
+            }
+        }
+
+        // ============================================================
+        // Connection drawing
+        // ============================================================
+        function drawConnections(now) {
+            const maxDist = connectionDist;
+            let linkCount = 0;
+
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const a = nodes[i], b = nodes[j];
+                    const dx = a.x - b.x, dy = a.y - b.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < maxDist) {
+                        linkCount++;
+                        let alpha = (1 - dist / maxDist) * 0.12;
+
+                        // Boost if either node is highlighted (recall)
+                        if (a.highlighted && b.highlighted) {
+                            alpha = Math.max(alpha, 0.5);
+                        } else if (a.highlighted || b.highlighted) {
+                            alpha = Math.max(alpha, 0.2);
+                        }
+
+                        // Dream wave boost
+                        if (dreamWave) {
+                            const elapsed = now - dreamWave.startTime;
+                            const progress = elapsed / dreamWave.duration;
+                            if (progress < 1) {
+                                // Wave emanates from center
+                                const waveFront = progress * Math.max(W, H) * 0.7;
+                                const midX = (a.x + b.x) / 2;
+                                const midY = (a.y + b.y) / 2;
+                                const distFromCenter = Math.sqrt(
+                                    (midX - W / 2) ** 2 + (midY - H / 2) ** 2
+                                );
+                                const waveWidth = 100;
+                                const distFromWave = Math.abs(distFromCenter - waveFront);
+                                if (distFromWave < waveWidth) {
+                                    const waveAlpha = (1 - distFromWave / waveWidth) * 0.6 * (1 - progress * 0.5);
+                                    alpha = Math.max(alpha, waveAlpha);
+                                }
+                            }
+                        }
+
+                        if (alpha < 0.01) continue;
+
+                        // Line color blends between the two node colors
+                        const ca = NODE_TYPES[a.type].color;
+                        const cb = NODE_TYPES[b.type].color;
+                        const hexAlpha = Math.floor(alpha * 255).toString(16).padStart(2, '0');
+
+                        ctx.beginPath();
+                        ctx.moveTo(a.x, a.y);
+                        ctx.lineTo(b.x, b.y);
+                        ctx.strokeStyle = ca + hexAlpha;
+                        ctx.lineWidth = alpha > 0.3 ? 1.2 : 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            return linkCount;
+        }
+
+        // ============================================================
+        // Terminal logging
+        // ============================================================
+        function getTimeStr() {
+            const d = new Date();
+            return d.toTimeString().slice(0, 8);
+        }
+
+        function addLog(html) {
+            const div = document.createElement('div');
+            div.className = 'log-line';
+            div.innerHTML = '<span class="log-time">[' + getTimeStr() + ']</span> ' + html;
+            terminal.appendChild(div);
+            // Keep max 50 lines
+            while (terminal.children.length > 50) {
+                terminal.removeChild(terminal.firstChild);
+            }
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // ============================================================
+        // Events: Remember, Recall, Dream
+        // ============================================================
+        function triggerRemember() {
+            if (nodes.length > 120) return; // cap
+
+            const types = Object.keys(NODE_TYPES);
+            const weights = [40, 30, 8, 4, 6, 12]; // probability weights
+            const totalW = weights.reduce((a, b) => a + b, 0);
+            let r = Math.random() * totalW;
+            let type = types[0];
+            for (let i = 0; i < weights.length; i++) {
+                r -= weights[i];
+                if (r <= 0) { type = types[i]; break; }
+            }
+
+            // Spawn near its cluster but with some randomness
+            const existing = nodes.filter(n => n.type === type);
+            let x, y;
+            if (existing.length > 0) {
+                const ref = existing[Math.floor(Math.random() * existing.length)];
+                x = ref.x + (Math.random() - 0.5) * 80;
+                y = ref.y + (Math.random() - 0.5) * 80;
+            } else {
+                x = W * 0.2 + Math.random() * W * 0.6;
+                y = H * 0.2 + Math.random() * H * 0.6;
+            }
+
+            x = Math.max(20, Math.min(W - 20, x));
+            y = Math.max(20, Math.min(H - 20, y));
+
+            const node = new MemNode(type, x, y);
+            nodes.push(node);
+            eventCount++;
+
+            const info = NODE_TYPES[type];
+            const fnClass = type === 'imprint' ? 'log-fn-imprint' :
+                           type === 'correction' ? 'log-fn-correct' :
+                           type === 'reasoning' ? 'log-fn-reason' :
+                           type === 'episode' ? 'log-fn-episode' : 'log-fn';
+
+            addLog('<span class="' + fnClass + '">remember</span>(<span class="log-arg">"' + node.content + '"</span>) <span class="log-arrow">&rarr;</span> <span class="log-id">' + node.id + '</span>');
+        }
+
+        function triggerRecall() {
+            if (nodes.length < 3) return;
+
+            // Pick a random node as the query center
+            const queryNode = nodes[Math.floor(Math.random() * nodes.length)];
+            queryNode.glowIntensity = 1;
+            queryNode.highlighted = true;
+
+            // Find closest nodes by distance (simulating similarity)
+            const distances = nodes
+                .filter(n => n !== queryNode)
+                .map(n => ({
+                    node: n,
+                    dist: Math.sqrt((n.x - queryNode.x) ** 2 + (n.y - queryNode.y) ** 2)
+                }))
+                .sort((a, b) => a.dist - b.dist)
+                .slice(0, 5);
+
+            const related = distances.map(d => d.node);
+            const scores = distances.map(d => Math.max(0.5, 1 - d.dist / (W * 0.5)));
+
+            related.forEach(n => {
+                n.glowIntensity = 0.8;
+                n.highlighted = true;
+            });
+
+            activeRecall = {
+                node: queryNode,
+                related: related,
+                time: performance.now(),
+                duration: 2500,
+            };
+
+            recallCount++;
+            eventCount++;
+
+            const topScores = scores.slice(0, 3).map(s => s.toFixed(2)).join(', ');
+            addLog('<span class="log-fn-recall">recall</span>(<span class="log-arg">"' + queryNode.content + '"</span>) <span class="log-arrow">&rarr;</span> <span class="log-result">' + related.length + ' results (' + topScores + ')</span>');
+        }
+
+        function triggerDream() {
+            dreamWave = {
+                startTime: performance.now(),
+                duration: 3000,
+            };
+
+            eventCount++;
+
+            // Connect some random far-apart nodes temporarily
+            const shuffled = [...nodes].sort(() => Math.random() - 0.5);
+            const dreamNodes = shuffled.slice(0, Math.min(8, nodes.length));
+            dreamNodes.forEach(n => {
+                n.glowIntensity = 0.6;
+            });
+
+            addLog('<span class="log-fn-dream">dream</span> <span class="log-arg">processing...</span> <span class="log-result">connecting ' + dreamNodes.length + ' memories across clusters</span>');
+        }
+
+        function triggerEpisodeNote() {
+            const notes = [
+                'completed visualization page',
+                'fixed deploy pipeline',
+                'shipped new feature',
+                'resolved 3 bug reports',
+                'updated documentation',
+                'refactored memory module',
+                'optimized query performance',
+                'added test coverage',
+            ];
+            const note = notes[Math.floor(Math.random() * notes.length)];
+            eventCount++;
+            addLog('<span class="log-fn-episode">episode_note</span>(<span class="log-arg">"' + note + '"</span>)');
+        }
+
+        function triggerCorrectionCheck() {
+            const tasks = [
+                'saving session handoff',
+                'rebuilding ChromaDB index',
+                'writing commit message',
+                'deploying to production',
+                'configuring new feed',
+            ];
+            const task = tasks[Math.floor(Math.random() * tasks.length)];
+            eventCount++;
+            addLog('<span class="log-fn-correct">correction_check</span>(<span class="log-arg">"' + task + '"</span>) <span class="log-arrow">&rarr;</span> <span class="log-result">0 relevant warnings</span>');
+        }
+
+        // ============================================================
+        // Mouse interaction
+        // ============================================================
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            mouseX = -1;
+            mouseY = -1;
+            hoveredNode = null;
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (hoveredNode) {
+                hoveredNode.glowIntensity = 1;
+                // Trigger a recall centered on the clicked node
+                const queryNode = hoveredNode;
+                queryNode.highlighted = true;
+                const distances = nodes
+                    .filter(n => n !== queryNode)
+                    .map(n => ({
+                        node: n,
+                        dist: Math.sqrt((n.x - queryNode.x) ** 2 + (n.y - queryNode.y) ** 2)
+                    }))
+                    .sort((a, b) => a.dist - b.dist)
+                    .slice(0, 5);
+
+                const related = distances.map(d => d.node);
+                related.forEach(n => {
+                    n.glowIntensity = 0.8;
+                    n.highlighted = true;
+                });
+
+                activeRecall = {
+                    node: queryNode,
+                    related: related,
+                    time: performance.now(),
+                    duration: 3000,
+                };
+
+                recallCount++;
+                eventCount++;
+                const scores = distances.map(d => Math.max(0.5, 1 - d.dist / (W * 0.5)));
+                const topScores = scores.slice(0, 3).map(s => s.toFixed(2)).join(', ');
+                addLog('<span class="log-fn-recall">recall</span>(<span class="log-arg">"' + queryNode.content + '"</span>) <span class="log-arrow">&rarr;</span> <span class="log-result">' + related.length + ' results (' + topScores + ')</span>');
+            }
+        });
+
+        // ============================================================
+        // Pause
+        // ============================================================
+        function togglePause() {
+            paused = !paused;
+            const btn = document.getElementById('btnPlay');
+            btn.textContent = paused ? 'PAUSED' : 'RUNNING';
+            btn.classList.toggle('active', !paused);
+        }
+
+        // ============================================================
+        // Main render loop
+        // ============================================================
+        let frameCount = 0;
+
+        function render(now) {
+            requestAnimationFrame(render);
+            frameCount++;
+
+            // Clear
+            ctx.clearRect(0, 0, W, H);
+
+            // Subtle background grid
+            ctx.strokeStyle = '#0e0e0e';
+            ctx.lineWidth = 0.5;
+            const gridSize = 40;
+            for (let x = 0; x < W; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, H);
+                ctx.stroke();
+            }
+            for (let y = 0; y < H; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(W, y);
+                ctx.stroke();
+            }
+
+            // Update recall state
+            if (activeRecall) {
+                const elapsed = now - activeRecall.time;
+                if (elapsed > activeRecall.duration) {
+                    activeRecall.node.highlighted = false;
+                    activeRecall.related.forEach(n => n.highlighted = false);
+                    activeRecall = null;
+                }
+            }
+
+            // Dream wave cleanup
+            if (dreamWave) {
+                const elapsed = now - dreamWave.startTime;
+                if (elapsed > dreamWave.duration) {
+                    dreamWave = null;
+                }
+            }
+
+            // Hover detection
+            hoveredNode = null;
+            if (mouseX >= 0 && mouseY >= 0) {
+                let closest = null, closestDist = Infinity;
+                for (const n of nodes) {
+                    const dx = n.x - mouseX, dy = n.y - mouseY;
+                    const d = Math.sqrt(dx * dx + dy * dy);
+                    if (d < 20 && d < closestDist) {
+                        closest = n;
+                        closestDist = d;
+                    }
+                }
+                hoveredNode = closest;
+            }
+
+            // Draw connections
+            const linkCount = drawConnections(now);
+
+            // Update + draw nodes
+            for (const node of nodes) {
+                node.update(now);
+            }
+            for (const node of nodes) {
+                node.draw();
+            }
+
+            // Dream wave center pulse
+            if (dreamWave) {
+                const elapsed = now - dreamWave.startTime;
+                const progress = elapsed / dreamWave.duration;
+                if (progress < 1) {
+                    const waveRadius = progress * Math.max(W, H) * 0.7;
+                    const alpha = (1 - progress) * 0.15;
+                    ctx.beginPath();
+                    ctx.arc(W / 2, H / 2, waveRadius, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(176, 64, 255, ' + alpha + ')';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Inner ring
+                    if (progress > 0.1) {
+                        const inner = (progress - 0.1) * Math.max(W, H) * 0.7;
+                        const ia = (1 - progress) * 0.08;
+                        ctx.beginPath();
+                        ctx.arc(W / 2, H / 2, inner, 0, Math.PI * 2);
+                        ctx.strokeStyle = 'rgba(176, 64, 255, ' + ia + ')';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Update stats
+            document.getElementById('statNodes').textContent = nodes.length;
+            document.getElementById('statLinks').textContent = linkCount;
+            document.getElementById('statEvents').textContent = eventCount;
+            document.getElementById('statRecalls').textContent = recallCount;
+
+            // Auto events (only when not paused)
+            if (!paused) {
+                // Remember every ~3s
+                if (now - lastRemember > 3000 + Math.random() * 1000) {
+                    triggerRemember();
+                    lastRemember = now;
+                }
+
+                // Recall every ~5s
+                if (now - lastRecall > 5000 + Math.random() * 2000) {
+                    triggerRecall();
+                    lastRecall = now;
+                }
+
+                // Dream every ~20s
+                if (now - lastDream > 20000 + Math.random() * 5000) {
+                    triggerDream();
+                    lastDream = now;
+                }
+
+                // Occasional episode note or correction check
+                if (frameCount % 420 === 0) {
+                    if (Math.random() > 0.5) {
+                        triggerEpisodeNote();
+                    } else {
+                        triggerCorrectionCheck();
+                    }
+                }
+            }
+        }
+
+        // ============================================================
+        // Boot
+        // ============================================================
+        function boot() {
+            resizeCanvas();
+            initNodes();
+
+            lastRemember = performance.now();
+            lastRecall = performance.now() + 2000; // offset first recall
+            lastDream = performance.now();
+
+            addLog('<span class="log-fn">system</span> <span class="log-arg">memory network online</span> <span class="log-arrow">&rarr;</span> <span class="log-result">' + nodes.length + ' nodes loaded</span>');
+
+            setTimeout(() => {
+                addLog('<span class="log-fn">system</span> <span class="log-arg">ChromaDB connected</span> <span class="log-arrow">&rarr;</span> <span class="log-result">7 collections (cosine)</span>');
+            }, 800);
+
+            setTimeout(() => {
+                addLog('<span class="log-fn">system</span> <span class="log-arg">overwatch daemon</span> <span class="log-arrow">&rarr;</span> <span class="log-result">monitoring active</span>');
+            }, 1500);
+
+            requestAnimationFrame(render);
+        }
+
+        boot();
+    </script>
+
+</body>
+</html>
