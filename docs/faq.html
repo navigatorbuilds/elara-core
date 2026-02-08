@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // FAQ & Troubleshooting</title>
+    <meta name="description" content="Common issues and solutions for Elara Core — installation, runtime errors, data management, and MCP client compatibility.">
+    <meta property="og:title" content="Elara Core — FAQ & Troubleshooting">
+    <meta property="og:description" content="Fix it before you file an issue.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://elara.navigatorbuilds.com/faq.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@NavigatorBuilds">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-nav a {
+            font-size: 13px;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--green-dark);
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(14px, 2.5vw, 22px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        /* Section headers */
+        .section-header {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(10px, 1.8vw, 14px);
+            color: var(--red);
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+            padding-top: 10px;
+        }
+
+        .section-desc {
+            color: var(--text-dim);
+            font-size: 13px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section {
+            margin-bottom: 50px;
+        }
+
+        /* FAQ items */
+        .faq-item {
+            margin-bottom: 6px;
+        }
+
+        .faq-item details {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            transition: border-color 0.2s;
+        }
+
+        .faq-item details[open] {
+            border-color: var(--border-green);
+        }
+
+        .faq-item summary {
+            padding: 14px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-bright);
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+            user-select: none;
+        }
+
+        .faq-item summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .faq-item summary::before {
+            content: '>';
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--green);
+            font-size: 16px;
+            font-weight: bold;
+            flex-shrink: 0;
+            transition: transform 0.2s;
+        }
+
+        .faq-item details[open] summary::before {
+            content: 'v';
+            color: var(--cyan);
+        }
+
+        .faq-item summary:hover {
+            background: rgba(0, 255, 65, 0.03);
+        }
+
+        .faq-item summary .q-text {
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            color: var(--green);
+            letter-spacing: 0.5px;
+        }
+
+        .faq-answer {
+            padding: 0 20px 18px 46px;
+            font-size: 14px;
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        .faq-answer p {
+            margin-bottom: 12px;
+        }
+
+        .faq-answer p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: #050505;
+            border: 1px solid var(--border-green);
+            padding: 14px 18px;
+            margin: 10px 0 12px;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: var(--green);
+            line-height: 1.8;
+        }
+
+        .code-block .comment {
+            color: var(--text-dim);
+        }
+
+        .code-block .cmd {
+            color: var(--cyan);
+        }
+
+        .code-block .path {
+            color: var(--amber);
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            padding: 3px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--green-dark);
+            color: var(--green);
+        }
+
+        /* Inline code */
+        .faq-answer code {
+            font-family: 'Share Tech Mono', monospace;
+            background: rgba(0, 255, 65, 0.06);
+            color: var(--green-dim);
+            padding: 2px 6px;
+            font-size: 13px;
+            border: 1px solid rgba(0, 51, 0, 0.4);
+        }
+
+        /* Note boxes */
+        .note {
+            background: rgba(255, 176, 0, 0.04);
+            border-left: 3px solid var(--amber);
+            padding: 10px 14px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+
+        .note strong {
+            color: var(--amber);
+        }
+
+        .tip {
+            background: rgba(0, 229, 255, 0.04);
+            border-left: 3px solid var(--cyan);
+            padding: 10px 14px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+
+        .tip strong {
+            color: var(--cyan);
+        }
+
+        /* Divider */
+        .divider {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 12px;
+            margin: 40px 0;
+            letter-spacing: 4px;
+        }
+
+        /* Still stuck */
+        .still-stuck {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 24px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .still-stuck h3 {
+            font-family: 'VT323', monospace;
+            font-size: 24px;
+            color: var(--amber);
+            margin-bottom: 10px;
+        }
+
+        .still-stuck p {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 14px;
+        }
+
+        .still-stuck a {
+            color: var(--green-dim);
+            text-decoration: none;
+            border: 1px solid var(--green-dark);
+            padding: 8px 20px;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .still-stuck a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        /* Compatibility table */
+        .compat-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+
+        .compat-table th {
+            text-align: left;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-green);
+            color: var(--cyan);
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            font-weight: normal;
+            letter-spacing: 1px;
+        }
+
+        .compat-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .compat-table td:first-child {
+            color: var(--green-dim);
+            white-space: nowrap;
+            width: 120px;
+        }
+
+        .compat-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        footer a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--green); }
+
+        @media (max-width: 600px) {
+            .faq-answer { padding-left: 20px; }
+            .faq-item summary .q-text { font-size: 17px; }
+            .compat-table td:first-child { width: auto; }
+            .compat-table { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="header-nav">
+            <a href="/">&larr; Elara Core</a>
+            <div class="nav-links">
+                <a href="/quickstart.html">Quickstart</a>
+                <a href="/tools.html">34 Tools</a>
+            </div>
+        </div>
+        <h1>// FAQ & TROUBLESHOOTING</h1>
+        <p>Common issues, fixes, and answers. Check here before filing an issue.</p>
+    </div>
+
+    <!-- ============ SETUP ============ -->
+    <div class="section" id="setup">
+        <div class="section-header">[ SETUP ]</div>
+        <div class="section-desc">Installation and initial configuration issues.</div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">ChromaDB won't install</span></summary>
+                <div class="faq-answer">
+                    <p>ChromaDB requires C++ build tools for its native extensions. On most systems, the error looks like <code>Failed building wheel for chroma-hnswlib</code>.</p>
+
+                    <p><strong>Fix:</strong> Install the build dependencies for your OS, then retry with no cache:</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Ubuntu/Debian</span><br>sudo apt install build-essential<br><br><span class="comment"># macOS</span><br>xcode-select --install<br><br><span class="comment"># Then install with no cache</span><br>pip install chromadb --no-cache-dir</code>
+                    </div>
+
+                    <div class="note">
+                        <strong>WSL users:</strong> Make sure you're installing inside WSL, not in Windows PowerShell. Run <code>which python</code> to confirm.
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">Python version mismatch</span></summary>
+                <div class="faq-answer">
+                    <p>Elara Core requires <strong>Python 3.10 or higher</strong>. Older versions will fail during install or at runtime with syntax errors.</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Check your version</span><br>python --version<br><br><span class="comment"># If it shows 3.9 or lower, upgrade:</span><br>sudo apt install python3.10 python3.10-venv<br><br><span class="comment"># Or use pyenv:</span><br>pyenv install 3.10<br>pyenv global 3.10</code>
+                    </div>
+
+                    <div class="tip">
+                        <strong>Tip:</strong> On some systems, <code>python3</code> points to 3.10+ while <code>python</code> points to 2.x or 3.8. Try <code>python3 --version</code> first.
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">Permission denied on data directory</span></summary>
+                <div class="faq-answer">
+                    <p>By default, Elara stores data in <code>~/.elara/</code>. If you see permission errors, the directory may have been created by a different user or with restricted permissions.</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Fix permissions on the default directory</span><br>chmod -R u+rw ~/.elara/<br><br><span class="comment"># Or use a custom location instead</span><br>export ELARA_DATA_DIR="/path/to/your/data"<br>elara init</code>
+                    </div>
+
+                    <p>To make the custom path permanent, add the <code>export</code> line to your <code>~/.bashrc</code> or <code>~/.zshrc</code>.</p>
+                </div>
+            </details>
+        </div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">MCP client can't find the server</span></summary>
+                <div class="faq-answer">
+                    <p>This usually means the <code>elara</code> command isn't in your shell's PATH, or the config file points to the wrong location.</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Verify elara is installed and findable</span><br>which elara<br><br><span class="comment"># If nothing shows, find where pip installed it</span><br>pip show elara-core | grep Location<br><br><span class="comment"># Test the server directly</span><br>elara serve</code>
+                    </div>
+
+                    <p>If <code>which elara</code> returns nothing, the install directory isn't in PATH. Common fix:</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Add pip's bin directory to PATH</span><br>export PATH="$HOME/.local/bin:$PATH"</code>
+                    </div>
+
+                    <div class="note">
+                        <strong>Cursor/Windsurf:</strong> These editors may use a different shell environment. Use the full absolute path to <code>elara</code> in your MCP config if the short name doesn't work.
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <!-- ============ RUNTIME ============ -->
+    <div class="section" id="runtime">
+        <div class="section-header">[ RUNTIME ]</div>
+        <div class="section-desc">Things that go wrong while Elara is running.</div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">Tools not showing up in my editor</span></summary>
+                <div class="faq-answer">
+                    <p>If the server starts but your MCP client shows zero tools, try these steps in order:</p>
+
+                    <p><strong>1.</strong> Restart your MCP client completely (not just reload).</p>
+                    <p><strong>2.</strong> Check server logs for errors:</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Run the server manually and watch output</span><br>elara serve 2>&1 | head -50</code>
+                    </div>
+
+                    <p><strong>3.</strong> Verify the config file path matches where Elara is actually installed.</p>
+                    <p><strong>4.</strong> Some clients cache tool lists. Delete the MCP cache and restart.</p>
+
+                    <div class="tip">
+                        <strong>Claude Code:</strong> Run <code>claude mcp list</code> to verify the server is registered. If it shows "elara" but no tools, the server is crashing on startup &mdash; check the logs.
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">Memory search returns nothing</span></summary>
+                <div class="faq-answer">
+                    <p>Semantic search relies on ChromaDB vector indexes. If they're empty or corrupted, searches return no results.</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Rebuild all indexes from source data</span><br>elara_rebuild_indexes()<br><br><span class="comment"># Or rebuild a specific collection</span><br>elara_rebuild_indexes(collection="memories")</code>
+                    </div>
+
+                    <p>You can also check index health by calling <code>elara_status()</code> &mdash; it reports memory counts per collection. If counts are zero but you know you've saved memories, a rebuild will fix it.</p>
+
+                    <div class="note">
+                        <strong>After migration:</strong> If you moved your data directory or upgraded Elara, always run a rebuild. The ChromaDB files may not be portable across different machines or Python versions.
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">Mood stuck at default values</span></summary>
+                <div class="faq-answer">
+                    <p>If <code>elara_mood()</code> always returns the same baseline values, check two things:</p>
+
+                    <p><strong>1.</strong> Verify the persona file exists in your data directory:</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code>ls ~/.elara/persona*<br><br><span class="comment"># If missing, reinitialize</span><br>elara init</code>
+                    </div>
+
+                    <p><strong>2.</strong> Confirm the mood module loaded. Call <code>elara_status()</code> and look for "mood" in the output. If it's missing, the module failed to import &mdash; check server logs for errors.</p>
+
+                    <p>Mood adjusts via <code>elara_mood_adjust()</code>. If you've never called it or set a mode, values will remain at defaults. Try <code>elara_mode(mode="dev")</code> to set a preset.</p>
+                </div>
+            </details>
+        </div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">Gmail tools failing</span></summary>
+                <div class="faq-answer">
+                    <p>Gmail integration requires OAuth2 authentication. If you see "credentials not found" or "token expired" errors:</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Run the OAuth flow (opens browser)</span><br>elara_gmail(action="auth")<br><br><span class="comment"># After auth, test with:</span><br>elara_gmail(action="inbox", n=3)</code>
+                    </div>
+
+                    <p>You need a Google Cloud project with the Gmail API enabled and OAuth credentials configured. The token is stored in your Elara data directory and refreshes automatically &mdash; but if it expires after 7 days (test mode), re-run the auth flow.</p>
+
+                    <div class="note">
+                        <strong>Google Cloud console:</strong> If you're using a "Testing" publishing status, tokens expire in 7 days. Set your app to "Production" (internal use is fine) for persistent tokens.
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">Dreams not running automatically</span></summary>
+                <div class="faq-answer">
+                    <p>Dreams (weekly/monthly pattern analysis) don't run on a timer by default. They need to be triggered.</p>
+
+                    <p><strong>Option 1: Manual trigger</strong></p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Run weekly dream analysis</span><br>elara_dream(dream_type="weekly")<br><br><span class="comment"># Check if any dreams are overdue</span><br>elara_dream_info(action="status")</code>
+                    </div>
+
+                    <p><strong>Option 2: Cron job</strong> (for automatic scheduling)</p>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Run weekly dreams every Sunday at 3 AM</span><br>0 3 * * 0 elara dream --type weekly<br><br><span class="comment"># Run monthly dreams on the 1st at 4 AM</span><br>0 4 1 * * elara dream --type monthly</code>
+                    </div>
+
+                    <p>Use <code>elara_dream_info(action="read", dream_type="weekly")</code> to read the latest report.</p>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <!-- ============ DATA ============ -->
+    <div class="section" id="data">
+        <div class="section-header">[ DATA ]</div>
+        <div class="section-desc">Managing, backing up, and resetting your data.</div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">Where is my data stored?</span></summary>
+                <div class="faq-answer">
+                    <p>By default, everything lives in <code>~/.elara/</code>. This includes:</p>
+
+                    <div class="code-block">
+                        <code><span class="path">~/.elara/</span><br>&boxvr;&horbar; memories.jsonl      <span class="comment"># semantic memories</span><br>&boxvr;&horbar; corrections.json    <span class="comment"># learned corrections</span><br>&boxvr;&horbar; episodes/           <span class="comment"># episodic session data</span><br>&boxvr;&horbar; reasoning/          <span class="comment"># reasoning trails</span><br>&boxvr;&horbar; chroma/             <span class="comment"># vector index database</span><br>&boxvr;&horbar; dreams/             <span class="comment"># dream reports</span><br>&boxvr;&horbar; handoff.json        <span class="comment"># session continuity</span><br>&boxur;&horbar; persona.json        <span class="comment"># mood & temperament</span></code>
+                    </div>
+
+                    <p>Override the location by setting <code>ELARA_DATA_DIR</code>:</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code>export ELARA_DATA_DIR="/custom/path"</code>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">How do I back up my data?</span></summary>
+                <div class="faq-answer">
+                    <p>Copy the entire data directory. ChromaDB stores everything as local files, so a simple copy works.</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Full backup</span><br>cp -r ~/.elara/ ~/.elara-backup-$(date +%Y%m%d)<br><br><span class="comment"># Or tar it up</span><br>tar czf elara-backup-$(date +%Y%m%d).tar.gz ~/.elara/</code>
+                    </div>
+
+                    <div class="tip">
+                        <strong>Tip:</strong> The JSON/JSONL source files are the ground truth. ChromaDB indexes can always be rebuilt from them using <code>elara_rebuild_indexes()</code>. If space is tight, you can skip backing up the <code>chroma/</code> directory.
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">How do I reset everything?</span></summary>
+                <div class="faq-answer">
+                    <p>Delete the data directory and reinitialize. This is a clean slate &mdash; all memories, episodes, corrections, and mood history will be gone.</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Nuclear option &mdash; back up first if unsure</span><br>rm -rf ~/.elara/<br>elara init</code>
+                    </div>
+
+                    <div class="note">
+                        <strong>This is irreversible.</strong> Consider backing up first. There is no undo.
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="faq-item">
+            <details>
+                <summary><span class="q-text">Can I use multiple personas?</span></summary>
+                <div class="faq-answer">
+                    <p>Yes. Point different sessions at different persona files using the <code>ELARA_PERSONA_FILE</code> environment variable.</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+                        <code><span class="comment"># Work persona</span><br>export ELARA_PERSONA_FILE="~/.elara/persona-work.json"<br><br><span class="comment"># Personal persona</span><br>export ELARA_PERSONA_FILE="~/.elara/persona-personal.json"</code>
+                    </div>
+
+                    <p>Each persona file tracks its own mood, temperament, and imprints independently. Memory and episodes are shared unless you also change <code>ELARA_DATA_DIR</code>.</p>
+
+                    <p>For fully isolated instances, set both variables to different paths.</p>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <!-- ============ COMPATIBILITY ============ -->
+    <div class="section" id="compatibility">
+        <div class="section-header">[ COMPATIBILITY ]</div>
+        <div class="section-desc">Client-specific notes and known issues.</div>
+
+        <div class="faq-item">
+            <details open>
+                <summary><span class="q-text">MCP client compatibility matrix</span></summary>
+                <div class="faq-answer">
+                    <table class="compat-table">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Claude Code</td>
+                                <td>Best supported. Use <code>claude mcp add elara -- elara serve</code>. All 34 tools auto-discovered. Supports streaming and parallel tool calls.</td>
+                            </tr>
+                            <tr>
+                                <td>Cursor</td>
+                                <td>Works via <code>.cursor/mcp.json</code>. Some users report needing to restart twice on first setup. Check the MCP panel for connection status.</td>
+                            </tr>
+                            <tr>
+                                <td>Windsurf</td>
+                                <td>Config goes in <code>~/.codeium/windsurf/mcp_config.json</code>. Tools appear in the Cascade panel. May need the full path to the <code>elara</code> binary.</td>
+                            </tr>
+                            <tr>
+                                <td>Cline</td>
+                                <td>VS Code extension. Add via Cline Settings &rarr; MCP Servers. Auto-detects all tools. Requires the Cline extension v2.0+.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="tip">
+                        <strong>General rule:</strong> If your client supports MCP servers via stdio transport, Elara will work. The config is always the same: command <code>elara</code>, args <code>["serve"]</code>.
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <div class="divider">- - - - - - - - [ STILL STUCK? ] - - - - - - - -</div>
+
+    <div class="still-stuck">
+        <h3>Can't find your answer?</h3>
+        <p>Open an issue on GitHub with your OS, Python version, and the full error message.</p>
+        <a href="https://github.com/aivelikivodja-bot/elara-core/issues" target="_blank" rel="noopener noreferrer">Open an Issue &rarr;</a>
+    </div>
+
+</div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="/quickstart.html">Quickstart</a> &mdash; <a href="/tools.html">Tools</a> &mdash; <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+<script>
+    function copyCode(btn) {
+        const block = btn.parentElement;
+        const code = block.querySelector('code').textContent;
+        navigator.clipboard.writeText(code.trim()).then(() => {
+            btn.textContent = 'OK!';
+            setTimeout(() => btn.textContent = 'copy', 2000);
+        });
+    }
+</script>
+
+</body>
+</html>
