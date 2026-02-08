@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "elara-core"
-version = "0.1.0"
+version = "0.9.0"
 description = "Persistent presence, mood, memory, and self-awareness for AI assistants"
 readme = "README.md"
 license = "LicenseRef-BSL-1.1"
@@ -44,9 +44,16 @@ dev = ["pytest>=7.0", "flask>=3.0.0"]
 elara = "elara_mcp.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/AiVelikIVodja/elara-core"
-Repository = "https://github.com/AiVelikIVodja/elara-core"
-Issues = "https://github.com/AiVelikIVodja/elara-core/issues"
+Homepage = "https://aivelikivodja-bot.github.io/elara-core/"
+Repository = "https://github.com/aivelikivodja-bot/elara-core"
+Issues = "https://github.com/aivelikivodja-bot/elara-core/issues"
+Documentation = "https://github.com/aivelikivodja-bot/elara-core#readme"
+
+[tool.hatch.build]
+exclude = [
+    "voice/models/*.onnx",
+    "interface/static/avatar.jpg",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = [
