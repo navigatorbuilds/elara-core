@@ -1,5 +1,7 @@
 # Elara Core
 
+**[elara.navigatorbuilds.com](https://elara.navigatorbuilds.com)**
+
 Persistent presence, mood, memory, and self-awareness for AI assistants.
 
 Elara gives your AI assistant a sense of continuity across sessions. It remembers what you were working on, tracks emotional state, learns from mistakes, and builds semantic memory — all through the Model Context Protocol (MCP).
