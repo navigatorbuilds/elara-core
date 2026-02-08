@@ -1,0 +1,16 @@
+{
+  "name": "Elara Core Documentation",
+  "short_name": "Elara Docs",
+  "description": "Persistent presence for AI assistants — documentation",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#00ff41",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

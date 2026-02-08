@@ -18,6 +18,7 @@
     <meta name="author" content="Nenad Vasic">
     <link rel="canonical" href="https://elara.navigatorbuilds.com">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="manifest" href="/manifest.json">
     <meta name="twitter:image" content="https://elara.navigatorbuilds.com/og-image.svg">
     <script type="application/ld+json">
     {
@@ -1664,6 +1665,24 @@
             }
         })();
     </script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('[SW] Registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('[SW] Registration failed:', error);
+                    });
+            });
+        }
+    </script>
+
+    <!-- Command Palette (Cmd+K / Ctrl+K) -->
+    <script src="/cmd-palette.js"></script>
 
 </body>
 </html>
