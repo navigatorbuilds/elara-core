@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Changelog</title>
+    <meta name="description" content="Version history and changelog for Elara Core — all notable changes, features, fixes, and improvements.">
+    <meta property="og:title" content="Elara Core — Changelog">
+    <meta property="og:description" content="Track every release, from 0.9.0 to the latest.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://elara.navigatorbuilds.com/changelog.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@NavigatorBuilds">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-nav a {
+            font-size: 13px;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--green-dark);
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(14px, 2.5vw, 22px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        /* Subscribe box */
+        .subscribe-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-green);
+            padding: 18px 24px;
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .subscribe-box p {
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .subscribe-box a {
+            color: var(--green-dim);
+            text-decoration: none;
+            border: 1px solid var(--green-dark);
+            padding: 8px 20px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .subscribe-box a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        /* Version entries */
+        .version {
+            margin-bottom: 50px;
+            border-left: 2px solid var(--border-green);
+            padding-left: 24px;
+        }
+
+        .version-header {
+            margin-bottom: 20px;
+        }
+
+        .version-number {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(12px, 2vw, 18px);
+            color: var(--green);
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .version-date {
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .changes-section {
+            margin-bottom: 20px;
+        }
+
+        .changes-section h3 {
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            color: var(--cyan);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .changes-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .changes-list li {
+            padding: 6px 0 6px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .changes-list li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--green-dim);
+            font-weight: bold;
+        }
+
+        /* Category tags */
+        .tag {
+            display: inline-block;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 2px 8px;
+            margin-right: 8px;
+            border: 1px solid;
+            letter-spacing: 1px;
+        }
+
+        .tag-added {
+            color: var(--green);
+            border-color: var(--green-dark);
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        .tag-changed {
+            color: var(--amber);
+            border-color: rgba(255, 176, 0, 0.3);
+            background: rgba(255, 176, 0, 0.05);
+        }
+
+        .tag-fixed {
+            color: var(--cyan);
+            border-color: rgba(0, 229, 255, 0.3);
+            background: rgba(0, 229, 255, 0.05);
+        }
+
+        .tag-security {
+            color: var(--red);
+            border-color: rgba(255, 0, 64, 0.3);
+            background: rgba(255, 0, 64, 0.05);
+        }
+
+        /* Note boxes */
+        .note {
+            background: rgba(0, 229, 255, 0.04);
+            border-left: 3px solid var(--cyan);
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .note strong {
+            color: var(--cyan);
+        }
+
+        /* Pre-release section */
+        .pre-release {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 24px;
+            margin-bottom: 50px;
+        }
+
+        .pre-release h3 {
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+        }
+
+        .pre-release p {
+            font-size: 14px;
+            color: var(--text);
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .pre-release ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .pre-release ul li {
+            padding: 4px 0 4px 20px;
+            position: relative;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .pre-release ul li::before {
+            content: '-';
+            position: absolute;
+            left: 0;
+            color: var(--text-dim);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        footer a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--green); }
+
+        @media (max-width: 600px) {
+            .version {
+                padding-left: 16px;
+            }
+            .subscribe-box {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .subscribe-box a {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="header-nav">
+            <a href="/">&larr; Elara Core</a>
+            <div class="nav-links">
+                <a href="/quickstart.html">Quickstart</a>
+                <a href="/tools.html">34 Tools</a>
+                <a href="/configure.html">Configure</a>
+                <a href="/faq.html">FAQ</a>
+                <a href="/changelog.html">Changelog</a>
+            </div>
+        </div>
+        <h1>// CHANGELOG</h1>
+        <p>All notable changes to Elara Core. Every release, every feature, every fix.</p>
+    </div>
+
+    <div class="subscribe-box">
+        <p>Get notified when new versions drop.</p>
+        <a href="https://github.com/aivelikivodja-bot/elara-core/releases" target="_blank" rel="noopener noreferrer">Subscribe on GitHub &rarr;</a>
+    </div>
+
+    <!-- Version 0.9.1 -->
+    <div class="version">
+        <div class="version-header">
+            <div class="version-number">[0.9.1]</div>
+            <div class="version-date">2026-02-08</div>
+        </div>
+
+        <div class="changes-section">
+            <h3>Added</h3>
+            <ul class="changes-list">
+                <li>GitHub Actions CI — tests run on every push (Python 3.12)</li>
+                <li>Auto-publish to PyPI on version tags</li>
+                <li>Custom domain: elara.navigatorbuilds.com</li>
+                <li>OG preview images and JSON-LD structured data for SEO</li>
+                <li>Tools reference page (34 tools documented)</li>
+                <li>GitHub issue templates (bug report, feature request)</li>
+                <li>SVG favicon</li>
+            </ul>
+        </div>
+
+        <div class="changes-section">
+            <h3>Changed</h3>
+            <ul class="changes-list">
+                <li>Homepage URL updated to custom domain in PyPI metadata</li>
+                <li>README badge row: Tests, PyPI, License</li>
+            </ul>
+        </div>
+
+        <div class="changes-section">
+            <h3>Fixed</h3>
+            <ul class="changes-list">
+                <li>f-string nested quote syntax for CI compatibility</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Version 0.9.0 -->
+    <div class="version">
+        <div class="version-header">
+            <div class="version-number">[0.9.0]</div>
+            <div class="version-date">2026-02-07</div>
+        </div>
+
+        <div class="changes-section">
+            <h3>Added</h3>
+            <ul class="changes-list">
+                <li>First public release on PyPI</li>
+                <li>pip-installable package with CLI (<code>elara init</code>, <code>elara serve</code>)</li>
+                <li>BSL-1.1 license</li>
+                <li>90 tests passing</li>
+                <li>Cyberpunk landing page (GitHub Pages)</li>
+                <li>Live terminal demo (asciinema)</li>
+                <li>Setup guides for 6 MCP clients (Claude Code, Cursor, Windsurf, Cline, Zed, custom)</li>
+            </ul>
+        </div>
+
+        <div class="changes-section">
+            <h3>Core Features</h3>
+            <ul class="changes-list">
+                <li><strong>34 MCP tools</strong> across 11 modules</li>
+                <li><strong>Semantic memory</strong> — ChromaDB vector search, importance weighting, natural decay</li>
+                <li><strong>Conversation indexing</strong> — every exchange searchable by meaning</li>
+                <li><strong>Episodic tracking</strong> — sessions as episodes with milestones, decisions, mood arcs</li>
+                <li><strong>Mood system</strong> — valence, energy, openness with natural decay and personality modes</li>
+                <li><strong>Dream processing</strong> — weekly/monthly/emotional pattern discovery</li>
+                <li><strong>Reasoning trails</strong> — hypothesis chains, evidence tracking, dead ends, solutions</li>
+                <li><strong>Corrections</strong> — mistake tracking that never decays, boot-loaded</li>
+                <li><strong>Goal tracking</strong> — persistent goals with staleness detection</li>
+                <li><strong>Business intelligence</strong> — 5-axis idea scoring, competitor tracking, pitch analytics</li>
+                <li><strong>Session handoff</strong> — structured carry-forward between sessions</li>
+                <li><strong>Self-awareness</strong> — reflection, blind spots, relationship pulse, growth intentions</li>
+                <li><strong>Gmail integration</strong> — read, triage, send, archive, semantic search</li>
+                <li><strong>Local LLM</strong> — Ollama interface for classification, summarization, triage</li>
+                <li><strong>Overwatch daemon</strong> — background conversation watching, auto cross-references</li>
+                <li><strong>RSS briefing</strong> — external intelligence feeds with semantic search</li>
+            </ul>
+        </div>
+
+        <div class="note">
+            <strong>First public release:</strong> This is the first pip-installable version. All features tested across 70+ private development sessions.
+        </div>
+    </div>
+
+    <!-- Pre-release -->
+    <div class="pre-release">
+        <h3>[Pre-release] — 2026-02-01 to 2026-02-06</h3>
+        <p><strong>Development History</strong></p>
+        <ul>
+            <li>70 sessions over 6 days</li>
+            <li>Architecture: monolith → split modules → mixin patterns</li>
+            <li>Overwatch daemon rewrite (drop LLM hallucinations, use importance scoring)</li>
+            <li>Pydantic schemas wired into 7 daemon modules</li>
+            <li>Atomic write helpers, structured logging, custom exceptions</li>
+            <li>16 broad exception handlers narrowed to specific types</li>
+            <li>ChromaDB caching, fsync, bounds checks (11 reliability fixes)</li>
+        </ul>
+    </div>
+
+</div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="/quickstart.html">Quickstart</a> &mdash; <a href="/tools.html">Tools</a> &mdash; <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+</body>
+</html>

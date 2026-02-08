@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // Architecture</title>
+    <meta name="description" content="Interactive architecture diagram of Elara Core MCP server - 35 tools, 11 modules, 7 ChromaDB collections.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --bg-card-hover: #141414;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --green-glow: rgba(0, 255, 65, 0.08);
+            --red: #ff0040;
+            --red-dim: #cc0033;
+            --red-glow: rgba(255, 0, 64, 0.08);
+            --cyan: #00e5ff;
+            --cyan-dim: #00b8cc;
+            --cyan-dark: #003344;
+            --cyan-glow: rgba(0, 229, 255, 0.08);
+            --amber: #ffb000;
+            --amber-dim: #cc8c00;
+            --amber-dark: #332300;
+            --amber-glow: rgba(255, 176, 0, 0.08);
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+            --scanline: rgba(0, 255, 65, 0.03);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* CRT Scanlines overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.08) 2px,
+                rgba(0, 0, 0, 0.08) 4px
+            );
+        }
+
+        /* Floating pixel characters */
+        .pixel-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .pixel-char {
+            position: absolute;
+            font-family: 'Press Start 2P', monospace;
+            opacity: 0.04;
+            animation: float-char linear infinite;
+            color: var(--green);
+        }
+
+        .pixel-char.red { color: var(--red); }
+
+        @keyframes float-char {
+            0% { transform: translateY(110vh) rotate(0deg); }
+            100% { transform: translateY(-10vh) rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Glitch effect */
+        @keyframes glitch {
+            0%, 100% { text-shadow: 2px 0 var(--red), -2px 0 var(--cyan); }
+            25% { text-shadow: -2px 0 var(--red), 2px 0 var(--cyan); }
+            50% { text-shadow: 2px 2px var(--red), -2px -2px var(--cyan); }
+            75% { text-shadow: -2px -1px var(--red), 2px 1px var(--cyan); }
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            92% { opacity: 1; }
+            93% { opacity: 0.8; }
+            94% { opacity: 1; }
+            96% { opacity: 0.9; }
+            97% { opacity: 1; }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(0, 255, 65, 0.2); }
+            50% { box-shadow: 0 0 20px rgba(0, 255, 65, 0.4), 0 0 40px rgba(0, 255, 65, 0.1); }
+        }
+
+        @keyframes data-flow {
+            0% { stroke-dashoffset: 20; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        @keyframes pulse-line {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 12px 0;
+            background: rgba(10, 10, 10, 0.92);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-green);
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: var(--green);
+            text-decoration: none;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+            animation: flicker 8s infinite;
+        }
+
+        .nav-logo .red { color: var(--red); text-shadow: 0 0 10px rgba(255, 0, 64, 0.5); }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 65, 0.4); }
+        .nav-links a.active { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 65, 0.4); }
+
+        .btn-github {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--green-dark);
+            color: var(--green);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .btn-github:hover {
+            background: var(--green-glow);
+            border-color: var(--green-dim);
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+        }
+
+        .btn-github svg { width: 16px; height: 16px; fill: currentColor; }
+
+        /* Page header */
+        .page-header {
+            padding: 120px 0 60px;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 28px;
+            color: var(--green);
+            text-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+            margin-bottom: 16px;
+            animation: glitch 4s infinite;
+        }
+
+        .page-header p {
+            color: var(--text-dim);
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .page-header p .hl { color: var(--green); }
+        .page-header p .hl-red { color: var(--red); }
+
+        /* Diagram container */
+        .diagram-wrap {
+            padding: 0 0 80px;
+        }
+
+        .diagram {
+            max-width: 1100px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Layer styling */
+        .arch-layer {
+            margin-bottom: 0;
+            position: relative;
+        }
+
+        .layer-label {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 16px;
+            padding-left: 4px;
+        }
+
+        .layer-label .layer-num {
+            color: var(--red);
+            margin-right: 8px;
+        }
+
+        /* Connection pipes between layers */
+        .connection-pipe {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 0;
+            position: relative;
+        }
+
+        .pipe-line {
+            width: 2px;
+            height: 40px;
+            position: relative;
+        }
+
+        .pipe-line::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--green-dim), transparent);
+            opacity: 0.4;
+        }
+
+        .pipe-dots {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            position: relative;
+        }
+
+        .pipe-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green-dim);
+            opacity: 0.5;
+            animation: pulse-line 2s ease-in-out infinite;
+        }
+
+        .pipe-dot:nth-child(2) { animation-delay: 0.3s; }
+        .pipe-dot:nth-child(3) { animation-delay: 0.6s; }
+        .pipe-dot:nth-child(4) { animation-delay: 0.9s; }
+        .pipe-dot:nth-child(5) { animation-delay: 1.2s; }
+
+        .pipe-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            text-align: center;
+            margin: 8px 0;
+        }
+
+        /* SVG connection lines */
+        .connections-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .connections-svg line {
+            stroke: var(--green-dark);
+            stroke-width: 1;
+            stroke-dasharray: 4, 4;
+            animation: data-flow 1s linear infinite;
+        }
+
+        /* Layer 1: MCP Clients */
+        .clients-grid {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .client-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 16px 20px;
+            text-align: center;
+            min-width: 140px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .client-box:hover {
+            border-color: var(--cyan-dim);
+            background: var(--bg-card-hover);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
+        }
+
+        .client-icon {
+            font-family: 'VT323', monospace;
+            font-size: 28px;
+            color: var(--cyan);
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+        }
+
+        .client-name {
+            font-size: 12px;
+            color: var(--text-bright);
+            letter-spacing: 1px;
+        }
+
+        .client-sub {
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* Layer 2: MCP Protocol */
+        .protocol-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: linear-gradient(90deg, transparent, var(--green-glow), var(--green-glow), transparent);
+            border-top: 1px solid var(--green-dark);
+            border-bottom: 1px solid var(--green-dark);
+            padding: 14px 0;
+            position: relative;
+        }
+
+        .protocol-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 8px,
+                rgba(0, 255, 65, 0.03) 8px,
+                rgba(0, 255, 65, 0.03) 16px
+            );
+        }
+
+        .protocol-text {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            color: var(--green);
+            text-shadow: 0 0 8px rgba(0, 255, 65, 0.4);
+            letter-spacing: 4px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .protocol-arrow {
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            color: var(--green-dim);
+            position: relative;
+            z-index: 1;
+            animation: pulse-line 1.5s ease-in-out infinite;
+        }
+
+        /* Layer 3: Tool Modules */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+        }
+
+        .module-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+            cursor: default;
+        }
+
+        .module-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            transition: all 0.3s;
+        }
+
+        /* Color coding by type */
+        .module-box.type-core::before { background: var(--green-dark); }
+        .module-box.type-core:hover::before { background: var(--green); box-shadow: 0 0 10px rgba(0, 255, 65, 0.5); }
+        .module-box.type-core:hover { border-color: var(--green-dark); box-shadow: 0 0 25px rgba(0, 255, 65, 0.1); }
+
+        .module-box.type-emotional::before { background: var(--red-dim); opacity: 0.5; }
+        .module-box.type-emotional:hover::before { background: var(--red); opacity: 1; box-shadow: 0 0 10px rgba(255, 0, 64, 0.5); }
+        .module-box.type-emotional:hover { border-color: rgba(255, 0, 64, 0.3); box-shadow: 0 0 25px rgba(255, 0, 64, 0.1); }
+
+        .module-box.type-productivity::before { background: var(--amber-dark); }
+        .module-box.type-productivity:hover::before { background: var(--amber); box-shadow: 0 0 10px rgba(255, 176, 0, 0.5); }
+        .module-box.type-productivity:hover { border-color: var(--amber-dark); box-shadow: 0 0 25px rgba(255, 176, 0, 0.1); }
+
+        .module-box.type-external::before { background: var(--cyan-dark); }
+        .module-box.type-external:hover::before { background: var(--cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
+        .module-box.type-external:hover { border-color: var(--cyan-dark); box-shadow: 0 0 25px rgba(0, 229, 255, 0.1); }
+
+        .module-box:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .module-name {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .module-box.type-core .module-name { color: var(--green); }
+        .module-box.type-emotional .module-name { color: var(--red); }
+        .module-box.type-productivity .module-name { color: var(--amber); }
+        .module-box.type-external .module-name { color: var(--cyan); }
+
+        .module-count {
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .module-box.type-core .module-count { color: var(--green-dim); }
+        .module-box.type-emotional .module-count { color: var(--red-dim); }
+        .module-box.type-productivity .module-count { color: var(--amber-dim); }
+        .module-box.type-external .module-count { color: var(--cyan-dim); }
+
+        .module-desc {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .module-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s ease, margin-top 0.3s ease;
+            opacity: 0;
+            margin-top: 0;
+        }
+
+        .module-box:hover .module-tools {
+            max-height: 200px;
+            opacity: 1;
+            margin-top: 8px;
+        }
+
+        .tool-chip {
+            padding: 2px 8px;
+            background: #050505;
+            border: 1px solid var(--border);
+            font-size: 10px;
+            transition: all 0.2s;
+        }
+
+        .module-box.type-core .tool-chip { color: var(--green-dim); }
+        .module-box.type-core .tool-chip:hover { border-color: var(--green-dark); color: var(--green); }
+
+        .module-box.type-emotional .tool-chip { color: var(--red-dim); }
+        .module-box.type-emotional .tool-chip:hover { border-color: rgba(255, 0, 64, 0.3); color: var(--red); }
+
+        .module-box.type-productivity .tool-chip { color: var(--amber-dim); }
+        .module-box.type-productivity .tool-chip:hover { border-color: var(--amber-dark); color: var(--amber); }
+
+        .module-box.type-external .tool-chip { color: var(--cyan-dim); }
+        .module-box.type-external .tool-chip:hover { border-color: var(--cyan-dark); color: var(--cyan); }
+
+        /* Wide module (spans 2 cols) */
+        .module-box.wide {
+            grid-column: span 2;
+        }
+
+        /* Full-width module (spans 3 cols) */
+        .module-box.full {
+            grid-column: span 3;
+        }
+
+        /* Layer 4: Data Layer */
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+        }
+
+        .data-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .data-section:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--green-dark);
+        }
+
+        .data-section-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: var(--red);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        .db-cylinders {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .db-cylinder {
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .db-cylinder:hover {
+            transform: translateY(-2px);
+        }
+
+        .cylinder-icon {
+            width: 48px;
+            height: 36px;
+            margin: 0 auto 6px;
+            position: relative;
+        }
+
+        .cylinder-body {
+            width: 48px;
+            height: 24px;
+            background: #111;
+            border-left: 2px solid var(--green-dim);
+            border-right: 2px solid var(--green-dim);
+            position: absolute;
+            bottom: 0;
+        }
+
+        .cylinder-top {
+            width: 48px;
+            height: 12px;
+            background: #111;
+            border: 2px solid var(--green-dim);
+            border-radius: 50%;
+            position: absolute;
+            top: 0;
+            z-index: 1;
+        }
+
+        .cylinder-bottom {
+            width: 48px;
+            height: 12px;
+            background: #111;
+            border: 2px solid var(--green-dim);
+            border-radius: 50%;
+            border-top: none;
+            position: absolute;
+            bottom: 0;
+        }
+
+        .db-cylinder:hover .cylinder-top,
+        .db-cylinder:hover .cylinder-body,
+        .db-cylinder:hover .cylinder-bottom {
+            border-color: var(--green);
+        }
+
+        .db-cylinder:hover .cylinder-top {
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+        }
+
+        .db-name {
+            font-size: 10px;
+            color: var(--green-dim);
+            letter-spacing: 1px;
+        }
+
+        .db-cylinder:hover .db-name {
+            color: var(--green);
+            text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-dim);
+            transition: all 0.2s;
+        }
+
+        .file-item:hover {
+            color: var(--text);
+        }
+
+        .file-icon {
+            color: var(--amber-dim);
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .file-item .config-icon {
+            color: var(--cyan-dim);
+        }
+
+        /* Layer 5: External */
+        .external-grid {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .external-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 20px 32px;
+            text-align: center;
+            transition: all 0.3s;
+            min-width: 180px;
+        }
+
+        .external-box:hover {
+            border-color: var(--cyan-dark);
+            background: var(--bg-card-hover);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+        }
+
+        .external-icon {
+            font-family: 'VT323', monospace;
+            font-size: 32px;
+            color: var(--cyan);
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+        }
+
+        .external-name {
+            font-size: 13px;
+            color: var(--text-bright);
+            letter-spacing: 1px;
+        }
+
+        .external-sub {
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Legend */
+        .legend {
+            margin-top: 48px;
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-swatch {
+            width: 12px;
+            height: 12px;
+            border: 1px solid;
+        }
+
+        .legend-swatch.core { background: var(--green-dark); border-color: var(--green-dim); }
+        .legend-swatch.emotional { background: rgba(255, 0, 64, 0.15); border-color: var(--red-dim); }
+        .legend-swatch.productivity { background: var(--amber-dark); border-color: var(--amber-dim); }
+        .legend-swatch.external { background: var(--cyan-dark); border-color: var(--cyan-dim); }
+
+        .legend-text {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* ASCII divider */
+        .ascii-divider {
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 12px;
+            padding: 24px 0;
+            letter-spacing: 4px;
+            opacity: 0.4;
+        }
+
+        /* Stats bar */
+        .arch-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            padding: 32px 0;
+            border-top: 1px solid var(--border-green);
+            border-bottom: 1px solid var(--border-green);
+            background: linear-gradient(180deg, var(--green-glow) 0%, transparent 100%);
+            margin-bottom: 48px;
+            flex-wrap: wrap;
+        }
+
+        .arch-stat {
+            text-align: center;
+        }
+
+        .arch-stat-value {
+            font-family: 'VT323', monospace;
+            font-size: 36px;
+            color: var(--green);
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+            line-height: 1;
+        }
+
+        .arch-stat-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 4px;
+        }
+
+        /* Data flow visualization */
+        .flow-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 16px 0;
+        }
+
+        .flow-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--green-dim);
+            animation: flow-pulse 2s ease-in-out infinite;
+        }
+
+        .flow-dot:nth-child(1) { animation-delay: 0s; }
+        .flow-dot:nth-child(2) { animation-delay: 0.15s; }
+        .flow-dot:nth-child(3) { animation-delay: 0.3s; }
+        .flow-dot:nth-child(4) { animation-delay: 0.45s; }
+        .flow-dot:nth-child(5) { animation-delay: 0.6s; }
+        .flow-dot:nth-child(6) { animation-delay: 0.75s; }
+        .flow-dot:nth-child(7) { animation-delay: 0.9s; }
+
+        @keyframes flow-pulse {
+            0%, 100% { opacity: 0.15; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.5); }
+        }
+
+        .flow-label {
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            padding-bottom: 8px;
+        }
+
+        /* Footer */
+        footer {
+            padding: 48px 0;
+            border-top: 1px solid var(--border-green);
+            text-align: center;
+        }
+
+        .footer-ascii {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            letter-spacing: 2px;
+            opacity: 0.4;
+        }
+
+        footer .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 24px;
+        }
+
+        footer .footer-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+        }
+
+        footer .footer-links a:hover { color: var(--green); }
+
+        footer .footer-copy {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        footer .footer-copy a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .modules-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .module-box.wide,
+            .module-box.full {
+                grid-column: span 1;
+            }
+            .data-grid {
+                grid-template-columns: 1fr;
+            }
+            .clients-grid {
+                gap: 8px;
+            }
+            .client-box {
+                min-width: 100px;
+                padding: 12px 14px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .page-header h1 { font-size: 18px; }
+            .modules-grid { grid-template-columns: 1fr; }
+            .nav-links a:not(.btn-github) { display: none; }
+            .arch-stats { gap: 20px; }
+            .legend { gap: 16px; }
+            .clients-grid { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Floating pixel characters -->
+    <div class="pixel-bg" id="pixelBg"></div>
+
+    <!-- Nav -->
+    <nav>
+        <div class="container">
+            <a href="/" class="nav-logo">ELARA<span class="red">/</span>CORE</a>
+            <div class="nav-links">
+                <a href="/">HOME</a>
+                <a href="/tools.html">TOOLS</a>
+                <a href="/architecture.html" class="active">ARCH</a>
+                <a href="/quickstart.html">START</a>
+                <a href="/configure.html">CONFIGURE</a>
+                <a href="/faq.html">FAQ</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core" class="btn-github" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    SRC
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>// ARCHITECTURE</h1>
+            <p><span class="hl">35 tools</span> across <span class="hl-red">11 modules</span> &mdash; hover modules to reveal tools</p>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <div class="arch-stats">
+        <div class="arch-stat">
+            <div class="arch-stat-value">35</div>
+            <div class="arch-stat-label">MCP Tools</div>
+        </div>
+        <div class="arch-stat">
+            <div class="arch-stat-value">11</div>
+            <div class="arch-stat-label">Modules</div>
+        </div>
+        <div class="arch-stat">
+            <div class="arch-stat-value">7</div>
+            <div class="arch-stat-label">Vector DBs</div>
+        </div>
+        <div class="arch-stat">
+            <div class="arch-stat-value">16,800+</div>
+            <div class="arch-stat-label">Lines Python</div>
+        </div>
+        <div class="arch-stat">
+            <div class="arch-stat-value">65+</div>
+            <div class="arch-stat-label">Source Files</div>
+        </div>
+    </div>
+
+    <!-- Architecture Diagram -->
+    <section class="diagram-wrap">
+        <div class="container">
+            <div class="diagram">
+
+                <!-- LAYER 1: MCP Clients -->
+                <div class="arch-layer">
+                    <div class="layer-label"><span class="layer-num">L1</span> MCP CLIENTS</div>
+                    <div class="clients-grid">
+                        <div class="client-box">
+                            <div class="client-icon">[&gt;_]</div>
+                            <div class="client-name">Claude Code</div>
+                            <div class="client-sub">CLI</div>
+                        </div>
+                        <div class="client-box">
+                            <div class="client-icon">[//>]</div>
+                            <div class="client-name">Cursor</div>
+                            <div class="client-sub">IDE</div>
+                        </div>
+                        <div class="client-box">
+                            <div class="client-icon">[~~~]</div>
+                            <div class="client-name">Windsurf</div>
+                            <div class="client-sub">IDE</div>
+                        </div>
+                        <div class="client-box">
+                            <div class="client-icon">[{;}]</div>
+                            <div class="client-name">Cline</div>
+                            <div class="client-sub">VS Code</div>
+                        </div>
+                        <div class="client-box">
+                            <div class="client-icon">[:::]</div>
+                            <div class="client-name">Claude Desktop</div>
+                            <div class="client-sub">App</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connection: Clients -> Protocol -->
+                <div class="flow-indicator">
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                </div>
+
+                <!-- LAYER 2: MCP Protocol -->
+                <div class="arch-layer">
+                    <div class="layer-label"><span class="layer-num">L2</span> PROTOCOL</div>
+                    <div class="protocol-bar">
+                        <span class="protocol-arrow">&darr;</span>
+                        <span class="protocol-text">MODEL CONTEXT PROTOCOL (STDIO)</span>
+                        <span class="protocol-arrow">&uarr;</span>
+                    </div>
+                </div>
+
+                <!-- Connection: Protocol -> Tools -->
+                <div class="flow-indicator">
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                </div>
+                <div class="flow-label">elara_mcp/server.py &mdash; tool dispatch</div>
+
+                <!-- LAYER 3: Tool Modules -->
+                <div class="arch-layer">
+                    <div class="layer-label"><span class="layer-num">L3</span> TOOL LAYER &mdash; 35 TOOLS / 11 MODULES</div>
+                    <div class="modules-grid">
+
+                        <!-- Core: memory -->
+                        <div class="module-box type-core">
+                            <div class="module-header">
+                                <span class="module-name">Memory</span>
+                                <span class="module-count">4</span>
+                            </div>
+                            <div class="module-desc">Semantic memory + conversation index</div>
+                            <div class="module-tools">
+                                <span class="tool-chip">remember</span>
+                                <span class="tool-chip">recall</span>
+                                <span class="tool-chip">recall_conversation</span>
+                                <span class="tool-chip">conversations</span>
+                            </div>
+                        </div>
+
+                        <!-- Emotional: mood -->
+                        <div class="module-box type-emotional">
+                            <div class="module-header">
+                                <span class="module-name">Mood</span>
+                                <span class="module-count">5</span>
+                            </div>
+                            <div class="module-desc">Presence, emotions, imprints, modes</div>
+                            <div class="module-tools">
+                                <span class="tool-chip">mood</span>
+                                <span class="tool-chip">mood_adjust</span>
+                                <span class="tool-chip">imprint</span>
+                                <span class="tool-chip">mode</span>
+                                <span class="tool-chip">status</span>
+                            </div>
+                        </div>
+
+                        <!-- Core: episodes -->
+                        <div class="module-box type-core">
+                            <div class="module-header">
+                                <span class="module-name">Episodes</span>
+                                <span class="module-count">5</span>
+                            </div>
+                            <div class="module-desc">Session tracking, milestones, context</div>
+                            <div class="module-tools">
+                                <span class="tool-chip">episode_start</span>
+                                <span class="tool-chip">episode_note</span>
+                                <span class="tool-chip">episode_end</span>
+                                <span class="tool-chip">episode_query</span>
+                                <span class="tool-chip">context</span>
+                            </div>
+                        </div>
+
+                        <!-- Emotional: dreams -->
+                        <div class="module-box type-emotional">
+                            <div class="module-header">
+                                <span class="module-name">Dreams</span>
+                                <span class="module-count">2</span>
+                            </div>
+                            <div class="module-desc">Weekly / monthly pattern discovery</div>
+                            <div class="module-tools">
+                                <span class="tool-chip">dream</span>
+                                <span class="tool-chip">dream_info</span>
+                            </div>
+                        </div>
+
+                        <!-- Productivity: goals -->
+                        <div class="module-box type-productivity">
+                            <div class="module-header">
+                                <span class="module-name">Goals</span>
+                                <span class="module-count">5</span>
+                            </div>
+                            <div class="module-desc">Goals, corrections, session handoff</div>
+                            <div class="module-tools">
+                                <span class="tool-chip">goal</span>
+                                <span class="tool-chip">goal_boot</span>
+                                <span class="tool-chip">correction</span>
+                                <span class="tool-chip">correction_boot</span>
+                                <span class="tool-chip">handoff</span>
+                            </div>
+                        </div>
+
+                        <!-- Productivity: cognitive -->
+                        <div class="module-box type-productivity">
+                            <div class="module-header">
+                                <span class="module-name">Cognitive</span>
+                                <span class="module-count">3</span>
+                            </div>
+                            <div class="module-desc">Reasoning trails, outcomes, synthesis</div>
+                            <div class="module-tools">
+                                <span class="tool-chip">reasoning</span>
+                                <span class="tool-chip">outcome</span>
+                                <span class="tool-chip">synthesis</span>
+                            </div>
+                        </div>
+
+                        <!-- Emotional: awareness -->
+                        <div class="module-box type-emotional">
+                            <div class="module-header">
+                                <span class="module-name">Awareness</span>
+                                <span class="module-count">5</span>
+                            </div>
+                            <div class="module-desc">Self-reflection, blind spots, temperament</div>
+                            <div class="module-tools">
+                                <span class="tool-chip">reflect</span>
+                                <span class="tool-chip">insight</span>
+                                <span class="tool-chip">intention</span>
+                                <span class="tool-chip">observe</span>
+                                <span class="tool-chip">temperament</span>
+                            </div>
+                        </div>
+
+                        <!-- Productivity: business -->
+                        <div class="module-box type-productivity">
+                            <div class="module-header">
+                                <span class="module-name">Business</span>
+                                <span class="module-count">1</span>
+                            </div>
+                            <div class="module-desc">Idea tracking, competitor analysis, scoring</div>
+                            <div class="module-tools">
+                                <span class="tool-chip">business</span>
+                            </div>
+                        </div>
+
+                        <!-- External: gmail -->
+                        <div class="module-box type-external">
+                            <div class="module-header">
+                                <span class="module-name">Gmail</span>
+                                <span class="module-count">1</span>
+                            </div>
+                            <div class="module-desc">Read, triage, send, archive, search</div>
+                            <div class="module-tools">
+                                <span class="tool-chip">gmail</span>
+                            </div>
+                        </div>
+
+                        <!-- External: maintenance (briefing + infra) -->
+                        <div class="module-box type-external">
+                            <div class="module-header">
+                                <span class="module-name">Briefing</span>
+                                <span class="module-count">3</span>
+                            </div>
+                            <div class="module-desc">RSS feeds, snapshot, index rebuild</div>
+                            <div class="module-tools">
+                                <span class="tool-chip">briefing</span>
+                                <span class="tool-chip">snapshot</span>
+                                <span class="tool-chip">rebuild_indexes</span>
+                            </div>
+                        </div>
+
+                        <!-- External: LLM -->
+                        <div class="module-box type-external">
+                            <div class="module-header">
+                                <span class="module-name">LLM</span>
+                                <span class="module-count">1</span>
+                            </div>
+                            <div class="module-desc">Local Ollama interface, classify, triage</div>
+                            <div class="module-tools">
+                                <span class="tool-chip">llm</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-swatch core"></div>
+                        <span class="legend-text">Core</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-swatch emotional"></div>
+                        <span class="legend-text">Emotional</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-swatch productivity"></div>
+                        <span class="legend-text">Productivity</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-swatch external"></div>
+                        <span class="legend-text">External</span>
+                    </div>
+                </div>
+
+                <!-- Connection: Tools -> Data -->
+                <div class="ascii-divider">- - - - - - - - [ DATA LAYER ] - - - - - - - -</div>
+                <div class="flow-indicator">
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                </div>
+
+                <!-- LAYER 4: Data Layer -->
+                <div class="arch-layer">
+                    <div class="layer-label"><span class="layer-num">L4</span> DATA LAYER</div>
+                    <div class="data-grid">
+
+                        <!-- ChromaDB Collections -->
+                        <div class="data-section" style="grid-column: span 2;">
+                            <div class="data-section-title">ChromaDB Collections (7)</div>
+                            <div class="db-cylinders">
+                                <div class="db-cylinder">
+                                    <div class="cylinder-icon">
+                                        <div class="cylinder-top"></div>
+                                        <div class="cylinder-body"></div>
+                                        <div class="cylinder-bottom"></div>
+                                    </div>
+                                    <div class="db-name">memories</div>
+                                </div>
+                                <div class="db-cylinder">
+                                    <div class="cylinder-icon">
+                                        <div class="cylinder-top"></div>
+                                        <div class="cylinder-body"></div>
+                                        <div class="cylinder-bottom"></div>
+                                    </div>
+                                    <div class="db-name">milestones</div>
+                                </div>
+                                <div class="db-cylinder">
+                                    <div class="cylinder-icon">
+                                        <div class="cylinder-top"></div>
+                                        <div class="cylinder-body"></div>
+                                        <div class="cylinder-bottom"></div>
+                                    </div>
+                                    <div class="db-name">conversations</div>
+                                </div>
+                                <div class="db-cylinder">
+                                    <div class="cylinder-icon">
+                                        <div class="cylinder-top"></div>
+                                        <div class="cylinder-body"></div>
+                                        <div class="cylinder-bottom"></div>
+                                    </div>
+                                    <div class="db-name">corrections</div>
+                                </div>
+                                <div class="db-cylinder">
+                                    <div class="cylinder-icon">
+                                        <div class="cylinder-top"></div>
+                                        <div class="cylinder-body"></div>
+                                        <div class="cylinder-bottom"></div>
+                                    </div>
+                                    <div class="db-name">reasoning</div>
+                                </div>
+                                <div class="db-cylinder">
+                                    <div class="cylinder-icon">
+                                        <div class="cylinder-top"></div>
+                                        <div class="cylinder-body"></div>
+                                        <div class="cylinder-bottom"></div>
+                                    </div>
+                                    <div class="db-name">synthesis</div>
+                                </div>
+                                <div class="db-cylinder">
+                                    <div class="cylinder-icon">
+                                        <div class="cylinder-top"></div>
+                                        <div class="cylinder-body"></div>
+                                        <div class="cylinder-bottom"></div>
+                                    </div>
+                                    <div class="db-name">briefing</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Storage -->
+                        <div class="data-section">
+                            <div class="data-section-title">File Storage</div>
+                            <div class="file-list">
+                                <div class="file-item">
+                                    <span class="file-icon">{}</span>
+                                    <span>memories.json</span>
+                                </div>
+                                <div class="file-item">
+                                    <span class="file-icon">{}</span>
+                                    <span>episodes.jsonl</span>
+                                </div>
+                                <div class="file-item">
+                                    <span class="file-icon">{}</span>
+                                    <span>corrections.json</span>
+                                </div>
+                                <div class="file-item">
+                                    <span class="file-icon">{}</span>
+                                    <span>goals.json</span>
+                                </div>
+                                <div class="file-item">
+                                    <span class="file-icon">{}</span>
+                                    <span>reasoning_trails.json</span>
+                                </div>
+                                <div class="file-item">
+                                    <span class="file-icon">{}</span>
+                                    <span>mood_state.json</span>
+                                </div>
+                                <div class="file-item">
+                                    <span class="file-icon config-icon">*</span>
+                                    <span>elara.toml</span>
+                                </div>
+                                <div class="file-item">
+                                    <span class="file-icon config-icon">*</span>
+                                    <span>handoff.json</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Connection: Data -> External -->
+                <div class="ascii-divider">- - - - - - - - [ EXTERNAL ] - - - - - - - -</div>
+                <div class="flow-indicator">
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                    <div class="flow-dot"></div>
+                </div>
+
+                <!-- LAYER 5: External Services -->
+                <div class="arch-layer">
+                    <div class="layer-label"><span class="layer-num">L5</span> EXTERNAL SERVICES</div>
+                    <div class="external-grid">
+                        <div class="external-box">
+                            <div class="external-icon">@</div>
+                            <div class="external-name">Gmail API</div>
+                            <div class="external-sub">OAuth2 &bull; Read/Send/Triage</div>
+                        </div>
+                        <div class="external-box">
+                            <div class="external-icon">((i))</div>
+                            <div class="external-name">RSS Feeds</div>
+                            <div class="external-sub">Briefing &bull; News &bull; Competitors</div>
+                        </div>
+                        <div class="external-box">
+                            <div class="external-icon">[AI]</div>
+                            <div class="external-name">Ollama</div>
+                            <div class="external-sub">Local LLM &bull; Mistral 7B</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Overwatch sidebar info -->
+    <div class="ascii-divider">- - - - - - - - [ BACKGROUND DAEMON ] - - - - - - - -</div>
+
+    <section style="padding: 40px 0 80px;">
+        <div class="container">
+            <div style="max-width: 700px; margin: 0 auto; background: var(--bg-card); border: 1px solid var(--border); padding: 28px; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--red-dim);"></div>
+                <div style="font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--red); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px;">[OVR] Overwatch Daemon</div>
+                <p style="font-size: 13px; color: var(--text); margin-bottom: 12px;">
+                    Runs independently alongside the MCP server. Watches conversation files in real-time, micro-ingests new exchanges into ChromaDB, and injects cross-session references.
+                </p>
+                <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 16px;">
+                    <div style="font-size: 11px; color: var(--text-dim);">
+                        <span style="color: var(--green-dim);">parser.py</span> &mdash; conversation extraction
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-dim);">
+                        <span style="color: var(--green-dim);">ingest.py</span> &mdash; micro-ingestion
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-dim);">
+                        <span style="color: var(--green-dim);">search.py</span> &mdash; cross-reference injection
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-ascii">========================================</div>
+            <div class="footer-links">
+                <a href="/">Home</a>
+                <a href="/tools.html">Tools</a>
+                <a href="/quickstart.html">Quickstart</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://github.com/aivelikivodja-bot/elara-core/blob/main/LICENSE" target="_blank" rel="noopener">BSL-1.1</a>
+            </div>
+            <p class="footer-copy">Built by <a href="https://github.com/aivelikivodja-bot" target="_blank" rel="noopener">Nenad Vasic</a> // Python 3.10+ // Linux, macOS, Windows</p>
+        </div>
+    </footer>
+
+    <script>
+        // Floating pixel characters
+        const chars = ['@', '#', '$', '%', '&', '*', '>', '<', '/', '\\', '|', '0', '1', '{', '}', '[', ']', '=', '+', '~'];
+        const bg = document.getElementById('pixelBg');
+
+        for (let i = 0; i < 30; i++) {
+            const span = document.createElement('span');
+            span.className = 'pixel-char' + (Math.random() > 0.7 ? ' red' : '');
+            span.textContent = chars[Math.floor(Math.random() * chars.length)];
+            span.style.left = Math.random() * 100 + '%';
+            span.style.fontSize = (8 + Math.random() * 24) + 'px';
+            span.style.animationDuration = (15 + Math.random() * 30) + 's';
+            span.style.animationDelay = -(Math.random() * 30) + 's';
+            bg.appendChild(span);
+        }
+    </script>
+
+</body>
+</html>
