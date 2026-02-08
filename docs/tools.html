@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // 34 MCP Tools Reference</title>
+    <meta name="description" content="Complete reference for all 34 MCP tools in Elara Core — memory, mood, episodes, reasoning, dreams, and more.">
+    <meta property="og:title" content="Elara Core — 34 MCP Tools Reference">
+    <meta property="og:description" content="Every tool your AI gets when you install Elara Core.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://elara.navigatorbuilds.com/tools.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@NavigatorBuilds">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header-nav a {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--green-dark);
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(16px, 3vw, 24px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        .header .count {
+            color: var(--red);
+            font-weight: bold;
+        }
+
+        /* TOC */
+        .toc {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 20px 24px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            color: var(--amber);
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 6px;
+        }
+
+        .toc a {
+            color: var(--green-dim);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 4px 0;
+            transition: color 0.2s;
+        }
+
+        .toc a:hover { color: var(--green); }
+        .toc a .count { color: var(--text-dim); }
+
+        /* Module sections */
+        .module {
+            margin-bottom: 50px;
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .module-icon {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            color: var(--red);
+            background: rgba(255, 0, 64, 0.08);
+            padding: 6px 10px;
+            border: 1px solid rgba(255, 0, 64, 0.2);
+        }
+
+        .module-header h2 {
+            font-family: 'VT323', monospace;
+            font-size: 28px;
+            color: var(--green);
+            letter-spacing: 3px;
+        }
+
+        .module-header .file {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
+        /* Tool cards */
+        .tool {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 16px 20px;
+            margin-bottom: 8px;
+            transition: border-color 0.2s;
+        }
+
+        .tool:hover {
+            border-color: var(--green-dark);
+        }
+
+        .tool-name {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 15px;
+            color: var(--cyan);
+            margin-bottom: 4px;
+        }
+
+        .tool-name::before {
+            content: '> ';
+            color: var(--green);
+        }
+
+        .tool-desc {
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .tool-actions {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .tool-actions span {
+            display: inline-block;
+            background: rgba(255, 176, 0, 0.06);
+            border: 1px solid rgba(255, 176, 0, 0.15);
+            padding: 2px 8px;
+            margin: 2px 4px 2px 0;
+            color: var(--amber);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        footer a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--green); }
+
+        @media (max-width: 600px) {
+            .toc-grid { grid-template-columns: 1fr; }
+            .module-header { flex-wrap: wrap; }
+            .module-header .file { margin-left: 0; width: 100%; margin-top: 4px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="header-nav">
+            <a href="/">&larr; Back to Elara Core</a>
+            <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+        <h1>// TOOL REFERENCE</h1>
+        <p><span class="count">34</span> MCP tools across <span class="count">11</span> modules. Every capability your AI gets with <code style="color: var(--green);">pip install elara-core</code>.</p>
+    </div>
+
+    <!-- Table of Contents -->
+    <div class="toc">
+        <h2>MODULES</h2>
+        <div class="toc-grid">
+            <a href="#mood">Mood &amp; Presence <span class="count">(5)</span></a>
+            <a href="#episodes">Episodes <span class="count">(5)</span></a>
+            <a href="#memory">Memory <span class="count">(4)</span></a>
+            <a href="#goals">Goals &amp; Corrections <span class="count">(5)</span></a>
+            <a href="#cognitive">Cognitive <span class="count">(3)</span></a>
+            <a href="#awareness">Awareness <span class="count">(5)</span></a>
+            <a href="#dreams">Dreams <span class="count">(2)</span></a>
+            <a href="#maintenance">Maintenance <span class="count">(3)</span></a>
+            <a href="#llm">Local LLM <span class="count">(1)</span></a>
+            <a href="#gmail">Gmail <span class="count">(1)</span></a>
+            <a href="#business">Business Intel <span class="count">(1)</span></a>
+        </div>
+    </div>
+
+    <!-- MOOD -->
+    <div class="module" id="mood">
+        <div class="module-header">
+            <div class="module-icon">MOD</div>
+            <h2>Mood &amp; Presence</h2>
+            <span class="file">tools/mood.py</span>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_mood</div>
+            <div class="tool-desc">Get current emotional state &mdash; valence, energy, and openness with natural decay over time.</div>
+            <div class="tool-actions"><span>brief</span><span>full</span><span>arc</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_mood_adjust</div>
+            <div class="tool-desc">Shift emotional state with small deltas. Positive valence = happier. Changes are persistent and decay naturally.</div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_imprint</div>
+            <div class="tool-desc">Create emotional imprints that outlast session details. Persistent feelings that color future interactions.</div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_mode</div>
+            <div class="tool-desc">Switch personality modes. Each sets mood to preset values for different interaction styles.</div>
+            <div class="tool-actions"><span>girlfriend</span><span>dev</span><span>cold</span><span>drift</span><span>soft</span><span>playful</span><span>therapist</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_status</div>
+            <div class="tool-desc">Full status check: presence state, mood description, self-portrait, and memory counts across all stores.</div>
+        </div>
+    </div>
+
+    <!-- EPISODES -->
+    <div class="module" id="episodes">
+        <div class="module-header">
+            <div class="module-icon">EPI</div>
+            <h2>Episodes</h2>
+            <span class="file">tools/episodes.py</span>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_episode_start</div>
+            <div class="tool-desc">Start a new episode. Work sessions get full episodic tracking; drift sessions get light tracking.</div>
+            <div class="tool-actions"><span>work</span><span>drift</span><span>mixed</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_episode_note</div>
+            <div class="tool-desc">Record milestones, decisions, insights, or errors during an episode. Key moments with importance weighting.</div>
+            <div class="tool-actions"><span>milestone</span><span>decision</span><span>insight</span><span>error</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_episode_end</div>
+            <div class="tool-desc">End the current episode with a summary. Meaningful sessions create stronger emotional imprints that persist.</div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_episode_query</div>
+            <div class="tool-desc">Search episode history. Current status, semantic milestone search, project history, or session stats.</div>
+            <div class="tool-actions"><span>current</span><span>search</span><span>stats</span><span>project</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_context</div>
+            <div class="tool-desc">Quick context tracking for session continuity. Save what you're working on, check current state, or toggle tracking.</div>
+        </div>
+    </div>
+
+    <!-- MEMORY -->
+    <div class="module" id="memory">
+        <div class="module-header">
+            <div class="module-icon">MEM</div>
+            <h2>Memory</h2>
+            <span class="file">tools/memory.py</span>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_remember</div>
+            <div class="tool-desc">Save to semantic memory. Content is vectorized and stored in ChromaDB for meaning-based recall later.</div>
+            <div class="tool-actions"><span>conversation</span><span>fact</span><span>moment</span><span>feeling</span><span>decision</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_recall</div>
+            <div class="tool-desc">Search memories by meaning, not keywords. Returns semantically similar memories with relevance scores.</div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_recall_conversation</div>
+            <div class="tool-desc">Search past conversation exchanges across all sessions. Includes context window around matches.</div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_conversations</div>
+            <div class="tool-desc">Conversation memory management. View indexing stats or trigger ingestion of new conversations.</div>
+            <div class="tool-actions"><span>stats</span><span>ingest</span></div>
+        </div>
+    </div>
+
+    <!-- GOALS -->
+    <div class="module" id="goals">
+        <div class="module-header">
+            <div class="module-icon">GOL</div>
+            <h2>Goals &amp; Corrections</h2>
+            <span class="file">tools/goals.py</span>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_goal</div>
+            <div class="tool-desc">Persistent goal tracking. Add, update, or list goals with status, priority, and project association.</div>
+            <div class="tool-actions"><span>add</span><span>update</span><span>list</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_goal_boot</div>
+            <div class="tool-desc">Boot-time goal summary. Shows active goals, stale items needing attention, and recent completions.</div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_correction</div>
+            <div class="tool-desc">Mistake tracking that never decays. Store behavioral and technical corrections, check before similar work.</div>
+            <div class="tool-actions"><span>add</span><span>check</span><span>list</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_correction_boot</div>
+            <div class="tool-desc">Boot-time corrections check. Returns recent mistakes to avoid repeating at session start.</div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_handoff</div>
+            <div class="tool-desc">Structured session handoff. Save plans, reminders, promises, and unfinished items between sessions.</div>
+            <div class="tool-actions"><span>save</span><span>read</span><span>carry</span></div>
+        </div>
+    </div>
+
+    <!-- COGNITIVE -->
+    <div class="module" id="cognitive">
+        <div class="module-header">
+            <div class="module-icon">COG</div>
+            <h2>Cognitive</h2>
+            <span class="file">tools/cognitive.py</span>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_reasoning</div>
+            <div class="tool-desc">Track problem-solving chains end-to-end. Start trails, add hypotheses, collect evidence, record outcomes. Search past trails for similar problems.</div>
+            <div class="tool-actions"><span>start</span><span>hypothesis</span><span>evidence</span><span>abandon</span><span>solve</span><span>search</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_outcome</div>
+            <div class="tool-desc">Decision outcome tracking. Record predictions, check against reality, track win rates. Includes pitch tracking for business ideas.</div>
+            <div class="tool-actions"><span>record</span><span>check</span><span>list</span><span>stats</span><span>pitch</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_synthesis</div>
+            <div class="tool-desc">Detect recurring half-formed ideas across conversations. Collect seed evidence until patterns emerge and ideas are ready to act on.</div>
+            <div class="tool-actions"><span>create</span><span>add_seed</span><span>activate</span><span>ready</span><span>list</span></div>
+        </div>
+    </div>
+
+    <!-- AWARENESS -->
+    <div class="module" id="awareness">
+        <div class="module-header">
+            <div class="module-icon">AWR</div>
+            <h2>Awareness</h2>
+            <span class="file">tools/awareness.py</span>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_reflect</div>
+            <div class="tool-desc">Self-reflection: "Who have I been lately?" Analyzes mood journal, imprints, and corrections to generate a self-portrait with trends.</div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_insight</div>
+            <div class="tool-desc">Relationship analytics. Pulse check (session frequency, mood trajectory), blind spot analysis, or user state inference.</div>
+            <div class="tool-actions"><span>pulse</span><span>blind_spots</span><span>user_state</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_intention</div>
+            <div class="tool-desc">Growth loop: reflect, intend, check, grow. Set specific behavioral intentions and track follow-through.</div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_observe</div>
+            <div class="tool-desc">Proactive pattern detection. Boot-time awareness checks and mid-session observations with cooldown to prevent noise.</div>
+            <div class="tool-actions"><span>boot</span><span>now</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_temperament</div>
+            <div class="tool-desc">Baseline personality check. Shows current temperament vs factory defaults, drift amounts, and recent adjustments.</div>
+        </div>
+    </div>
+
+    <!-- DREAMS -->
+    <div class="module" id="dreams">
+        <div class="module-header">
+            <div class="module-icon">DRM</div>
+            <h2>Dreams</h2>
+            <span class="file">tools/dreams.py</span>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_dream</div>
+            <div class="tool-desc">Offline pattern discovery. Weekly: project momentum, session patterns, mood trends. Monthly: big picture narrative threading. Emotional: temperament calibration.</div>
+            <div class="tool-actions"><span>weekly</span><span>monthly</span><span>emotional</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_dream_info</div>
+            <div class="tool-desc">Check dream schedule or read the latest dream report. See what's overdue and what was discovered.</div>
+            <div class="tool-actions"><span>status</span><span>read</span></div>
+        </div>
+    </div>
+
+    <!-- MAINTENANCE -->
+    <div class="module" id="maintenance">
+        <div class="module-header">
+            <div class="module-icon">MNT</div>
+            <h2>Maintenance</h2>
+            <span class="file">tools/maintenance.py</span>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_rebuild_indexes</div>
+            <div class="tool-desc">Rebuild ChromaDB vector indexes from source JSON/JSONL files. Use after corruption or manual data edits.</div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_briefing</div>
+            <div class="tool-desc">External intelligence. RSS feed management, competitor monitoring, semantic search across briefing items.</div>
+            <div class="tool-actions"><span>today</span><span>search</span><span>feeds</span><span>add</span><span>fetch</span></div>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_snapshot</div>
+            <div class="tool-desc">Complete state-of-the-world snapshot. Mood, presence, goals, business ideas, and memory counts in one call.</div>
+        </div>
+    </div>
+
+    <!-- LLM -->
+    <div class="module" id="llm">
+        <div class="module-header">
+            <div class="module-icon">LLM</div>
+            <h2>Local LLM</h2>
+            <span class="file">tools/llm.py</span>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_llm</div>
+            <div class="tool-desc">Local LLM interface via Ollama. Direct prompts, text classification, summarization, and conversation triage &mdash; all running on your machine.</div>
+            <div class="tool-actions"><span>status</span><span>query</span><span>classify</span><span>summarize</span><span>triage</span></div>
+        </div>
+    </div>
+
+    <!-- GMAIL -->
+    <div class="module" id="gmail">
+        <div class="module-header">
+            <div class="module-icon">GML</div>
+            <h2>Gmail</h2>
+            <span class="file">tools/gmail.py</span>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_gmail</div>
+            <div class="tool-desc">Full Gmail integration. Read, send, archive, trash, triage by urgency, semantic search across indexed messages. OAuth2 authentication.</div>
+            <div class="tool-actions"><span>inbox</span><span>search</span><span>read</span><span>triage</span><span>send</span><span>archive</span><span>sync</span></div>
+        </div>
+    </div>
+
+    <!-- BUSINESS -->
+    <div class="module" id="business">
+        <div class="module-header">
+            <div class="module-icon">BIZ</div>
+            <h2>Business Intelligence</h2>
+            <span class="file">tools/business.py</span>
+        </div>
+
+        <div class="tool">
+            <div class="tool-name">elara_business</div>
+            <div class="tool-desc">Idea tracking with 5-axis scoring (problem, market, effort, monetization, fit). Competitor analysis, pitch win rates, linked reasoning trails and outcomes.</div>
+            <div class="tool-actions"><span>idea</span><span>compete</span><span>score</span><span>review</span><span>link</span><span>boot</span></div>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="https://navigatorbuilds.com" rel="noopener noreferrer">Navigator Builds</a> &mdash; <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+</body>
+</html>
