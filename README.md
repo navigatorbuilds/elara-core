@@ -23,7 +23,49 @@ Elara gives your AI assistant a sense of continuity across sessions. It remember
 - **Business intelligence** — idea scoring, competitor tracking, pitch analytics
 - **Session handoff** — structured carry-forward between sessions
 - **Self-awareness** — reflection, blind spots, relationship pulse, growth intentions
-- **34 MCP tools** across 10 modules
+- **34 MCP tools** across 11 modules
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      MCP CLIENTS                            │
+│           Claude Code · Cursor · Windsurf · Cline           │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ MCP Protocol
+┌──────────────────────────▼──────────────────────────────────┐
+│                     elara_mcp/tools/                        │
+│                                                             │
+│  ┌─────────┐ ┌──────────┐ ┌────────┐ ┌──────────────────┐  │
+│  │  MOOD   │ │ EPISODES │ │ MEMORY │ │ GOALS/CORRECTIONS│  │
+│  │ 5 tools │ │ 5 tools  │ │4 tools │ │    5 tools       │  │
+│  └────┬────┘ └────┬─────┘ └───┬────┘ └────────┬─────────┘  │
+│  ┌────┴────┐ ┌────┴─────┐ ┌───┴────┐ ┌────────┴─────────┐  │
+│  │COGNITIVE│ │AWARENESS │ │ DREAMS │ │   MAINTENANCE    │  │
+│  │ 3 tools │ │ 5 tools  │ │2 tools │ │    3 tools       │  │
+│  └────┬────┘ └────┬─────┘ └───┬────┘ └────────┬─────────┘  │
+│  ┌────┴────┐ ┌────┴─────┐ ┌───┴────────────────┘           │
+│  │  GMAIL  │ │   LLM    │ │  BUSINESS                      │
+│  │ 1 tool  │ │  1 tool  │ │  1 tool                        │
+│  └─────────┘ └──────────┘ └───────────────────              │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│                     daemon/ + core/                         │
+│                                                             │
+│  State Engine    Emotions    Decay     Presence    Schemas  │
+│  Mood Math       Imprints    Events    Allostatic  Paths    │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+┌──────────────────────────▼──────────────────────────────────┐
+│                    ChromaDB (7 collections)                  │
+│                                                             │
+│  memories · milestones · conversations · corrections        │
+│  reasoning · synthesis · briefing                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**[Full tool reference →](https://elara.navigatorbuilds.com/tools.html)**
 
 ## Prerequisites
 
