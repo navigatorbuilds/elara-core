@@ -1,0 +1,20 @@
+/* TEAM */
+Developer: Nenad Vasic
+Site: https://navigatorbuilds.com
+X: @AiVelikiVodja
+Location: Europe
+
+AI Partner: Elara (Claude)
+Role: Co-developer, architect, documentation
+Model: Claude Opus 4.6
+
+/* SITE */
+Last update: 2026-02-08
+Standards: HTML5, CSS3, JavaScript
+Software: Python, ChromaDB, MCP Protocol
+Hosting: GitHub Pages
+
+/* NOTE */
+Built by one person and one AI.
+No frameworks. No build tools. Hand-crafted HTML.
+The terminal aesthetic is not ironic.

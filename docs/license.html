@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // License Explained</title>
+    <meta name="description" content="BSL 1.1 explained — free for personal use, free for internal company use, NOT free for selling as a competing product. Converts to Apache 2.0 after 4 years.">
+    <meta property="og:title" content="Elara Core — License Explained">
+    <meta property="og:description" content="Source-available now. Open source in 4 years.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://elara.navigatorbuilds.com/license.html">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@NavigatorBuilds">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #0f0f0f;
+            --green: #00ff41;
+            --green-dim: #00cc33;
+            --green-dark: #003300;
+            --red: #ff0040;
+            --cyan: #00e5ff;
+            --amber: #ffb000;
+            --text: #c0c0c0;
+            --text-dim: #606060;
+            --text-bright: #e0e0e0;
+            --border: #1a1a1a;
+            --border-green: #003300;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-nav a {
+            font-size: 13px;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--green-dark);
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(0, 255, 65, 0.08);
+            border-color: var(--green);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(14px, 2.5vw, 22px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        /* Hero statement */
+        .hero-statement {
+            background: var(--bg-card);
+            border: 2px solid var(--border-green);
+            padding: 30px;
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .hero-statement .big-text {
+            font-family: 'VT323', monospace;
+            font-size: clamp(24px, 4vw, 36px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+
+        .hero-statement .sub-text {
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* Section headers */
+        .section-header {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(10px, 1.8vw, 14px);
+            color: var(--red);
+            letter-spacing: 3px;
+            margin-bottom: 16px;
+            padding-top: 10px;
+        }
+
+        .section {
+            margin-bottom: 50px;
+        }
+
+        /* Content blocks */
+        .content p {
+            margin-bottom: 16px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .content ul {
+            list-style: none;
+            margin: 16px 0;
+        }
+
+        .content ul li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .content ul li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--green);
+            font-weight: bold;
+        }
+
+        .content ul li strong {
+            color: var(--cyan);
+        }
+
+        .content strong {
+            color: var(--text-bright);
+        }
+
+        .content a {
+            color: var(--green-dim);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .content a:hover {
+            color: var(--green);
+            border-bottom-color: var(--green);
+        }
+
+        /* Inline code */
+        .content code {
+            font-family: 'Share Tech Mono', monospace;
+            background: rgba(0, 255, 65, 0.06);
+            color: var(--green-dim);
+            padding: 2px 6px;
+            font-size: 13px;
+            border: 1px solid rgba(0, 51, 0, 0.4);
+        }
+
+        /* Highlight boxes */
+        .highlight {
+            background: rgba(0, 255, 65, 0.04);
+            border-left: 3px solid var(--green);
+            padding: 16px 20px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .highlight strong {
+            color: var(--green);
+        }
+
+        .warning {
+            background: rgba(255, 0, 64, 0.04);
+            border-left: 3px solid var(--red);
+            padding: 16px 20px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .warning strong {
+            color: var(--red);
+        }
+
+        /* TL;DR Box */
+        .tldr {
+            background: var(--bg-card);
+            border: 2px solid var(--border-green);
+            padding: 24px;
+            margin: 30px 0 50px;
+        }
+
+        .tldr h2 {
+            font-family: 'VT323', monospace;
+            font-size: 28px;
+            color: var(--red);
+            margin-bottom: 14px;
+            letter-spacing: 2px;
+        }
+
+        .tldr p {
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+
+        .tldr p:last-child {
+            margin-bottom: 0;
+        }
+
+        .tldr strong {
+            color: var(--green);
+        }
+
+        .tldr ul {
+            list-style: none;
+            margin: 12px 0;
+        }
+
+        .tldr ul li {
+            padding: 6px 0 6px 20px;
+            position: relative;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .tldr ul li::before {
+            content: '\u2022';
+            position: absolute;
+            left: 0;
+            color: var(--green-dim);
+            font-size: 16px;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0;
+            margin-top: 40px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        footer a {
+            color: var(--green-dim);
+            text-decoration: none;
+        }
+
+        footer a:hover { color: var(--green); }
+
+        @media (max-width: 600px) {
+            .hero-statement { padding: 20px; }
+            .content ul li { padding-left: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="header-nav">
+            <a href="/">&larr; Elara Core</a>
+            <div class="nav-links">
+                <a href="/tools.html">TOOLS</a>
+                <a href="/architecture.html">ARCH</a>
+                <a href="/quickstart.html">START</a>
+                <a href="/configure.html">CONFIGURE</a>
+                <a href="/personas.html">PERSONAS</a>
+                <a href="/faq.html">FAQ</a>
+                <a href="/roadmap.html">ROADMAP</a>
+                <a href="/changelog.html">CHANGELOG</a>
+                <a href="/status.html">STATUS</a>
+                <a href="/search.html">&#128269;</a>
+            </div>
+        </div>
+        <h1>// LICENSE EXPLAINED</h1>
+        <p>Source-available now. Open source in 4 years.</p>
+    </div>
+
+    <div class="hero-statement">
+        <div class="big-text">BSL 1.1 LICENSE</div>
+        <div class="sub-text">
+            Business Source License 1.1<br>
+            Free for personal use. Free for internal use. NOT free for commercial extraction.<br>
+            Converts to Apache 2.0 on 2029-01-01.
+        </div>
+    </div>
+
+    <!-- ============ TL;DR ============ -->
+    <div class="tldr">
+        <h2>TL;DR</h2>
+        <ul>
+            <li><strong>Free for personal use</strong></li>
+            <li><strong>Free for internal company use</strong></li>
+            <li><strong>Free for education and research</strong></li>
+            <li><strong>NOT free for selling as a competing product</strong></li>
+            <li><strong>Source code is fully available and inspectable</strong></li>
+            <li><strong>Converts to Apache 2.0 (fully open) after 4 years</strong></li>
+        </ul>
+        <p>This is not proprietary software. You can see all the code, modify it, fork it, and use it. You just can't sell it as a service without permission until it becomes Apache 2.0 in 2029.</p>
+    </div>
+
+    <!-- ============ YOU CAN ============ -->
+    <div class="section">
+        <div class="section-header">[ YOU CAN ]</div>
+        <div class="content">
+            <ul>
+                <li><strong>Use Elara for your own projects</strong> — Personal use is unlimited and unrestricted.</li>
+                <li><strong>Modify the code for personal use</strong> — Fork it, change it, break it, fix it. It's yours to experiment with.</li>
+                <li><strong>Deploy it on your own machine</strong> — Run it locally, on your server, in a container, wherever.</li>
+                <li><strong>Use it at work for internal tools</strong> — If your company uses it internally (not reselling it), that's fine.</li>
+                <li><strong>Fork it and experiment</strong> — Create your own version, add features, strip features, whatever.</li>
+                <li><strong>Use it for academic research</strong> — Universities, research labs, students — all good.</li>
+                <li><strong>Reference it in publications</strong> — Cite it, write about it, study it.</li>
+            </ul>
+
+            <div class="highlight">
+                <strong>The key principle:</strong> If you're using Elara for your own purposes (personal, educational, internal), you're free to do so. The license only restricts <em>commercial extraction</em> — selling it as a product or service.
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ YOU CANNOT ============ -->
+    <div class="section">
+        <div class="section-header">[ YOU CANNOT ]</div>
+        <div class="content">
+            <ul>
+                <li><strong>Sell Elara as a product or service</strong> — You can't package it up and sell it to customers as a commercial offering.</li>
+                <li><strong>Offer Elara as a hosted/managed service</strong> — No "Elara-as-a-Service" SaaS platforms without permission.</li>
+                <li><strong>Rebrand and redistribute commercially</strong> — You can't slap a new name on it and sell it.</li>
+                <li><strong>Remove the license notices</strong> — The license and copyright notices must stay in the code.</li>
+            </ul>
+
+            <div class="warning">
+                <strong>The Additional Use Grant:</strong> The BSL 1.1 license includes a specific restriction: "You may make production use of the Licensed Work, provided your use does not include offering the Licensed Work to third parties on a hosted or embedded basis which is competitive with Anthropic's products." This means you can't sell Elara as a competing product to Anthropic's Claude offerings.
+            </div>
+
+            <p>If you want to build a commercial product around Elara, <a href="mailto:nebojsa.nikolic85@gmail.com">contact me</a>. We can probably work something out.</p>
+        </div>
+    </div>
+
+    <!-- ============ WHY BSL 1.1? ============ -->
+    <div class="section">
+        <div class="section-header">[ WHY BSL 1.1? ]</div>
+        <div class="content">
+            <p>The Business Source License is designed to protect solo developers from corporate extraction while keeping the code open and inspectable.</p>
+
+            <p><strong>It's better than proprietary:</strong></p>
+            <ul>
+                <li>You can always see the code.</li>
+                <li>You can modify it for personal use.</li>
+                <li>You can verify there's no surveillance, telemetry, or backdoors.</li>
+                <li>The project can't be rug-pulled — the code is already out there.</li>
+            </ul>
+
+            <p><strong>It's better than pure AGPL:</strong></p>
+            <ul>
+                <li>Clearer commercial terms (BSL is explicit about what's allowed).</li>
+                <li>No ambiguity about "network use" triggers.</li>
+                <li>Easier for companies to evaluate and approve.</li>
+                <li>Eventually becomes Apache 2.0, which is widely trusted.</li>
+            </ul>
+
+            <p><strong>It protects the work:</strong></p>
+            <ul>
+                <li>Prevents big companies from taking the code and offering "Elara Cloud" without contributing back.</li>
+                <li>Gives the solo developer leverage to negotiate if someone wants to commercialize it.</li>
+                <li>Ensures that if value is extracted, it's done fairly.</li>
+            </ul>
+
+            <div class="highlight">
+                <strong>The Change Date:</strong> On January 1, 2029, Elara Core's license automatically converts to <strong>Apache 2.0</strong> — a fully permissive open source license. At that point, anyone can do anything with it, including commercial use.
+            </div>
+
+            <p>This means the project has a built-in expiration on restrictions. It won't stay locked down forever. Four years is enough time to establish the project, build credibility, and prevent immediate rip-offs. After that, it's fully open.</p>
+        </div>
+    </div>
+
+    <!-- ============ WHAT IS APACHE 2.0? ============ -->
+    <div class="section">
+        <div class="section-header">[ WHAT IS APACHE 2.0? ]</div>
+        <div class="content">
+            <p>After the Change Date (2029-01-01), Elara Core becomes Apache 2.0 licensed. This is one of the most permissive and widely trusted open source licenses.</p>
+
+            <p><strong>Under Apache 2.0, you can:</strong></p>
+            <ul>
+                <li>Use it commercially without restrictions.</li>
+                <li>Modify it and sell the modified version.</li>
+                <li>Incorporate it into proprietary products.</li>
+                <li>Offer it as a hosted service.</li>
+                <li>Do basically anything, as long as you include the original license and copyright notices.</li>
+            </ul>
+
+            <p>Apache 2.0 is the same license used by Kubernetes, Android, TensorFlow, and thousands of other projects. It's industry-standard, lawyer-approved, and corporate-friendly.</p>
+
+            <p>The BSL-to-Apache-2.0 path means Elara Core will eventually join the ranks of truly open projects. The BSL period is just a temporary protective measure.</p>
+        </div>
+    </div>
+
+    <!-- ============ FULL LICENSE TEXT ============ -->
+    <div class="section">
+        <div class="section-header">[ FULL LICENSE TEXT ]</div>
+        <div class="content">
+            <p>The complete, legally binding BSL 1.1 license is available in the repository:</p>
+            <p><a href="https://github.com/aivelikivodja-bot/elara-core/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">View LICENSE on GitHub &rarr;</a></p>
+
+            <p>For the official FAQ about the Business Source License:</p>
+            <p><a href="https://mariadb.com/bsl-faq-mariadb/" target="_blank" rel="noopener noreferrer">MariaDB BSL FAQ &rarr;</a></p>
+
+            <p>This page is a human-readable explanation. If there's ever a conflict between this explanation and the actual license text, the license text wins.</p>
+        </div>
+    </div>
+
+    <!-- ============ QUESTIONS? ============ -->
+    <div class="section">
+        <div class="section-header">[ QUESTIONS? ]</div>
+        <div class="content">
+            <p>If you're unsure whether your use case is allowed, <a href="mailto:nebojsa.nikolic85@gmail.com">email me</a>. I'm not trying to be restrictive — I just don't want AWS launching "Elara Cloud" without talking to me first.</p>
+
+            <p>For most users, the license is simple: use it however you want, just don't sell it as a competing product. After 2029, even that restriction disappears.</p>
+
+            <div class="highlight">
+                <strong>Bottom line:</strong> This is source-available software that becomes open source. You can inspect it, modify it, and use it. You just can't commercially extract it for 4 years. After that, it's fully open.
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="/quickstart.html">Quickstart</a> &mdash; <a href="/tools.html">Tools</a> &mdash; <a href="https://github.com/aivelikivodja-bot/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+</body>
+</html>
