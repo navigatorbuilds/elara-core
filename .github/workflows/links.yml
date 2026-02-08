@@ -12,6 +12,7 @@ on:
 
 jobs:
   check-links:
+    if: github.repository == 'aivelikivodja-bot/elara-core'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
