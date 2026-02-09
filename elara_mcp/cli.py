@@ -94,6 +94,7 @@ def main() -> None:
         "--data-dir",
         type=Path,
         default=None,
+        dest="top_data_dir",
         help="Override data directory (default: $ELARA_DATA_DIR or ~/.elara/)",
     )
 
@@ -102,17 +103,22 @@ def main() -> None:
     # init
     init_parser = sub.add_parser("init", help="Bootstrap Elara data directory")
     init_parser.add_argument("--force", action="store_true", help="Overwrite existing files")
+    init_parser.add_argument("--data-dir", type=Path, default=None, dest="sub_data_dir",
+                             help="Override data directory (default: $ELARA_DATA_DIR or ~/.elara/)")
 
     # serve
-    sub.add_parser("serve", help="Start MCP server (stdio)")
+    serve_parser = sub.add_parser("serve", help="Start MCP server (stdio)")
+    serve_parser.add_argument("--data-dir", type=Path, default=None, dest="sub_data_dir",
+                              help="Override data directory (default: $ELARA_DATA_DIR or ~/.elara/)")
 
     args = parser.parse_args()
 
-    # Resolve data dir: --data-dir flag → env → default
-    if args.data_dir:
-        data_dir = args.data_dir.expanduser().resolve()
+    # Resolve data dir: subcommand flag → top-level flag → env → default
+    import os
+    raw = getattr(args, "sub_data_dir", None) or getattr(args, "top_data_dir", None)
+    if raw:
+        data_dir = raw.expanduser().resolve()
     else:
-        import os
         env = os.environ.get("ELARA_DATA_DIR")
         if env:
             data_dir = Path(env).expanduser().resolve()
