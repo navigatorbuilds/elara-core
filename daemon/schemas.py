@@ -444,6 +444,44 @@ class GmailCache(ElaraModel):
 
 
 # ============================================================================
+# OVERNIGHT
+# ============================================================================
+
+class OvernightConfig(ElaraModel):
+    """Overnight thinking config: ~/.claude/overnight/overnight-config.json"""
+    max_hours: float = 6.0
+    stop_at: str = "07:00"
+    think_model: str = "qwen2.5:32b"
+    mode: str = "auto"  # auto, exploratory, directed
+    rounds_per_problem: int = 5
+    max_tokens: int = 2048
+    temperature: float = 0.7
+    enable_research: bool = True
+
+
+class OvernightQueueItem(ElaraModel):
+    """Single problem in the overnight directed-thinking queue."""
+    problem: str
+    context: str = ""
+    priority: int = Field(default=5, ge=1, le=10)
+    added: str = ""
+    source: str = "manual"  # manual, handoff, correction, goal
+
+
+class OvernightMeta(ElaraModel):
+    """Run metadata: ~/.claude/overnight/YYYY-MM-DD/meta.json"""
+    date: str
+    started: str
+    ended: Optional[str] = None
+    mode: str = "exploratory"
+    rounds_completed: int = 0
+    problems_processed: int = 0
+    research_queries: int = 0
+    status: str = "running"  # running, completed, stopped, error
+    config: Optional[Dict[str, Any]] = None
+
+
+# ============================================================================
 # UTILITY — validated load/save helpers
 # ============================================================================
 

@@ -10,37 +10,37 @@
 
 Persistent presence, mood, memory, and self-awareness for AI assistants. **34 MCP tools. 11 modules. 19K lines of Python. Zero cloud dependencies.**
 
-Elara gives your AI assistant a sense of continuity across sessions. It remembers what you were working on, tracks emotional state, learns from mistakes, and builds semantic memory — all through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io).
+Elara gives your AI assistant a sense of continuity across sessions — all through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io). Built because I got tired of re-explaining my project every time I opened a new chat.
 
 ### What it looks like
 
 ```
-You: "What were we working on last week?"
-Elara: recalls from semantic memory, checks episode history, surfaces relevant goals
+You: "Morning."
+Elara: "You were debugging the auth module at 2am. Did you sleep?"
 
-You: "I keep making the same mistake with async/await"
-Elara: saves correction, surfaces it next time you touch async code
+You: "I keep messing up async/await in the service layer"
+Elara: "Noted. I'll flag it next time you touch async code."
+(two days later, you open a file with async)
+Elara: "Heads up — last time you hit a race condition here. Use asyncio.gather, not sequential awaits."
 
-You: "How's the project going?"
-Elara: runs weekly dream, shows momentum trends, flags stalled goals
+You: "What happened this week?"
+Elara: "3 work sessions, 2 drift sessions. Auth module shipped. Goal #4 is stalling —
+       no progress in 9 days. You also said you'd file the patent. That's been carried
+       forward 3 times now."
 ```
 
 **Everything stays local.** No cloud. No telemetry. Your data lives in `~/.elara/`.
 
 ## Features
 
-- **Presence tracking** — knows when you're here, how long you've been gone
-- **Mood and emotional state** — valence, energy, openness with natural decay
-- **Semantic memory** — ChromaDB-backed vector search across conversations
-- **Episodic memory** — session tracking with milestones, decisions, insights
-- **Dream mode** — weekly/monthly pattern discovery across sessions
-- **Reasoning trails** — track hypothesis chains for debugging complex problems
-- **Corrections** — learn from mistakes, surface relevant ones before repeating
-- **Goal tracking** — persistent goals with staleness detection
-- **Business intelligence** — idea scoring, competitor tracking, pitch analytics
-- **Session handoff** — structured carry-forward between sessions
-- **Self-awareness** — reflection, blind spots, relationship pulse, growth intentions
-- **34 MCP tools** across 11 modules
+- **Semantic memory** — ChromaDB vector search. Ask "what were we doing last week?" and get real answers
+- **Mood system** — tracks valence, energy, openness. Decays naturally between sessions like real emotions
+- **Corrections** — saves your mistakes, surfaces them *before* you repeat them
+- **Dream mode** — weekly/monthly pattern discovery across sessions, inspired by sleep consolidation
+- **Reasoning trails** — track hypothesis chains when debugging. Includes what was abandoned and why
+- **Session handoff** — structured carry-forward so nothing falls through the cracks
+
+Plus: episodic memory, goal tracking, presence detection, self-reflection, business intelligence, and more. **[Full tool reference →](https://elara.navigatorbuilds.com/tools.html)**
 
 ## Architecture
 
@@ -86,25 +86,15 @@ Elara: runs weekly dream, shows momentum trends, flags stalled goals
 
 ## Documentation
 
-Complete documentation is available at **[elara.navigatorbuilds.com](https://elara.navigatorbuilds.com)**.
+Full docs at **[elara.navigatorbuilds.com](https://elara.navigatorbuilds.com)** — quickstart, tool reference, architecture diagrams, persona templates, and more.
 
-| Page | Description |
-|------|-------------|
-| [Quickstart](https://elara.navigatorbuilds.com/quickstart.html) | Installation & setup guide |
-| [Tools Reference](https://elara.navigatorbuilds.com/tools.html) | All 34 MCP tools |
-| [Architecture](https://elara.navigatorbuilds.com/architecture.html) | Interactive system diagram |
-| [API Reference](https://elara.navigatorbuilds.com/api.html) | Python API docs |
-| [Configure](https://elara.navigatorbuilds.com/configure.html) | Interactive config generator |
-| [Personas](https://elara.navigatorbuilds.com/personas.html) | Community persona templates |
-| [Before & After](https://elara.navigatorbuilds.com/compare.html) | See the difference |
-| [Examples](https://elara.navigatorbuilds.com/examples.html) | Copy-paste examples |
-| [Migration](https://elara.navigatorbuilds.com/migrate.html) | Coming from mem0/ChatGPT/etc |
-| [FAQ](https://elara.navigatorbuilds.com/faq.html) | Troubleshooting |
-| [Roadmap](https://elara.navigatorbuilds.com/roadmap.html) | Public roadmap |
-| [Changelog](https://elara.navigatorbuilds.com/changelog.html) | Version history |
-| [Privacy](https://elara.navigatorbuilds.com/privacy.html) | Zero-telemetry policy |
-| [Status](https://elara.navigatorbuilds.com/status.html) | Build & community badges |
-| [Search](https://elara.navigatorbuilds.com/search.html) | Search all docs |
+| | |
+|---|---|
+| **[Quickstart](https://elara.navigatorbuilds.com/quickstart.html)** | Install and get running in 2 minutes |
+| **[Tools Reference](https://elara.navigatorbuilds.com/tools.html)** | All 34 MCP tools explained |
+| **[Before & After](https://elara.navigatorbuilds.com/compare.html)** | See what changes with Elara |
+| **[Examples](https://elara.navigatorbuilds.com/examples.html)** | Copy-paste CLAUDE.md personas |
+| **[Architecture](https://elara.navigatorbuilds.com/architecture.html)** | Interactive system diagram |
 
 ## Prerequisites
 
@@ -176,26 +166,6 @@ Elara's personality is defined in your `CLAUDE.md` file, not in the code. See `e
 - **OS:** Linux, macOS, Windows (WSL)
 - **MCP Clients:** Claude Code, Claude Desktop, Cursor, or any MCP-compatible client
 
-## Architecture
-
-```
-core/           Main orchestrator + central paths
-daemon/         State, mood, presence, dreams, reasoning, corrections
-memory/         ChromaDB vector memory, conversations, episodes
-elara_mcp/      MCP server + 34 tool definitions
-hooks/          Claude Code session hooks
-interface/      Web dashboard (optional)
-voice/          TTS via Piper (optional)
-senses/         System monitoring (optional)
-```
-
-Key patterns:
-- **Mixin composition** for large modules (Overwatch, ConversationMemory, EpisodicMemory)
-- **Singleton pattern** via `get_*()` functions for memory systems
-- **Pydantic schemas** for data validation
-- **Atomic writes** to prevent corruption
-- **Central paths module** (`core/paths.py`) — single source of truth for all file locations
-
 ## Development
 
 ```bash
@@ -228,6 +198,10 @@ The `elara-` prefix is preserved in all filenames for backward compatibility.
 - **[GitHub Discussions](https://github.com/aivelikivodja-bot/elara-core/discussions)** — Questions, ideas, showcase
 - **[Issues](https://github.com/aivelikivodja-bot/elara-core/issues)** — Bug reports and feature requests
 - **[Contributing](CONTRIBUTING.md)** — How to contribute
+
+---
+
+If Elara resonates with you, a star helps others find it.
 
 ## Badge
 

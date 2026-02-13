@@ -28,7 +28,7 @@ logger = logging.getLogger("elara.llm")
 
 # Ollama API
 OLLAMA_URL = "http://localhost:11434"
-DEFAULT_MODEL = "qwen2.5:1.5b"
+DEFAULT_MODEL = "qwen2.5:7b"
 DEFAULT_TIMEOUT = 30  # seconds
 
 # Cache availability check (don't spam connection attempts)
