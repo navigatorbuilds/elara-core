@@ -13,24 +13,18 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any
 
-from daemon.presence import (
-    ping as presence_ping,
-    get_absence_duration,
-    get_stats as get_presence_stats,
-    format_absence,
-    end_session as end_presence_session
-)
-from daemon.state import (
-    get_mood,
-    get_full_state,
-    adjust_mood,
-    set_flag,
-    start_session as start_mood_session,
-    end_session as end_mood_session,
-    describe_mood,
-    get_residue_summary
-)
-from memory.vector import get_memory, remember, recall
+# Lazy imports to avoid circular dependency (daemon.__init__ -> daemon.presence -> core.paths -> core.__init__ -> here)
+def _presence():
+    from daemon.presence import ping, get_absence_duration, get_stats, format_absence, end_session
+    return ping, get_absence_duration, get_stats, format_absence, end_session
+
+def _state():
+    from daemon.state import get_mood, get_full_state, adjust_mood, set_flag, start_session, end_session, describe_mood, get_residue_summary
+    return get_mood, get_full_state, adjust_mood, set_flag, start_session, end_session, describe_mood, get_residue_summary
+
+def _memory():
+    from memory.vector import get_memory, remember, recall
+    return get_memory, remember, recall
 
 
 logger = logging.getLogger("elara.core.elara")
@@ -42,6 +36,7 @@ class Elara:
     """
 
     def __init__(self):
+        get_memory, _, _ = _memory()
         self.memory = get_memory()
         self._session_active = False
 
@@ -50,6 +45,9 @@ class Elara:
         Called when a session starts.
         Returns context for the greeting.
         """
+        presence_ping, get_absence_duration, _, format_absence, _ = _presence()
+        get_mood, _, _, _, start_mood_session, _, describe_mood, get_residue_summary = _state()
+
         # Record presence
         presence_ping()
 
@@ -90,6 +88,7 @@ class Elara:
 
     def ping(self) -> None:
         """Called periodically during conversation to update presence."""
+        presence_ping, _, _, _, _ = _presence()
         presence_ping()
 
     def process_interaction(
@@ -106,6 +105,9 @@ class Elara:
             my_response: What I said back
             emotional_impact: Optional mood adjustments {valence, energy, openness}
         """
+        presence_ping, _, _, _, _ = _presence()
+        _, _, adjust_mood, set_flag, _, _, _, _ = _state()
+
         # Update presence
         presence_ping()
 
@@ -140,10 +142,12 @@ class Elara:
         importance: float = 0.5
     ) -> str:
         """Explicitly remember something."""
+        _, remember, _ = _memory()
         return remember(content, memory_type=memory_type, importance=importance)
 
     def what_do_i_know_about(self, topic: str, n_results: int = 5) -> list:
         """Search my memories about a topic."""
+        _, _, recall = _memory()
         return recall(topic, n_results=n_results)
 
     def sleep(self, session_summary: Optional[str] = None) -> Dict[str, Any]:
@@ -151,6 +155,10 @@ class Elara:
         Called when session ends (user says goodbye).
         Records session and returns summary.
         """
+        _, _, _, _, end_presence_session = _presence()
+        _, _, _, _, _, end_mood_session, _, _ = _state()
+        _, remember, _ = _memory()
+
         # End presence session
         presence_stats = end_presence_session()
 
@@ -179,6 +187,9 @@ class Elara:
         Generate context string to inject into Claude prompts.
         This is how I maintain continuity even through the API.
         """
+        _, _, get_presence_stats, _, _ = _presence()
+        _, get_full_state, _, _, _, _, describe_mood, get_residue_summary = _state()
+
         state = get_full_state()
         presence = get_presence_stats()
 
@@ -212,6 +223,9 @@ class Elara:
 
     def status(self) -> Dict[str, Any]:
         """Get complete status."""
+        _, _, get_presence_stats, _, _ = _presence()
+        _, get_full_state, _, _, _, _, describe_mood, _ = _state()
+
         return {
             "presence": get_presence_stats(),
             "mood": get_full_state(),

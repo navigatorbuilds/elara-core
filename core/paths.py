@@ -263,6 +263,33 @@ class ElaraPaths:
         return self._root / "elara-gmail-cache.json"
 
     # ------------------------------------------------------------------
+    # Overnight
+    # ------------------------------------------------------------------
+    @property
+    def overnight_dir(self) -> Path:
+        return self._root / "overnight"
+
+    @property
+    def overnight_pid(self) -> Path:
+        return self.overnight_dir / "overnight.pid"
+
+    @property
+    def overnight_log(self) -> Path:
+        return self.overnight_dir / "overnight.log"
+
+    @property
+    def overnight_config(self) -> Path:
+        return self.overnight_dir / "overnight-config.json"
+
+    @property
+    def overnight_queue(self) -> Path:
+        return self.overnight_dir / "overnight-queue.json"
+
+    @property
+    def overnight_latest(self) -> Path:
+        return self.overnight_dir / "latest-findings.md"
+
+    # ------------------------------------------------------------------
     # Overwatch
     # ------------------------------------------------------------------
     @property
@@ -327,6 +354,7 @@ class ElaraPaths:
             self.briefing_db,
             self.gmail_db,
             self.messages_dir,
+            self.overnight_dir,
         ]
         for d in dirs:
             d.mkdir(parents=True, exist_ok=True)
