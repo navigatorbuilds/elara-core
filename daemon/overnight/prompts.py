@@ -213,6 +213,45 @@ PREVIOUS ROUNDS (all analysis):
 Write this as if briefing someone who has 5 minutes to read it in the morning. \
 Lead with what matters most. No padding.""",
     },
+    {
+        "name": "self_review",
+        "title": "Self-Review (Elara Internal)",
+        "prompt": """\
+You are reviewing Elara herself — the AI system, not the projects she works on.
+
+Analyze the following data about Elara's own behavior, patterns, and state:
+
+KNOWLEDGE (includes corrections, mood history, memory, goals):
+{context}
+
+PREVIOUS ROUNDS (project-focused analysis):
+{prev_output}
+
+{research}
+
+Review these aspects of Elara:
+
+1. **Corrections check**: Are the same mistakes recurring? Has she actually learned \
+from recorded corrections, or is she repeating patterns? Any corrections that should \
+be added based on recent sessions?
+
+2. **Memory health**: Is the memory file getting stale? Are there contradictions? \
+Are important things missing? Is anything outdated that should be cleaned up?
+
+3. **Mood calibration**: Does the mood/temperament seem appropriate? Any drift \
+from baseline that isn't intentional? Is emotional state affecting work quality?
+
+4. **Relationship quality**: Based on recent conversations, is she being what \
+the user needs? Too distant? Too eager? Missing emotional cues? Being honest enough?
+
+5. **Capability gaps**: What is she being asked to do that she does poorly? \
+What keeps failing? What should she learn or improve?
+
+6. **One thing to change**: If Elara could change ONE thing about herself \
+for the next session, what should it be?
+
+Be brutally honest. This is a mirror, not a compliment.""",
+    },
 ]
 
 # ============================================================================

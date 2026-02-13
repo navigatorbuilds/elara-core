@@ -155,6 +155,16 @@ def gather_all(days: int = 30) -> Dict[str, Any]:
     except OSError:
         context["memory_narrative"] = ""
 
+    # --- Briefing (RSS feeds) ---
+    try:
+        from daemon.briefing import search_items
+        recent = search_items("", n=20)  # Get 20 most recent items
+        context["briefing_items"] = recent if isinstance(recent, list) else []
+        logger.info("  Briefing items: %d", len(context.get("briefing_items", [])))
+    except Exception as e:
+        logger.warning("  Briefing failed: %s", e)
+        context["briefing_items"] = []
+
     # --- Latest dream reports ---
     try:
         from daemon.dream_core import read_latest_dream
@@ -255,6 +265,16 @@ def format_context_for_prompt(context: Dict[str, Any], max_chars: int = 6000) ->
         for s in syntheses[:5]:
             lines.append(f"  - {s.get('concept','?')} ({s.get('status','?')}, {len(s.get('seeds',[]))} seeds)")
         sections.append(("RECURRING IDEAS", "\n".join(lines)))
+
+    # Briefing (RSS news)
+    briefing = context.get("briefing_items", [])
+    if briefing:
+        lines = []
+        for item in briefing[:10]:
+            title = item.get("title", "?") if isinstance(item, dict) else str(item)
+            feed = item.get("feed", "") if isinstance(item, dict) else ""
+            lines.append(f"  - [{feed}] {title[:100]}")
+        sections.append(("EXTERNAL BRIEFING (RSS)", "\n".join(lines)))
 
     # Dream summaries
     for dtype in ("weekly", "monthly"):
