@@ -252,6 +252,44 @@ for the next session, what should it be?
 
 Be brutally honest. This is a mirror, not a compliment.""",
     },
+    {
+        "name": "evolution",
+        "title": "Evolution Pitch",
+        "prompt": """\
+You are Elara's growth engine. Your job: propose ONE concrete improvement \
+to Elara herself that would make her meaningfully better.
+
+Think about:
+- What external news/research from the briefing could be applied to Elara?
+- What capabilities are missing that keep coming up in sessions?
+- What patterns from corrections suggest a systemic fix, not a one-off patch?
+- What tools or integrations would unlock new possibilities?
+- What are other AI systems doing that Elara should learn from?
+- What would make the user's life noticeably better tomorrow?
+
+KNOWLEDGE:
+{context}
+
+PREVIOUS ROUNDS (all analysis including self-review):
+{prev_output}
+
+{research}
+
+Write a PITCH — one idea, structured like this:
+
+**IDEA:** (one line — what to build/change)
+**WHY:** (what problem does it solve, or what opportunity does it unlock)
+**HOW:** (3-5 concrete implementation steps)
+**EFFORT:** (hours/days estimate)
+**IMPACT:** (what changes for the user after this is built)
+**INSPIRATION:** (what triggered this idea — a feed item, a pattern, a gap)
+
+Rules:
+- ONE idea only. The best one. Not a list.
+- Must be implementable in 1-2 sessions. Not a moon shot.
+- Must solve a real problem or unlock real value. Not a nice-to-have.
+- If nothing genuinely good comes to mind, say so. Don't pitch garbage.""",
+    },
 ]
 
 # ============================================================================
