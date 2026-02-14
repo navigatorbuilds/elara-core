@@ -118,7 +118,7 @@ def _in_quiet_hours() -> bool:
 
 def _should_think() -> tuple[bool, str]:
     """
-    Decide whether to start a thinking run.
+    Decide whether to start a thinking run (session-aware mode).
     Returns (should_run, reason).
     """
     # Don't think during quiet hours
@@ -149,6 +149,32 @@ def _should_think() -> tuple[bool, str]:
 
     # All clear — think!
     return True, f"idle {idle_minutes:.0f} min, no recent run"
+
+
+def _should_think_scheduled(interval_hours: float = 6.0) -> tuple[bool, str]:
+    """
+    Decide whether to start a thinking run (scheduled mode).
+    Runs every N hours regardless of session state.
+    Returns (should_run, reason).
+    """
+    # Still respect quiet hours
+    if _in_quiet_hours():
+        return False, "quiet hours (3-6 AM)"
+
+    # Still avoid conflicts with active sessions
+    if _overwatch_is_active():
+        last = _last_session_activity()
+        if last and (datetime.now() - last).total_seconds() < 300:  # 5 min buffer
+            return False, "session currently active"
+
+    # Check interval since last run
+    last_run = _last_thinking_run()
+    if last_run:
+        gap_hours = (datetime.now() - last_run).total_seconds() / 3600
+        if gap_hours < interval_hours:
+            return False, f"ran {gap_hours:.1f}h ago (interval: {interval_hours}h)"
+    # No previous run — run now
+    return True, f"scheduled (every {interval_hours}h)"
 
 
 class BrainScheduler:
@@ -188,8 +214,21 @@ class BrainScheduler:
 
     def _loop(self):
         """The actual polling loop."""
+        config = load_config()
+        schedule_mode = config.get("schedule_mode", "session_aware")
+        interval = config.get("scheduled_interval_hours", 6.0)
+        logger.info("Schedule mode: %s", schedule_mode)
+
         while not self.stop_event.is_set():
-            should, reason = _should_think()
+            # Reload config each cycle to pick up changes
+            config = load_config()
+            schedule_mode = config.get("schedule_mode", "session_aware")
+            interval = config.get("scheduled_interval_hours", 6.0)
+
+            if schedule_mode == "scheduled":
+                should, reason = _should_think_scheduled(interval)
+            else:
+                should, reason = _should_think()
 
             if should:
                 logger.info("Triggering thinking run — %s", reason)

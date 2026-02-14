@@ -457,6 +457,72 @@ class OvernightConfig(ElaraModel):
     max_tokens: int = 2048
     temperature: float = 0.7
     enable_research: bool = True
+    # 3D Cognition
+    schedule_mode: str = "session_aware"  # session_aware | scheduled
+    scheduled_interval_hours: float = 6.0
+    enable_3d_cognition: bool = True
+
+
+# ============================================================================
+# 3D COGNITION — Models, Predictions, Principles
+# ============================================================================
+
+class ModelEvidence(ElaraModel):
+    """Single piece of evidence for a cognitive model."""
+    text: str
+    source: str = "overnight"  # overnight, observation, correction, manual
+    direction: str = "supports"  # supports, weakens, invalidates
+    date: str = ""
+
+
+class CognitiveModel(ElaraModel):
+    """Persistent understanding: ~/.elara/elara-models/{model_id}.json"""
+    model_id: str
+    statement: str
+    domain: str = "general"  # work_patterns, emotional, project, behavioral, technical, general
+    confidence: float = 0.5
+    evidence: List[ModelEvidence] = Field(default_factory=list)
+    status: str = "active"  # active, weakened, invalidated, superseded
+    check_count: int = 0
+    strengthen_count: int = 0
+    weaken_count: int = 0
+    created: str = ""
+    last_updated: str = ""
+    last_checked: str = ""
+    source_run: str = ""
+    tags: List[str] = Field(default_factory=list)
+
+
+class Prediction(ElaraModel):
+    """Explicit forecast: ~/.elara/elara-predictions/{prediction_id}.json"""
+    prediction_id: str
+    statement: str
+    confidence: float = 0.5
+    deadline: str = ""  # ISO date
+    source_model: Optional[str] = None  # model_id link
+    source_run: str = ""
+    status: str = "pending"  # pending, correct, wrong, partially_correct, expired
+    actual_outcome: Optional[str] = None
+    lesson: Optional[str] = None
+    checked: Optional[str] = None
+    created: str = ""
+    tags: List[str] = Field(default_factory=list)
+
+
+class Principle(ElaraModel):
+    """Crystallized self-derived rule: stored in elara-principles.json (list)."""
+    principle_id: str
+    statement: str
+    domain: str = "general"
+    confidence: float = 0.5
+    source_insights: List[str] = Field(default_factory=list)  # list of run dates
+    source_models: List[str] = Field(default_factory=list)  # list of model_ids
+    status: str = "active"  # active, challenged, retired
+    times_confirmed: int = 0
+    times_challenged: int = 0
+    last_confirmed: Optional[str] = None
+    created: str = ""
+    tags: List[str] = Field(default_factory=list)
 
 
 class OvernightQueueItem(ElaraModel):
