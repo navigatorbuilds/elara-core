@@ -313,6 +313,8 @@ def elara_memory_consolidation(
             "at_risk"        — Show memories with importance < 0.2
             "contradictions" — Show detected memory contradictions
             "resolve"        — Resolve a contradiction (needs resolve_ids "id_a,id_b,keep")
+            "sweep"          — Show junk memories that would be cleaned (dry run)
+            "sweep_confirm"  — Archive and delete junk memories
         resolve_ids: For resolve action: "id_a,id_b,newer" or "id_a,id_b,a" or "id_a,id_b,b"
 
     Returns:
@@ -399,4 +401,19 @@ def elara_memory_consolidation(
             return f"Resolved: kept {kept[:12]}.. , archived the other."
         return "Resolution failed — memories not found or invalid keep value."
 
-    return f"Unknown action: {action}. Use: stats, consolidate, duplicates, at_risk, contradictions, resolve"
+    if action == "sweep":
+        result = c.sweep_junk(dry_run=True)
+        junk = result["junk"]
+        if not junk:
+            return "No junk memories found."
+        lines = [f"Found {len(junk)} junk memories (dry run — use sweep_confirm to archive):"]
+        for item in junk:
+            lines.append(f"  [{item['importance']:.2f}] {item['reason']}: {item['content'][:80]}")
+        return "\n".join(lines)
+
+    if action == "sweep_confirm":
+        result = c.sweep_junk(dry_run=False)
+        return (f"Swept {result.get('archived', 0)} junk memories "
+                f"(archived before deletion). {c.vm.collection.count()} remaining.")
+
+    return f"Unknown action: {action}. Use: stats, consolidate, duplicates, at_risk, contradictions, resolve, sweep, sweep_confirm"
