@@ -4,6 +4,9 @@
 
 """
 Overnight output — write round results, findings, and metadata.
+
+Each run gets its own directory: YYYY-MM-DD/HH-MM/
+Nothing is ever overwritten. latest-findings.md always points to the newest.
 """
 
 import json
@@ -11,18 +14,37 @@ import logging
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from core.paths import get_paths
-from daemon.overnight.config import today_dir, LATEST_FINDINGS
+from daemon.overnight.config import run_dir as make_run_dir, LATEST_FINDINGS
 
 logger = logging.getLogger("elara.overnight")
+
+# Module-level run directory — set once per run by init_run_dir()
+_current_run_dir: Optional[Path] = None
+
+
+def init_run_dir(started: datetime = None) -> Path:
+    """Initialize the output directory for this run. Call once at run start."""
+    global _current_run_dir
+    _current_run_dir = make_run_dir(started)
+    logger.info("Run output → %s", _current_run_dir)
+    return _current_run_dir
+
+
+def get_run_dir() -> Path:
+    """Get the current run's output directory."""
+    if _current_run_dir is not None:
+        return _current_run_dir
+    # Fallback: create one now (shouldn't happen in normal flow)
+    return init_run_dir()
 
 
 def write_round(round_num: int, phase_name: str, phase_title: str,
                 output: str, research: str = "", duration_s: float = 0) -> Path:
     """Save a single round's output as JSON."""
-    d = today_dir()
+    d = get_run_dir()
     data = {
         "round": round_num,
         "phase": phase_name,
@@ -46,10 +68,10 @@ def write_findings(rounds: List[Dict[str, Any]], mode: str = "exploratory",
 
     Structure: synthesis/recommendation first, then individual round details.
     """
-    d = today_dir()
+    d = get_run_dir()
     lines = []
 
-    lines.append(f"# Overnight Findings — {datetime.now().strftime('%Y-%m-%d')}")
+    lines.append(f"# Overnight Findings — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     lines.append(f"")
     lines.append(f"*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}*")
     lines.append(f"*Mode: {mode}*")
@@ -149,7 +171,7 @@ def write_findings(rounds: List[Dict[str, Any]], mode: str = "exploratory",
     path.write_text(content)
     logger.info("Findings written → %s (%d chars)", path.name, len(content))
 
-    # Copy to latest
+    # Copy to latest (always the most recent run's findings)
     try:
         shutil.copy2(str(path), str(LATEST_FINDINGS))
         logger.info("Latest findings → %s", LATEST_FINDINGS.name)
@@ -164,7 +186,7 @@ def write_meta(started: datetime, config: dict, mode: str,
                research_queries: int = 0, status: str = "completed",
                cognition_3d: Dict[str, Any] = None) -> Path:
     """Write run metadata."""
-    d = today_dir()
+    d = get_run_dir()
     data = {
         "date": datetime.now().strftime("%Y-%m-%d"),
         "started": started.isoformat(),
@@ -294,6 +316,11 @@ def write_morning_brief(
     brief_path.parent.mkdir(parents=True, exist_ok=True)
     brief_path.write_text(content)
     logger.info("Morning brief written → %s (%d chars)", brief_path.name, len(content))
+
+    # Also save in run dir
+    run_copy = get_run_dir() / "morning-brief.md"
+    run_copy.write_text(content)
+
     return brief_path
 
 
@@ -303,8 +330,8 @@ def write_creative_journal(
     """
     Append drift outputs to the creative journal.
 
-    Unlike findings (overwritten daily), the journal ACCUMULATES.
-    Each entry is dated and attributed to its technique.
+    Journal ACCUMULATES — never overwritten. Each entry dated.
+    Also saves a copy in the run directory.
     """
     _p = get_paths()
     journal_path = _p.creative_journal
@@ -340,8 +367,8 @@ def write_creative_journal(
     journal_path.write_text(existing + entry)
     logger.info("Creative journal updated → %s (+%d chars)", journal_path.name, len(entry))
 
-    # Also save a copy in today's dir
-    today_copy = today_dir() / "drift.md"
-    today_copy.write_text("\n".join(lines))
+    # Also save in run dir
+    run_copy = get_run_dir() / "drift.md"
+    run_copy.write_text("\n".join(lines))
 
     return journal_path

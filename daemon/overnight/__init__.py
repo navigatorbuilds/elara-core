@@ -30,7 +30,8 @@ from daemon.overnight.config import (
 from daemon.overnight.gather import gather_all, format_context_for_prompt
 from daemon.overnight.thinker import OvernightThinker
 from daemon.overnight.output import (
-    write_findings, write_meta, write_morning_brief, write_creative_journal,
+    init_run_dir, write_findings, write_meta, write_morning_brief,
+    write_creative_journal,
 )
 from daemon.overnight.drift import DriftThinker
 
@@ -140,6 +141,9 @@ class OvernightRunner:
 
     def _run_inner(self) -> dict:
         """Inner run logic (PID + signals already set up)."""
+        # Initialize per-run output directory (YYYY-MM-DD/HH-MM/)
+        init_run_dir(self.started)
+
         # Check Ollama
         if not self._check_ollama():
             write_meta(self.started, self.config, self.mode, 0, status="error")
