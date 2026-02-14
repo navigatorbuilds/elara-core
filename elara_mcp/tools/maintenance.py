@@ -296,19 +296,24 @@ def elara_snapshot() -> str:
 @mcp.tool()
 def elara_memory_consolidation(
     action: str = "stats",
+    resolve_ids: Optional[str] = None,
 ) -> str:
     """
-    Memory consolidation — merge duplicates, decay unused, archive weak.
+    Memory consolidation — merge duplicates, decay unused, archive weak,
+    detect contradictions.
 
     Biological-like memory maintenance. Runs automatically during overnight
     brain, or trigger manually here.
 
     Args:
         action: What to do:
-            "stats"       — Consolidation history, memory count, at-risk count
-            "consolidate" — Run full consolidation pass (merge/decay/archive)
-            "duplicates"  — Show potential duplicate pairs with similarity scores
-            "at_risk"     — Show memories with importance < 0.2
+            "stats"          — Consolidation history, memory count, contradiction count
+            "consolidate"    — Run full consolidation pass (merge/decay/archive/contradictions)
+            "duplicates"     — Show potential duplicate pairs with similarity scores
+            "at_risk"        — Show memories with importance < 0.2
+            "contradictions" — Show detected memory contradictions
+            "resolve"        — Resolve a contradiction (needs resolve_ids "id_a,id_b,keep")
+        resolve_ids: For resolve action: "id_a,id_b,newer" or "id_a,id_b,a" or "id_a,id_b,b"
 
     Returns:
         Consolidation results or statistics
@@ -324,6 +329,7 @@ def elara_memory_consolidation(
             f"Recall log entries: {s['recall_log_entries']}",
             f"Archived memories: {s['archive_size']}",
             f"At-risk (< 0.2): {s['at_risk_count']}",
+            f"Contradictions: {s.get('contradictions_count', 0)}",
             f"Total consolidation runs: {s['total_runs']}",
             f"Last run: {s.get('last_run', 'never')}",
         ]
@@ -332,7 +338,8 @@ def elara_memory_consolidation(
             lines.append(f"Last result: merged={lr.get('merged', 0)}, "
                           f"archived={lr.get('archived', 0)}, "
                           f"strengthened={lr.get('strengthened', 0)}, "
-                          f"decayed={lr.get('decayed', 0)}")
+                          f"decayed={lr.get('decayed', 0)}, "
+                          f"contradictions={lr.get('contradictions_found', 0)}")
         return "\n".join(lines)
 
     if action == "consolidate":
@@ -344,6 +351,7 @@ def elara_memory_consolidation(
             f"  Duplicate pairs found: {result.get('duplicate_pairs_found', 0)}",
             f"  Merged: {result.get('merged', 0)}",
             f"  Archived: {result.get('archived', 0)}",
+            f"  Contradictions found: {result.get('contradictions_found', 0)}",
             f"  Memories remaining: {result.get('memories_after', '?')}",
         ]
         return "\n".join(lines)
@@ -367,4 +375,28 @@ def elara_memory_consolidation(
             lines.append(f"    ID: {mem['memory_id']}  Date: {mem['date']}")
         return "\n".join(lines)
 
-    return f"Unknown action: {action}. Use: stats, consolidate, duplicates, at_risk"
+    if action == "contradictions":
+        contras = c.get_contradictions()
+        if not contras:
+            return "No contradictions detected."
+        lines = [f"{len(contras)} contradiction(s) found:"]
+        for i, con in enumerate(contras[:15]):
+            lines.append(f"\n  [{i+1}] similarity: {con['similarity']:.4f}")
+            lines.append(f"    A ({con['date_a']}): {con['content_a'][:100]}")
+            lines.append(f"    B ({con['date_b']}): {con['content_b'][:100]}")
+            lines.append(f"    IDs: {con['id_a'][:12]}.. vs {con['id_b'][:12]}..")
+        return "\n".join(lines)
+
+    if action == "resolve":
+        if not resolve_ids:
+            return "Error: resolve_ids required. Format: 'id_a,id_b,newer' or 'id_a,id_b,a' or 'id_a,id_b,b'"
+        parts = [p.strip() for p in resolve_ids.split(",")]
+        if len(parts) != 3:
+            return "Error: resolve_ids must be 'id_a,id_b,keep' where keep is 'newer', 'a', or 'b'"
+        id_a, id_b, keep = parts
+        kept = c.resolve_contradiction(id_a, id_b, keep=keep)
+        if kept:
+            return f"Resolved: kept {kept[:12]}.. , archived the other."
+        return "Resolution failed — memories not found or invalid keep value."
+
+    return f"Unknown action: {action}. Use: stats, consolidate, duplicates, at_risk, contradictions, resolve"

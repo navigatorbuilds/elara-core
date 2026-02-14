@@ -138,6 +138,8 @@ def write_findings(rounds: List[Dict[str, Any]], mode: str = "exploratory",
                 lines.append(f"- **Memories strengthened:** {cs['memories_strengthened']}")
             if cs.get("memories_decayed"):
                 lines.append(f"- **Memories decayed:** {cs['memories_decayed']}")
+            if cs.get("contradictions_found"):
+                lines.append(f"- **Contradictions detected:** {cs['contradictions_found']}")
             if cs.get("memories_remaining"):
                 lines.append(f"- **Memories remaining:** {cs['memories_remaining']}")
         lines.append("")
