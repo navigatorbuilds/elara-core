@@ -2,6 +2,38 @@
 
 All notable changes to Elara Core.
 
+## [0.10.0] — 2026-02-14
+
+### Added — 3D Cognition System
+- **Cognitive Models** (`daemon/models.py`) — persistent understanding that accumulates evidence, adjusts confidence, and decays over time
+- **Predictions** (`daemon/predictions.py`) — explicit forecasts with deadlines, accuracy tracking, and calibration scoring
+- **Principles** (`daemon/principles.py`) — crystallized rules from repeated insights, with confirmation and challenge mechanics
+- **3 new MCP tools** (`elara_model`, `elara_prediction`, `elara_principle`) — full CRUD + search for all 3D layers
+- **4 new overnight phases** — model_check, prediction_check, model_build, crystallize (structured JSON output parsed and applied)
+- **Domain-aware confidence** — business patterns held at high confidence, human behavioral patterns held loosely
+- **Time decay** — models not checked in 30 days lose confidence automatically
+
+### Added — Creative Drift
+- **Overnight drift mode** (`daemon/overnight/drift.py`) — the brain's imagination
+- **5 creative techniques** — free association, inversion, metaphor, spark, letter to morning
+- **Random context sampling** — pulls items from different knowledge categories for unexpected collisions
+- **Creative journal** — accumulates drift output over time (never overwrites)
+- **Higher temperature** (0.95) for looser, more creative LLM output
+
+### Added — Scheduling & Morning Brief
+- **Scheduled mode** — run every N hours regardless of session activity (alongside session-aware mode)
+- **Morning brief** — concise summary written after each overnight run (TL;DR, prediction deadlines, brain activity, drift highlight)
+- **Multi-scale temporal gathering** — daily, weekly, monthly aggregation of session data
+- **Boot integration** — morning brief detection in boot-check.sh
+
+### Changed
+- Overnight phases expanded from 10 to 14 (+ drift rounds)
+- Context gathering now includes 3D cognition data (models, predictions, principles)
+- Thinker accepts raw context dict for structured JSON processing
+- Findings include 3D Cognition Updates section
+- Metadata includes cognition stats
+- 38 MCP tools across 12 modules (was 35/11)
+
 ## [0.9.2] — 2026-02-08
 
 ### Added

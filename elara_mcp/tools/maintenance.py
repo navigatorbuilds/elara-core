@@ -34,7 +34,8 @@ def elara_rebuild_indexes(
     collections_to_rebuild = (
         [collection] if collection
         else ["memories", "milestones", "conversations", "corrections",
-              "reasoning", "synthesis", "briefing"]
+              "reasoning", "synthesis", "briefing",
+              "models", "predictions", "principles"]
     )
 
     for coll_name in collections_to_rebuild:
@@ -93,6 +94,21 @@ def _rebuild_collection(name: str) -> str:
         from daemon.briefing import reindex_all as briefing_reindex
         stats = briefing_reindex()
         return f"OK ({stats.get('items_in_index', 0)} items in index)"
+
+    if name == "models":
+        from daemon.models import reindex_all as models_reindex
+        stats = models_reindex()
+        return f"OK ({stats.get('indexed', 0)} models re-indexed)"
+
+    if name == "predictions":
+        from daemon.predictions import reindex_all as predictions_reindex
+        stats = predictions_reindex()
+        return f"OK ({stats.get('indexed', 0)} predictions re-indexed)"
+
+    if name == "principles":
+        from daemon.principles import reindex_all as principles_reindex
+        stats = principles_reindex()
+        return f"OK ({stats.get('indexed', 0)} principles re-indexed)"
 
     return f"Unknown collection: {name}"
 

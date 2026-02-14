@@ -29,7 +29,10 @@ from daemon.overnight.config import (
 )
 from daemon.overnight.gather import gather_all, format_context_for_prompt
 from daemon.overnight.thinker import OvernightThinker
-from daemon.overnight.output import write_findings, write_meta
+from daemon.overnight.output import (
+    write_findings, write_meta, write_morning_brief, write_creative_journal,
+)
+from daemon.overnight.drift import DriftThinker
 
 logger = logging.getLogger("elara.overnight")
 
@@ -159,8 +162,11 @@ class OvernightRunner:
             write_meta(self.started, self.config, self.mode, 0, status="error")
             return {"status": "error", "reason": "No context available"}
 
-        # Create thinker
-        thinker = OvernightThinker(context_text, self.config, self.stop_event)
+        # Create thinker (pass raw context dict for 3D cognition)
+        thinker = OvernightThinker(
+            context_text, self.config, self.stop_event,
+            context_dict=context,
+        )
 
         all_rounds = []
         problems_processed = 0
@@ -183,10 +189,48 @@ class OvernightRunner:
                 r.get("problem", "") for r in directed_rounds if r.get("problem")
             ))
 
+        # Run creative drift
+        drift_rounds = []
+        if self.config.get("enable_drift", True) and not self.stop_event.is_set():
+            try:
+                drifter = DriftThinker(context, self.config, self.stop_event)
+                drift_rounds = drifter.run()
+                if drift_rounds:
+                    write_creative_journal(drift_rounds)
+            except Exception as e:
+                logger.warning("Creative drift failed: %s", e)
+
+        # Collect 3D cognition summary
+        cognition_summary = thinker.cognition_summary
+
+        # Apply time decay to old models
+        if self.config.get("enable_3d_cognition", True):
+            try:
+                from daemon.models import apply_time_decay
+                decayed = apply_time_decay()
+                if decayed:
+                    cognition_summary["models_decayed"] = len(decayed)
+                    logger.info("Time decay applied to %d models", len(decayed))
+            except Exception as e:
+                logger.warning("Time decay failed: %s", e)
+
         # Write outputs
         if all_rounds:
             findings_mode = "mixed" if self.mode == "auto" and self.queue else self.mode
-            write_findings(all_rounds, mode=findings_mode, problems=problems_list or None)
+            write_findings(
+                all_rounds, mode=findings_mode, problems=problems_list or None,
+                cognition_summary=cognition_summary,
+            )
+
+        # Write morning brief
+        if all_rounds:
+            try:
+                write_morning_brief(
+                    all_rounds, cognition_summary=cognition_summary,
+                    drift_rounds=drift_rounds,
+                )
+            except Exception as e:
+                logger.warning("Morning brief failed: %s", e)
 
         status = "completed" if not self.stop_event.is_set() else "stopped"
         write_meta(
@@ -195,6 +239,7 @@ class OvernightRunner:
             problems_processed=problems_processed,
             research_queries=thinker.total_research_queries,
             status=status,
+            cognition_3d=cognition_summary,
         )
 
         elapsed = (datetime.now() - self.started).total_seconds() / 60
@@ -203,6 +248,7 @@ class OvernightRunner:
         logger.info("  Rounds: %d", thinker.total_rounds)
         logger.info("  Research queries: %d", thinker.total_research_queries)
         logger.info("  Duration: %.1f minutes", elapsed)
+        logger.info("  Drift rounds: %d", len(drift_rounds))
         logger.info("  Status: %s", status)
 
         return {
@@ -211,5 +257,6 @@ class OvernightRunner:
             "rounds": thinker.total_rounds,
             "research_queries": thinker.total_research_queries,
             "problems_processed": problems_processed,
+            "drift_rounds": len(drift_rounds),
             "duration_minutes": round(elapsed, 1),
         }

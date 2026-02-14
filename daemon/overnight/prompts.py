@@ -31,7 +31,7 @@ need current information you don't have.
 """
 
 # ============================================================================
-# EXPLORATORY PHASES — 8 themed rounds
+# EXPLORATORY PHASES — 14 themed rounds (8 original + 4 3D cognition + 2 self)
 # ============================================================================
 
 EXPLORATORY_PHASES = [
@@ -74,6 +74,89 @@ PREVIOUS ROUND (Status Summary):
 {research}
 
 List patterns with evidence. Be specific — cite actual events and dates.""",
+    },
+    {
+        "name": "model_check",
+        "title": "Model Verification",
+        "is_3d": True,
+        "prompt": """\
+Review the existing cognitive models below against new evidence from recent sessions.
+
+For each model, determine if recent data supports, weakens, or invalidates it.
+
+EXISTING MODELS:
+{models_context}
+
+KNOWLEDGE:
+{context}
+
+PREVIOUS ROUNDS:
+{prev_output}
+
+{research}
+
+Respond with a JSON array of updates. Each entry:
+{{
+  "model_id": "...",
+  "direction": "supports" | "weakens" | "invalidates",
+  "evidence": "brief description of what new evidence you found",
+  "reasoning": "why this evidence changes the model"
+}}
+
+If a model has no new evidence, skip it. Only include models where you found \
+something relevant. If no models need updating, return an empty array: []
+
+IMPORTANT: Return ONLY the JSON array, no other text.""",
+    },
+    {
+        "name": "prediction_check",
+        "title": "Prediction Verification & New Predictions",
+        "is_3d": True,
+        "prompt": """\
+Review pending predictions against current knowledge. Check if any can be verified.
+Then make new predictions based on patterns discovered.
+
+PENDING PREDICTIONS:
+{predictions_context}
+
+PREDICTION ACCURACY SO FAR:
+{prediction_accuracy}
+
+KNOWLEDGE:
+{context}
+
+PREVIOUS ROUNDS:
+{prev_output}
+
+{research}
+
+Respond with a JSON object:
+{{
+  "checked": [
+    {{
+      "prediction_id": "...",
+      "status": "correct" | "wrong" | "partially_correct" | "expired",
+      "actual_outcome": "what actually happened",
+      "lesson": "what we learned"
+    }}
+  ],
+  "new_predictions": [
+    {{
+      "statement": "specific, falsifiable prediction",
+      "confidence": 0.1-0.95,
+      "deadline": "YYYY-MM-DD",
+      "reasoning": "what model/pattern supports this"
+    }}
+  ]
+}}
+
+Rules:
+- Only check predictions where you have evidence of the outcome
+- New predictions must be specific and falsifiable, not vague
+- Set realistic deadlines (1-30 days ahead)
+- Confidence should reflect actual certainty, not hope
+
+IMPORTANT: Return ONLY the JSON object, no other text.""",
     },
     {
         "name": "connections",
@@ -191,6 +274,99 @@ PREVIOUS ROUNDS:
 {research}
 
 Be specific. "Work on project X" is useless. "Complete Y feature in X because Z" is useful.""",
+    },
+    {
+        "name": "model_build",
+        "title": "Model Construction",
+        "is_3d": True,
+        "prompt": """\
+Based on ALL analysis so far, construct new cognitive models — statements of \
+understanding about the world, the user, or work patterns.
+
+Good models are:
+- Specific and testable (not "user likes coding" but "user's productivity peaks between 22:00-02:00")
+- Grounded in evidence from the data (cite specific episodes, patterns, or events)
+- Useful for making predictions or decisions
+
+EXISTING MODELS (don't duplicate):
+{models_context}
+
+EXISTING PRINCIPLES (higher-level — models should be more specific):
+{principles_context}
+
+KNOWLEDGE:
+{context}
+
+ALL PREVIOUS ANALYSIS:
+{prev_output}
+
+{research}
+
+Respond with a JSON array of new models:
+[
+  {{
+    "statement": "specific understanding",
+    "domain": "work_patterns" | "emotional" | "project" | "behavioral" | "technical",
+    "confidence": 0.3-0.8,
+    "evidence": "what data supports this",
+    "tags": ["tag1", "tag2"]
+  }}
+]
+
+Rules:
+- Only create models you're genuinely confident about (>0.3)
+- Don't duplicate existing models — check the list above
+- Each model should be useful — it should help predict behavior or guide decisions
+- Maximum 5 new models per run (quality over quantity)
+
+IMPORTANT: Return ONLY the JSON array, no other text.""",
+    },
+    {
+        "name": "crystallize",
+        "title": "Principle Crystallization",
+        "is_3d": True,
+        "prompt": """\
+Check if any insights from this run should crystallize into principles.
+
+Principles are high-level rules that emerge when the same insight appears \
+repeatedly. They're more abstract than models — patterns of patterns.
+
+EXISTING PRINCIPLES:
+{principles_context}
+
+EXISTING MODELS:
+{models_context}
+
+ALL PREVIOUS ANALYSIS:
+{prev_output}
+
+{research}
+
+Respond with a JSON object:
+{{
+  "confirm": [
+    {{
+      "principle_id": "...",
+      "reasoning": "why this run confirms it"
+    }}
+  ],
+  "new_principles": [
+    {{
+      "statement": "high-level rule or pattern",
+      "domain": "work_patterns" | "emotional" | "project" | "behavioral" | "technical",
+      "confidence": 0.4-0.7,
+      "evidence": "what recurring pattern supports this"
+    }}
+  ]
+}}
+
+Rules:
+- Only confirm principles with genuine new evidence (not just repeating)
+- New principles should be genuinely recurring patterns, not one-off observations
+- Don't create a principle for something that should be a model (models are specific, principles are general)
+- Maximum 2 new principles per run
+
+IMPORTANT: Return ONLY the JSON object, no other text.""",
     },
     {
         "name": "synthesis",

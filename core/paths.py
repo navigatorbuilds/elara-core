@@ -290,6 +290,41 @@ class ElaraPaths:
         return self.overnight_dir / "latest-findings.md"
 
     # ------------------------------------------------------------------
+    # 3D Cognition (models, predictions, principles)
+    # ------------------------------------------------------------------
+    @property
+    def models_dir(self) -> Path:
+        return self._root / "elara-models"
+
+    @property
+    def models_db(self) -> Path:
+        return self._root / "elara-models-db"
+
+    @property
+    def predictions_dir(self) -> Path:
+        return self._root / "elara-predictions"
+
+    @property
+    def predictions_db(self) -> Path:
+        return self._root / "elara-predictions-db"
+
+    @property
+    def principles_file(self) -> Path:
+        return self._root / "elara-principles.json"
+
+    @property
+    def principles_db(self) -> Path:
+        return self._root / "elara-principles-db"
+
+    @property
+    def morning_brief(self) -> Path:
+        return self.overnight_dir / "morning-brief.md"
+
+    @property
+    def creative_journal(self) -> Path:
+        return self.overnight_dir / "creative-journal.md"
+
+    # ------------------------------------------------------------------
     # Overwatch
     # ------------------------------------------------------------------
     @property
@@ -355,6 +390,11 @@ class ElaraPaths:
             self.gmail_db,
             self.messages_dir,
             self.overnight_dir,
+            self.models_dir,
+            self.models_db,
+            self.predictions_dir,
+            self.predictions_db,
+            self.principles_db,
         ]
         for d in dirs:
             d.mkdir(parents=True, exist_ok=True)

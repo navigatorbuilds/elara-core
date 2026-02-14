@@ -105,6 +105,16 @@ class Events:
     LLM_TRIAGE = "llm_triage"
     LLM_UNAVAILABLE = "llm_unavailable"
 
+    # --- 3D Cognition ---
+    MODEL_CREATED = "model_created"
+    MODEL_UPDATED = "model_updated"
+    MODEL_INVALIDATED = "model_invalidated"
+    PREDICTION_MADE = "prediction_made"
+    PREDICTION_CHECKED = "prediction_checked"
+    PRINCIPLE_CRYSTALLIZED = "principle_crystallized"
+    PRINCIPLE_CONFIRMED = "principle_confirmed"
+    PRINCIPLE_CHALLENGED = "principle_challenged"
+
     # --- Handoff ---
     HANDOFF_SAVED = "handoff_saved"
 

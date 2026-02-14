@@ -33,6 +33,14 @@ DEFAULT_CONFIG = {
     "max_tokens": 2048,
     "temperature": 0.7,
     "enable_research": True,
+    # 3D Cognition
+    "schedule_mode": "session_aware",
+    "scheduled_interval_hours": 6,
+    "enable_3d_cognition": True,
+    # Creative Drift
+    "enable_drift": True,
+    "drift_temperature": 0.95,
+    "drift_rounds": 5,
 }
 
 

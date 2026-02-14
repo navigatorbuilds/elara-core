@@ -165,6 +165,33 @@ def gather_all(days: int = 30) -> Dict[str, Any]:
         logger.warning("  Briefing failed: %s", e)
         context["briefing_items"] = []
 
+    # --- 3D Cognition: models, predictions, principles ---
+    try:
+        from daemon.models import get_active_models
+        context["cognitive_models"] = get_active_models()
+        logger.info("  Cognitive models: %d active", len(context["cognitive_models"]))
+    except Exception as e:
+        logger.warning("  Cognitive models failed: %s", e)
+        context["cognitive_models"] = []
+
+    try:
+        from daemon.predictions import get_pending_predictions, get_prediction_accuracy
+        context["predictions_pending"] = get_pending_predictions()
+        context["prediction_accuracy"] = get_prediction_accuracy()
+        logger.info("  Predictions: %d pending", len(context["predictions_pending"]))
+    except Exception as e:
+        logger.warning("  Predictions failed: %s", e)
+        context["predictions_pending"] = []
+        context["prediction_accuracy"] = {}
+
+    try:
+        from daemon.principles import get_active_principles
+        context["principles"] = get_active_principles()
+        logger.info("  Principles: %d active", len(context["principles"]))
+    except Exception as e:
+        logger.warning("  Principles failed: %s", e)
+        context["principles"] = []
+
     # --- Latest dream reports ---
     try:
         from daemon.dream_core import read_latest_dream
@@ -176,8 +203,141 @@ def gather_all(days: int = 30) -> Dict[str, Any]:
     except Exception as e:
         logger.warning("  Dream reports failed: %s", e)
 
+    # --- Temporal scales (daily/weekly/monthly aggregation) ---
+    try:
+        context["temporal"] = gather_temporal_scales(context)
+        logger.info("  Temporal scales: daily=%d, weekly=%d, monthly=%d",
+                     len(context["temporal"].get("daily", [])),
+                     len(context["temporal"].get("weekly", [])),
+                     len(context["temporal"].get("monthly", [])))
+    except Exception as e:
+        logger.warning("  Temporal scales failed: %s", e)
+        context["temporal"] = {}
+
     logger.info("Knowledge gathering complete.")
     return context
+
+
+def gather_temporal_scales(context: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Aggregate context data across daily, weekly, and monthly scales.
+
+    Uses episodes and mood journal already gathered to build summaries
+    at multiple time horizons.
+    """
+    now = datetime.now()
+    result = {"daily": [], "weekly": [], "monthly": []}
+
+    episodes = context.get("episodes", [])
+    mood_entries = context.get("mood_journal", [])
+
+    # --- Daily (last 7 days) ---
+    for day_offset in range(7):
+        day = now - timedelta(days=day_offset)
+        day_str = day.strftime("%Y-%m-%d")
+
+        day_eps = [
+            e for e in episodes
+            if str(e.get("started", ""))[:10] == day_str
+        ]
+        day_moods = [
+            m for m in mood_entries
+            if str(m.get("timestamp", ""))[:10] == day_str
+        ]
+
+        if not day_eps and not day_moods:
+            continue
+
+        projects = set()
+        session_types = []
+        for e in day_eps:
+            projects.update(e.get("projects", []))
+            session_types.append(e.get("session_type", "unknown"))
+
+        avg_valence = None
+        if day_moods:
+            vals = [m.get("valence", 0) for m in day_moods if "valence" in m]
+            avg_valence = round(sum(vals) / len(vals), 2) if vals else None
+
+        result["daily"].append({
+            "date": day_str,
+            "sessions": len(day_eps),
+            "projects": list(projects),
+            "session_types": session_types,
+            "avg_mood": avg_valence,
+        })
+
+    # --- Weekly (last 4 weeks) ---
+    for week_offset in range(4):
+        week_start = now - timedelta(weeks=week_offset, days=now.weekday())
+        week_end = week_start + timedelta(days=7)
+        week_label = week_start.strftime("%Y-W%W")
+
+        week_eps = [
+            e for e in episodes
+            if week_start.isoformat()[:10] <= str(e.get("started", ""))[:10] < week_end.isoformat()[:10]
+        ]
+
+        if not week_eps:
+            continue
+
+        projects = set()
+        work_count = 0
+        drift_count = 0
+        for e in week_eps:
+            projects.update(e.get("projects", []))
+            st = e.get("session_type", "")
+            if st == "work":
+                work_count += 1
+            elif st == "drift":
+                drift_count += 1
+
+        result["weekly"].append({
+            "week": week_label,
+            "sessions": len(week_eps),
+            "projects": list(projects),
+            "work_sessions": work_count,
+            "drift_sessions": drift_count,
+            "work_drift_ratio": round(work_count / max(drift_count, 1), 1),
+        })
+
+    # --- Monthly (last 3 months) ---
+    for month_offset in range(3):
+        # Calculate month
+        m = now.month - month_offset
+        y = now.year
+        while m <= 0:
+            m += 12
+            y -= 1
+        month_str = f"{y}-{m:02d}"
+
+        month_eps = [
+            e for e in episodes
+            if str(e.get("started", ""))[:7] == month_str
+        ]
+
+        if not month_eps:
+            continue
+
+        projects = set()
+        for e in month_eps:
+            projects.update(e.get("projects", []))
+
+        # Model/prediction counts from 3D context
+        models = context.get("cognitive_models", [])
+        month_models = len([
+            m for m in models
+            if str(m.get("created", ""))[:7] == month_str
+        ])
+
+        result["monthly"].append({
+            "month": month_str,
+            "sessions": len(month_eps),
+            "projects": list(projects),
+            "models_created": month_models,
+        })
+
+    return result
 
 
 def format_context_for_prompt(context: Dict[str, Any], max_chars: int = 6000) -> str:
@@ -275,6 +435,80 @@ def format_context_for_prompt(context: Dict[str, Any], max_chars: int = 6000) ->
             feed = item.get("feed", "") if isinstance(item, dict) else ""
             lines.append(f"  - [{feed}] {title[:100]}")
         sections.append(("EXTERNAL BRIEFING (RSS)", "\n".join(lines)))
+
+    # 3D Cognition: Models
+    models = context.get("cognitive_models", [])
+    if models:
+        lines = []
+        for m in models[:10]:
+            lines.append(
+                f"  - [{m.get('domain','?')}] {m.get('statement','?')[:80]} "
+                f"(conf={m.get('confidence',0)}, checks={m.get('check_count',0)})"
+            )
+        sections.append(("COGNITIVE MODELS", "\n".join(lines)))
+
+    # 3D Cognition: Predictions
+    predictions = context.get("predictions_pending", [])
+    if predictions:
+        lines = []
+        for p in predictions[:8]:
+            days = p.get("_days_until_deadline", "?")
+            lines.append(
+                f"  - {p.get('statement','?')[:80]} "
+                f"(conf={p.get('confidence',0)}, deadline={p.get('deadline','?')}, {days}d left)"
+            )
+        accuracy = context.get("prediction_accuracy", {})
+        if accuracy.get("checked"):
+            lines.append(
+                f"  Overall: {accuracy.get('accuracy','?')} accuracy, "
+                f"{accuracy.get('checked',0)} checked, {accuracy.get('pending',0)} pending"
+            )
+        sections.append(("ACTIVE PREDICTIONS", "\n".join(lines)))
+
+    # 3D Cognition: Principles
+    principles = context.get("principles", [])
+    if principles:
+        lines = []
+        for p in principles[:8]:
+            lines.append(
+                f"  - [{p.get('domain','?')}] {p.get('statement','?')[:80]} "
+                f"(conf={p.get('confidence',0)}, confirmed={p.get('times_confirmed',0)}x)"
+            )
+        sections.append(("CRYSTALLIZED PRINCIPLES", "\n".join(lines)))
+
+    # Temporal scales
+    temporal = context.get("temporal", {})
+    if temporal:
+        lines = []
+        daily = temporal.get("daily", [])
+        if daily:
+            lines.append("  Daily (last 7d):")
+            for d in daily[:7]:
+                mood = f", mood={d['avg_mood']}" if d.get("avg_mood") is not None else ""
+                lines.append(
+                    f"    {d['date']}: {d['sessions']} sessions, "
+                    f"projects=[{', '.join(d.get('projects', [])[:3])}]{mood}"
+                )
+        weekly = temporal.get("weekly", [])
+        if weekly:
+            lines.append("  Weekly:")
+            for w in weekly[:4]:
+                lines.append(
+                    f"    {w['week']}: {w['sessions']} sessions, "
+                    f"work/drift={w.get('work_drift_ratio', '?')}, "
+                    f"projects=[{', '.join(w.get('projects', [])[:4])}]"
+                )
+        monthly = temporal.get("monthly", [])
+        if monthly:
+            lines.append("  Monthly:")
+            for m in monthly[:3]:
+                lines.append(
+                    f"    {m['month']}: {m['sessions']} sessions, "
+                    f"{m.get('models_created', 0)} models, "
+                    f"projects=[{', '.join(m.get('projects', [])[:5])}]"
+                )
+        if lines:
+            sections.append(("TEMPORAL OVERVIEW", "\n".join(lines)))
 
     # Dream summaries
     for dtype in ("weekly", "monthly"):
