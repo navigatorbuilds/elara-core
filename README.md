@@ -8,207 +8,329 @@
 [![License](https://img.shields.io/badge/license-BSL--1.1-ff0040)](https://github.com/aivelikivodja-bot/elara-core/blob/main/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-elara.navigatorbuilds.com-%23ffb000)](https://elara.navigatorbuilds.com)
 
-Persistent presence, mood, memory, and self-awareness for AI assistants. **34 MCP tools. 11 modules. 19K lines of Python. Zero cloud dependencies.**
-
-Elara gives your AI assistant a sense of continuity across sessions — all through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io). Built because I got tired of re-explaining my project every time I opened a new chat.
-
-### What it looks like
+Elara gives your AI assistant persistent memory, mood, self-awareness, and overnight thinking — all through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io). **38 tools. 12 modules. 20K+ lines of Python. Everything runs locally.**
 
 ```
 You: "Morning."
 Elara: "You were debugging the auth module at 2am. Did you sleep?"
 
-You: "I keep messing up async/await in the service layer"
-Elara: "Noted. I'll flag it next time you touch async code."
-(two days later, you open a file with async)
-Elara: "Heads up — last time you hit a race condition here. Use asyncio.gather, not sequential awaits."
-
 You: "What happened this week?"
-Elara: "3 work sessions, 2 drift sessions. Auth module shipped. Goal #4 is stalling —
-       no progress in 9 days. You also said you'd file the patent. That's been carried
-       forward 3 times now."
+Elara: "3 work sessions. Auth module shipped. Goal #4 is stalling —
+       no progress in 9 days. My overnight brain built 2 new models
+       and flagged a prediction deadline in 3 days."
 ```
 
-**Everything stays local.** No cloud. No telemetry. Your data lives in `~/.elara/`.
+---
 
-## Features
+## What is MCP?
 
-- **Semantic memory** — ChromaDB vector search. Ask "what were we doing last week?" and get real answers
-- **Mood system** — tracks valence, energy, openness. Decays naturally between sessions like real emotions
-- **Corrections** — saves your mistakes, surfaces them *before* you repeat them
-- **Dream mode** — weekly/monthly pattern discovery across sessions, inspired by sleep consolidation
-- **Reasoning trails** — track hypothesis chains when debugging. Includes what was abandoned and why
-- **Session handoff** — structured carry-forward so nothing falls through the cracks
+[Model Context Protocol](https://modelcontextprotocol.io) is how AI assistants (Claude Code, Cursor, Windsurf, etc.) connect to external tools. Think of it as a USB port for AI — plug Elara in and your assistant gains memory, mood, and awareness. No code changes needed.
 
-Plus: episodic memory, goal tracking, presence detection, self-reflection, business intelligence, and more. **[Full tool reference →](https://elara.navigatorbuilds.com/tools.html)**
+---
+
+## Install (2 minutes)
+
+### Prerequisites
+
+- **Python 3.10+** — [python.org/downloads](https://www.python.org/downloads/)
+- **An MCP client** — [Claude Code](https://claude.ai/code), [Cursor](https://cursor.sh), or any MCP-compatible editor
+
+> **Windows users:** When installing Python, check **"Add python.exe to PATH"** at the bottom of the installer.
+
+### Step 1: Install Elara
+
+```bash
+pip install elara-core
+```
+
+<details>
+<summary>Windows? Use <code>py -m pip install elara-core</code></summary>
+
+If `pip` isn't recognized, try:
+```
+py -m pip install elara-core
+```
+Or:
+```
+python -m pip install elara-core
+```
+</details>
+
+### Step 2: Initialize
+
+```bash
+elara init
+```
+
+You should see:
+```
+Elara initialized at /home/yourname/.elara
+
+Next steps:
+  1. Add Elara to your MCP client:
+     claude mcp add elara -- elara serve
+
+  2. (Optional) Create a persona in your CLAUDE.md:
+     See examples/CLAUDE.md.example for a template
+```
+
+This creates `~/.elara/` with default config files. All your data lives here.
+
+### Step 3: Connect to your AI
+
+**Claude Code:**
+```bash
+claude mcp add elara -- elara serve
+```
+
+**Cursor / Other MCP clients:**
+
+Add this to your MCP config (usually `~/.cursor/mcp.json` or similar):
+```json
+{
+  "mcpServers": {
+    "elara": {
+      "command": "elara",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+### Step 4: Verify it works
+
+Open a new session in your AI client and say:
+
+> "Use elara_status to check if Elara is running."
+
+You should get back a status message with mood, presence, and memory counts. If you see that, **you're done**.
+
+---
+
+## First 5 Minutes
+
+Once Elara is connected, try these in your AI session:
+
+```
+"Remember that I prefer dark themes and use pytest for testing."
+→ Stored in semantic memory. Elara will recall this by meaning, not keywords.
+
+"How am I doing?"
+→ Returns mood state (valence, energy, openness).
+
+"Start an episode — we're working on the auth module."
+→ Begins tracking this work session with milestones and decisions.
+
+"What do you remember about my preferences?"
+→ Searches semantic memory and returns relevant matches.
+
+"Set a goal: Ship auth module by Friday."
+→ Tracked persistently. Elara will remind you if it stalls.
+```
+
+That's the core loop: **remember → recall → track → reflect**.
+
+---
+
+## What Elara Does
+
+### Core (works out of the box)
+
+| Feature | What it does |
+|---------|-------------|
+| **Semantic memory** | Store and search by meaning, not keywords. "What were we doing last week?" just works. |
+| **Mood system** | Tracks valence, energy, openness. Decays naturally between sessions. |
+| **Session tracking** | Episodes with milestones, decisions, and project tagging. |
+| **Goals & corrections** | Persistent goals with staleness detection. Mistakes saved and surfaced before you repeat them. |
+| **Session handoff** | Structured carry-forward between sessions so nothing gets lost. |
+
+### Advanced
+
+| Feature | What it does |
+|---------|-------------|
+| **3D Cognition** *(new in v0.10.0)* | Persistent models (understanding), predictions (foresight), and principles (wisdom) that accumulate over time. |
+| **Overnight thinking** | Autonomous analysis between sessions — runs 14 phases through a local LLM, builds cognitive models, makes predictions. |
+| **Creative drift** | The overnight brain's imagination — random context collisions at high temperature. Writes to an accumulating creative journal. |
+| **Dream mode** | Weekly/monthly pattern discovery across sessions, inspired by sleep consolidation. |
+| **Reasoning trails** | Track hypothesis chains when debugging. Includes what was abandoned and why. |
+| **Self-reflection** | Mood trends, blind spots, growth intentions. |
+| **RSS briefing** | External news feeds for context. |
+
+> **Note:** Overnight thinking and creative drift require [Ollama](https://ollama.ai) with a local LLM (e.g., `qwen2.5:32b`). Everything else works without it.
+
+---
+
+## Tools Quick Reference
+
+**Start here** (5 essential tools):
+
+| Tool | What it does |
+|------|-------------|
+| `elara_remember` | Save something to memory |
+| `elara_recall` | Search memories by meaning |
+| `elara_mood` | Check emotional state |
+| `elara_episode_start` | Begin tracking a work session |
+| `elara_status` | Full status check |
+
+**All 38 tools by module:**
+
+<details>
+<summary>Click to expand full tool list</summary>
+
+| Module | Tools | Count |
+|--------|-------|-------|
+| **Memory** | `elara_remember`, `elara_recall`, `elara_recall_conversation`, `elara_conversations` | 4 |
+| **Mood** | `elara_mood`, `elara_mood_adjust`, `elara_imprint`, `elara_mode`, `elara_status` | 5 |
+| **Episodes** | `elara_episode_start`, `elara_episode_note`, `elara_episode_end`, `elara_episode_query`, `elara_context` | 5 |
+| **Goals** | `elara_goal`, `elara_goal_boot`, `elara_correction`, `elara_correction_boot`, `elara_handoff` | 5 |
+| **Awareness** | `elara_reflect`, `elara_insight`, `elara_intention`, `elara_observe`, `elara_temperament` | 5 |
+| **Dreams** | `elara_dream`, `elara_dream_info` | 2 |
+| **Cognitive** | `elara_reasoning`, `elara_outcome`, `elara_synthesis` | 3 |
+| **3D Cognition** | `elara_model`, `elara_prediction`, `elara_principle` | 3 |
+| **Business** | `elara_business` | 1 |
+| **LLM** | `elara_llm` | 1 |
+| **Gmail** | `elara_gmail` | 1 |
+| **Maintenance** | `elara_rebuild_indexes`, `elara_briefing`, `elara_snapshot` | 3 |
+
+</details>
+
+**[Full tool reference →](https://elara.navigatorbuilds.com/tools.html)**
+
+---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      MCP CLIENTS                            │
-│           Claude Code · Cursor · Windsurf · Cline           │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ MCP Protocol
-┌──────────────────────────▼──────────────────────────────────┐
-│                     elara_mcp/tools/                        │
-│                                                             │
-│  ┌─────────┐ ┌──────────┐ ┌────────┐ ┌──────────────────┐  │
-│  │  MOOD   │ │ EPISODES │ │ MEMORY │ │ GOALS/CORRECTIONS│  │
-│  │ 5 tools │ │ 5 tools  │ │4 tools │ │    5 tools       │  │
-│  └────┬────┘ └────┬─────┘ └───┬────┘ └────────┬─────────┘  │
-│  ┌────┴────┐ ┌────┴─────┐ ┌───┴────┐ ┌────────┴─────────┐  │
-│  │COGNITIVE│ │AWARENESS │ │ DREAMS │ │   MAINTENANCE    │  │
-│  │ 3 tools │ │ 5 tools  │ │2 tools │ │    3 tools       │  │
-│  └────┬────┘ └────┬─────┘ └───┬────┘ └────────┬─────────┘  │
-│  ┌────┴────┐ ┌────┴─────┐ ┌───┴────────────────┘           │
-│  │  GMAIL  │ │   LLM    │ │  BUSINESS                      │
-│  │ 1 tool  │ │  1 tool  │ │  1 tool                        │
-│  └─────────┘ └──────────┘ └───────────────────              │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────┐
-│                     daemon/ + core/                         │
-│                                                             │
-│  State Engine    Emotions    Decay     Presence    Schemas  │
-│  Mood Math       Imprints    Events    Allostatic  Paths    │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────┐
-│                    ChromaDB (7 collections)                  │
-│                                                             │
-│  memories · milestones · conversations · corrections        │
-│  reasoning · synthesis · briefing                           │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│              YOUR MCP CLIENT                     │
+│     Claude Code · Cursor · Windsurf · Cline      │
+└────────────────────┬────────────────────────────┘
+                     │ MCP Protocol (stdio)
+┌────────────────────▼────────────────────────────┐
+│              elara_mcp/tools/                     │
+│                                                  │
+│  Memory · Mood · Episodes · Goals · Awareness    │
+│  Dreams · Cognitive · 3D Cognition · Business    │
+│  LLM · Gmail · Maintenance                      │
+│                  (38 tools)                       │
+└────────────────────┬────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────┐
+│              daemon/ + core/                      │
+│                                                  │
+│  State engine · Emotions · Models · Predictions  │
+│  Principles · Dreams · Overnight brain · Drift   │
+└────────────────────┬────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────┐
+│           ~/.elara/ (all local)                   │
+│                                                  │
+│  ChromaDB (7 collections) · JSON state files     │
+│  Overnight findings · Creative journal           │
+└─────────────────────────────────────────────────┘
 ```
 
-**[Full tool reference →](https://elara.navigatorbuilds.com/tools.html)** · **[Quickstart guide →](https://elara.navigatorbuilds.com/quickstart.html)**
-
-## Documentation
-
-Full docs at **[elara.navigatorbuilds.com](https://elara.navigatorbuilds.com)** — quickstart, tool reference, architecture diagrams, persona templates, and more.
-
-| | |
-|---|---|
-| **[Quickstart](https://elara.navigatorbuilds.com/quickstart.html)** | Install and get running in 2 minutes |
-| **[Tools Reference](https://elara.navigatorbuilds.com/tools.html)** | All 34 MCP tools explained |
-| **[Before & After](https://elara.navigatorbuilds.com/compare.html)** | See what changes with Elara |
-| **[Examples](https://elara.navigatorbuilds.com/examples.html)** | Copy-paste CLAUDE.md personas |
-| **[Architecture](https://elara.navigatorbuilds.com/architecture.html)** | Interactive system diagram |
-
-## Prerequisites
-
-- **Python 3.10+** — [Download here](https://www.python.org/downloads/)
-- **Git** — [Download here](https://git-scm.com/downloads)
-
-> **Windows users:** When installing Python, check **"Add python.exe to PATH"** at the bottom of the installer. This is unchecked by default and without it `pip` and `python` commands won't work.
->
-> If Python is already installed but `pip` isn't recognized, try `python -m pip` instead of `pip`, or `py -m pip` on Windows.
-
-## Quick Start
-
-### Linux / macOS
-
-```bash
-pip install elara-core
-elara init
-claude mcp add elara -- elara serve
-```
-
-### Windows (Command Prompt or PowerShell)
-
-```
-py -m pip install elara-core
-elara init
-claude mcp add elara -- elara serve
-```
-
-> If `py` doesn't work, try `python -m pip install` instead.
-
-That's it. Elara is now available as an MCP server in your Claude Code sessions.
+---
 
 ## Configuration
 
-### Data Directory
+### Data directory
 
-By default, Elara stores data in `~/.elara/`. Override with:
+Default: `~/.elara/`. Override with:
 
 ```bash
-# Environment variable
-export ELARA_DATA_DIR=~/.claude
-
-# Or CLI flag
-elara serve --data-dir ~/.claude
+export ELARA_DATA_DIR=/your/custom/path
+# or
+elara serve --data-dir /your/custom/path
 ```
 
 ### Persona
 
-Elara's personality is defined in your `CLAUDE.md` file, not in the code. See `examples/CLAUDE.md.example` for a template.
+Elara's personality comes from your AI client's system prompt (e.g., `CLAUDE.md`), not from the code. Copy the included template to get started:
 
-## MCP Tools Reference
+```bash
+cp examples/CLAUDE.md.example ~/.claude/CLAUDE.md
+```
 
-| Module | Tools | Description |
-|--------|-------|-------------|
-| **Memory** | `elara_remember`, `elara_recall`, `elara_recall_conversation`, `elara_conversations` | Semantic memory — store and search by meaning |
-| **Mood** | `elara_mood`, `elara_mood_adjust`, `elara_imprint`, `elara_mode`, `elara_status` | Emotional state with natural decay |
-| **Episodes** | `elara_episode_start`, `elara_episode_note`, `elara_episode_end`, `elara_episode_query`, `elara_context` | Session lifecycle and continuity |
-| **Goals** | `elara_goal`, `elara_goal_boot`, `elara_correction`, `elara_correction_boot`, `elara_handoff` | Persistent tracking and learning |
-| **Awareness** | `elara_reflect`, `elara_insight`, `elara_intention`, `elara_observe`, `elara_temperament` | Self-reflection and growth |
-| **Dreams** | `elara_dream`, `elara_dream_info` | Pattern discovery across sessions |
-| **Cognitive** | `elara_reasoning`, `elara_outcome`, `elara_synthesis` | Reasoning trails and idea synthesis |
-| **Business** | `elara_business` | Idea scoring and competitor tracking |
-| **LLM** | `elara_llm` | Local LLM interface (Ollama) |
-| **Maintenance** | `elara_rebuild_indexes`, `elara_briefing`, `elara_snapshot` | Index management and RSS feeds |
+Edit it to make Elara yours — name, personality, boot behavior, session-end behavior.
 
-## Compatibility
+### Overnight thinking (optional)
 
-- **Python:** 3.10+
-- **OS:** Linux, macOS, Windows (WSL)
-- **MCP Clients:** Claude Code, Claude Desktop, Cursor, or any MCP-compatible client
+Requires [Ollama](https://ollama.ai) with a model installed:
+
+```bash
+# Install Ollama (Linux)
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Pull a model
+ollama pull qwen2.5:32b
+
+# Run overnight thinking manually
+cd /path/to/elara-core
+python3 -m daemon.overnight --mode exploratory
+```
+
+---
+
+## Troubleshooting
+
+**"elara: command not found"**
+→ Your Python scripts directory isn't in PATH. Try: `python -m elara_mcp.cli serve`
+
+**"No module named 'chromadb'"**
+→ Reinstall: `pip install elara-core --force-reinstall`
+
+**MCP client doesn't see Elara tools**
+→ Make sure you restarted your client after adding the MCP config. Check with: `claude mcp list`
+
+**"Elara initialized" but tools don't work**
+→ Run `elara serve` in a terminal to see error output. Most common: Python version too old (need 3.10+).
+
+---
 
 ## Development
 
 ```bash
-# Clone and install in dev mode
 git clone https://github.com/aivelikivodja-bot/elara-core.git
 cd elara-core
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -e ".[dev]"
-
-# Run tests
 pytest
-
-# Run MCP server locally
-elara serve
 ```
-
-## Your Existing Data
-
-If you already have Elara data in `~/.claude/`, set the environment variable and everything keeps working:
-
-```bash
-export ELARA_DATA_DIR=~/.claude
-```
-
-The `elara-` prefix is preserved in all filenames for backward compatibility.
-
-## Community
-
-- **[GitHub Discussions](https://github.com/aivelikivodja-bot/elara-core/discussions)** — Questions, ideas, showcase
-- **[Issues](https://github.com/aivelikivodja-bot/elara-core/issues)** — Bug reports and feature requests
-- **[Contributing](CONTRIBUTING.md)** — How to contribute
 
 ---
 
-If Elara resonates with you, a star helps others find it.
+## Compatibility
 
-## Badge
+| | Supported |
+|---|---|
+| **Python** | 3.10, 3.11, 3.12 |
+| **OS** | Linux, macOS, Windows (WSL recommended) |
+| **MCP Clients** | Claude Code, Claude Desktop, Cursor, Windsurf, Cline |
 
-Using Elara in your project? Add the badge:
+---
 
-```markdown
-[![Powered by Elara Core](https://elara.navigatorbuilds.com/badge.svg)](https://elara.navigatorbuilds.com)
-```
+## Community
 
-[![Powered by Elara Core](https://elara.navigatorbuilds.com/badge.svg)](https://elara.navigatorbuilds.com)
+- **[Docs](https://elara.navigatorbuilds.com)** — Quickstart, tool reference, architecture, persona templates
+- **[Discussions](https://github.com/aivelikivodja-bot/elara-core/discussions)** — Questions, ideas, showcase
+- **[Issues](https://github.com/aivelikivodja-bot/elara-core/issues)** — Bug reports and feature requests
+- **[Contributing](CONTRIBUTING.md)** — How to help
+
+---
+
+## What's New in v0.10.0
+
+**3D Cognition System** — Elara now builds persistent understanding between sessions:
+- **Cognitive Models** — understanding that accumulates evidence and adjusts confidence over time
+- **Predictions** — explicit forecasts with deadlines and accuracy tracking
+- **Principles** — crystallized rules from repeated insights
+
+**Creative Drift** — the overnight brain's imagination. Random context collisions at high temperature, writing to an accumulating creative journal.
+
+**[Full changelog →](CHANGELOG.md)**
+
+---
+
+If Elara resonates with you, a star helps others find it. ⭐
