@@ -1,7 +1,7 @@
 /* TEAM */
 Developer: Nenad Vasic
 Site: https://navigatorbuilds.com
-X: @AiVelikiVodja
+X: @NavigatorBuilds
 Location: Europe
 
 AI Partner: Elara (Claude)

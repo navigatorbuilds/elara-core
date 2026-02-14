@@ -82,8 +82,8 @@
                 width: 90%;
                 max-width: 600px;
                 background: #050505;
-                border: 2px solid var(--green, #00ff41);
-                box-shadow: 0 0 30px rgba(0, 255, 65, 0.3), 0 10px 60px rgba(0, 0, 0, 0.8);
+                border: 2px solid var(--green, #3b82f6);
+                box-shadow: 0 0 30px rgba(59, 130, 246, 0.3), 0 10px 60px rgba(0, 0, 0, 0.8);
                 font-family: 'Share Tech Mono', 'Courier New', monospace;
                 position: relative;
                 max-height: 70vh;
@@ -100,13 +100,13 @@
                     0deg,
                     transparent,
                     transparent 2px,
-                    rgba(0, 255, 65, 0.02) 2px,
-                    rgba(0, 255, 65, 0.02) 4px
+                    rgba(59, 130, 246, 0.02) 2px,
+                    rgba(59, 130, 246, 0.02) 4px
                 );
             }
 
             .cmd-palette-header {
-                border-bottom: 1px solid var(--green-dark, #003300);
+                border-bottom: 1px solid var(--green-dark, #14532d);
                 padding: 16px;
                 display: flex;
                 align-items: center;
@@ -122,7 +122,7 @@
                 outline: none;
                 font-family: 'Share Tech Mono', 'Courier New', monospace;
                 font-size: 16px;
-                color: var(--green, #00ff41);
+                color: var(--green, #3b82f6);
                 padding: 4px;
             }
 
@@ -157,19 +157,19 @@
 
             .cmd-palette-item:hover,
             .cmd-palette-item.selected {
-                background: rgba(0, 255, 65, 0.08);
-                border-left: 3px solid var(--green, #00ff41);
+                background: rgba(59, 130, 246, 0.08);
+                border-left: 3px solid var(--green, #3b82f6);
                 padding-left: 13px;
             }
 
             .cmd-palette-item-title {
                 font-size: 14px;
-                color: var(--green, #00ff41);
+                color: var(--green, #3b82f6);
                 font-weight: normal;
             }
 
             .cmd-palette-item.selected .cmd-palette-item-title {
-                text-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
+                text-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
             }
 
             .cmd-palette-item-desc {
@@ -196,11 +196,11 @@
 
             .cmd-palette-results::-webkit-scrollbar-thumb {
                 background: var(--border, #1a1a1a);
-                border: 1px solid var(--green-dark, #003300);
+                border: 1px solid var(--green-dark, #14532d);
             }
 
             .cmd-palette-results::-webkit-scrollbar-thumb:hover {
-                background: var(--green-dark, #003300);
+                background: var(--green-dark, #14532d);
             }
         </style>
     `;

@@ -14,7 +14,7 @@
         body {
             font-family: 'Courier New', Consolas, monospace;
             background: #000;
-            color: #00ff41;
+            color: #3b82f6;
             line-height: 1.6;
             padding: 40px 20px;
             position: relative;
@@ -64,47 +64,42 @@
             text-align: center;
             margin-bottom: 60px;
             padding: 30px;
-            border: 2px solid #00ff41;
+            border: 2px solid #3b82f6;
             background: rgba(10, 14, 26, 0.8);
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
             position: relative;
         }
 
         h1 {
             font-size: 48px;
-            text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
+            text-shadow: 0 0 10px #3b82f6, 0 0 20px #3b82f6;
             margin-bottom: 10px;
-            animation: glitch 3s infinite;
+            
         }
 
-        @keyframes glitch {
-            0%, 90%, 100% { transform: translate(0); }
-            92% { transform: translate(-2px, 1px); }
-            94% { transform: translate(2px, -1px); }
-            96% { transform: translate(-1px, 2px); }
-        }
+        
 
         .subtitle {
-            color: #ff0040;
+            color: #ef4444;
             font-size: 18px;
-            text-shadow: 0 0 5px #ff0040;
+            text-shadow: 0 0 5px #ef4444;
         }
 
         .back-link {
             position: absolute;
             top: 20px;
             left: 20px;
-            color: #00ff41;
+            color: #3b82f6;
             text-decoration: none;
             padding: 10px 20px;
-            border: 1px solid #00ff41;
-            background: rgba(0, 255, 65, 0.1);
+            border: 1px solid #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
             transition: all 0.3s;
         }
 
         .back-link:hover {
-            background: rgba(0, 255, 65, 0.2);
-            box-shadow: 0 0 10px #00ff41;
+            background: rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 10px #3b82f6;
         }
 
         .grid {
@@ -123,8 +118,8 @@
         }
 
         .sticker-card:hover {
-            border-color: #00ff41;
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+            border-color: #3b82f6;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
             transform: translateY(-5px);
         }
 
@@ -143,14 +138,14 @@
         .sticker-preview img {
             max-width: 100%;
             height: auto;
-            filter: drop-shadow(0 0 10px rgba(0, 255, 65, 0.3));
+            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.3));
         }
 
         .sticker-title {
             font-size: 20px;
-            color: #00ff41;
+            color: #3b82f6;
             margin-bottom: 15px;
-            text-shadow: 0 0 5px #00ff41;
+            text-shadow: 0 0 5px #3b82f6;
         }
 
         .sticker-actions {
@@ -163,9 +158,9 @@
             flex: 1;
             min-width: 100px;
             padding: 10px 20px;
-            border: 1px solid #00ff41;
-            background: rgba(0, 255, 65, 0.1);
-            color: #00ff41;
+            border: 1px solid #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
             text-decoration: none;
             text-align: center;
             cursor: pointer;
@@ -175,19 +170,19 @@
         }
 
         .btn:hover {
-            background: rgba(0, 255, 65, 0.2);
-            box-shadow: 0 0 10px #00ff41;
+            background: rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 10px #3b82f6;
         }
 
         .btn-secondary {
-            border-color: #ff0040;
-            color: #ff0040;
-            background: rgba(255, 0, 64, 0.1);
+            border-color: #ef4444;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 0, 64, 0.2);
-            box-shadow: 0 0 10px #ff0040;
+            background: rgba(239, 68, 68, 0.2);
+            box-shadow: 0 0 10px #ef4444;
         }
 
         .embed-section {
@@ -203,7 +198,7 @@
         }
 
         .embed-title {
-            color: #ff0040;
+            color: #ef4444;
             margin-bottom: 10px;
             font-size: 14px;
         }
@@ -212,7 +207,7 @@
             background: #000;
             border: 1px solid #1a2332;
             padding: 15px;
-            color: #00ff41;
+            color: #3b82f6;
             font-size: 12px;
             overflow-x: auto;
             white-space: pre-wrap;
@@ -228,12 +223,12 @@
         }
 
         footer a {
-            color: #00ff41;
+            color: #3b82f6;
             text-decoration: none;
         }
 
         footer a:hover {
-            text-shadow: 0 0 5px #00ff41;
+            text-shadow: 0 0 5px #3b82f6;
         }
 
         @media (max-width: 768px) {
@@ -386,7 +381,7 @@
                 const text = this.textContent;
                 navigator.clipboard.writeText(text).then(() => {
                     const originalBorder = this.style.border;
-                    this.style.border = '1px solid #00ff41';
+                    this.style.border = '1px solid #3b82f6';
                     setTimeout(() => {
                         this.style.border = originalBorder;
                     }, 500);

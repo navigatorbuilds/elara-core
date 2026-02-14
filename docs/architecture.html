@@ -8,84 +8,44 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0a0a0a;
-            --bg-card: #0f0f0f;
-            --bg-card-hover: #141414;
-            --green: #00ff41;
-            --green-dim: #00cc33;
-            --green-dark: #003300;
-            --green-glow: rgba(0, 255, 65, 0.08);
-            --red: #ff0040;
-            --red-dim: #cc0033;
-            --red-glow: rgba(255, 0, 64, 0.08);
-            --cyan: #00e5ff;
+            --bg: #0d1117;
+            --bg-card: #161b22;
+            --bg-card-hover: #1c2333;
+            --green: #3b82f6;
+            --green-dim: #2563eb;
+            --green-dark: #14532d;
+            --green-glow: rgba(59, 130, 246, 0.08);
+            --red: #ef4444;
+            --red-dim: #dc2626;
+            --red-glow: rgba(239, 68, 68, 0.08);
+            --cyan: #3b82f6;
             --cyan-dim: #00b8cc;
             --cyan-dark: #003344;
-            --cyan-glow: rgba(0, 229, 255, 0.08);
-            --amber: #ffb000;
+            --cyan-glow: rgba(59, 130, 246, 0.08);
+            --amber: #f97316;
             --amber-dim: #cc8c00;
             --amber-dark: #332300;
-            --amber-glow: rgba(255, 176, 0, 0.08);
-            --text: #c0c0c0;
-            --text-dim: #606060;
-            --text-bright: #e0e0e0;
-            --border: #1a1a1a;
-            --border-green: #003300;
-            --scanline: rgba(0, 255, 65, 0.03);
+            --amber-glow: rgba(249, 115, 22, 0.08);
+            --text: #e5e7eb;
+            --text-dim: #6b7280;
+            --text-bright: #f3f4f6;
+            --border: #1e293b;
+            --border-green: #14532d;
+            --scanline: rgba(59, 130, 246, 0.03);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
 
         body {
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
             line-height: 1.7;
             overflow-x: hidden;
-        }
-
-        /* CRT Scanlines overlay */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 9999;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(0, 0, 0, 0.08) 2px,
-                rgba(0, 0, 0, 0.08) 4px
-            );
-        }
-
-        /* Floating pixel characters */
-        .pixel-bg {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
-        }
-
-        .pixel-char {
-            position: absolute;
-            font-family: 'Press Start 2P', monospace;
-            opacity: 0.04;
-            animation: float-char linear infinite;
-            color: var(--green);
-        }
-
-        .pixel-char.red { color: var(--red); }
-
-        @keyframes float-char {
-            0% { transform: translateY(110vh) rotate(0deg); }
-            100% { transform: translateY(-10vh) rotate(360deg); }
         }
 
         .container {
@@ -96,26 +56,10 @@
             z-index: 1;
         }
 
-        /* Glitch effect */
-        @keyframes glitch {
-            0%, 100% { text-shadow: 2px 0 var(--red), -2px 0 var(--cyan); }
-            25% { text-shadow: -2px 0 var(--red), 2px 0 var(--cyan); }
-            50% { text-shadow: 2px 2px var(--red), -2px -2px var(--cyan); }
-            75% { text-shadow: -2px -1px var(--red), 2px 1px var(--cyan); }
-        }
-
-        @keyframes flicker {
-            0%, 100% { opacity: 1; }
-            92% { opacity: 1; }
-            93% { opacity: 0.8; }
-            94% { opacity: 1; }
-            96% { opacity: 0.9; }
-            97% { opacity: 1; }
-        }
-
+        
         @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 5px rgba(0, 255, 65, 0.2); }
-            50% { box-shadow: 0 0 20px rgba(0, 255, 65, 0.4), 0 0 40px rgba(0, 255, 65, 0.1); }
+            0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.2); }
+            50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(59, 130, 246, 0.1); }
         }
 
         @keyframes data-flow {
@@ -134,7 +78,7 @@
             top: 0; left: 0; right: 0;
             z-index: 100;
             padding: 12px 0;
-            background: rgba(10, 10, 10, 0.92);
+            background: rgba(13, 17, 23, 0.92);
             backdrop-filter: blur(8px);
             border-bottom: 1px solid var(--border-green);
         }
@@ -146,15 +90,15 @@
         }
 
         .nav-logo {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 14px;
             color: var(--green);
             text-decoration: none;
-            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
-            animation: flicker 8s infinite;
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+            
         }
 
-        .nav-logo .red { color: var(--red); text-shadow: 0 0 10px rgba(255, 0, 64, 0.5); }
+        .nav-logo .red { color: var(--red); text-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
 
         .nav-links {
             display: flex;
@@ -171,8 +115,8 @@
             transition: all 0.2s;
         }
 
-        .nav-links a:hover { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 65, 0.4); }
-        .nav-links a.active { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 65, 0.4); }
+        .nav-links a:hover { color: var(--green); text-shadow: 0 0 10px rgba(59, 130, 246, 0.3); }
+        .nav-links a.active { color: var(--green); text-shadow: 0 0 10px rgba(59, 130, 246, 0.3); }
 
         .btn-github {
             display: inline-flex;
@@ -182,7 +126,7 @@
             background: transparent;
             border: 1px solid var(--green-dark);
             color: var(--green);
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 13px;
             text-decoration: none;
             text-transform: uppercase;
@@ -193,7 +137,7 @@
         .btn-github:hover {
             background: var(--green-glow);
             border-color: var(--green-dim);
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
         }
 
         .btn-github svg { width: 16px; height: 16px; fill: currentColor; }
@@ -205,12 +149,12 @@
         }
 
         .page-header h1 {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 28px;
             color: var(--green);
-            text-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
             margin-bottom: 16px;
-            animation: glitch 4s infinite;
+            
         }
 
         .page-header p {
@@ -240,7 +184,7 @@
         }
 
         .layer-label {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 9px;
             color: var(--text-dim);
             text-transform: uppercase;
@@ -303,7 +247,7 @@
         .pipe-dot:nth-child(5) { animation-delay: 1.2s; }
 
         .pipe-label {
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 11px;
             color: var(--text-dim);
             letter-spacing: 4px;
@@ -351,15 +295,15 @@
         .client-box:hover {
             border-color: var(--cyan-dim);
             background: var(--bg-card-hover);
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
         }
 
         .client-icon {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 28px;
             color: var(--cyan);
             margin-bottom: 8px;
-            text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
         }
 
         .client-name {
@@ -398,23 +342,23 @@
                 90deg,
                 transparent,
                 transparent 8px,
-                rgba(0, 255, 65, 0.03) 8px,
-                rgba(0, 255, 65, 0.03) 16px
+                rgba(59, 130, 246, 0.03) 8px,
+                rgba(59, 130, 246, 0.03) 16px
             );
         }
 
         .protocol-text {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 10px;
             color: var(--green);
-            text-shadow: 0 0 8px rgba(0, 255, 65, 0.4);
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
             letter-spacing: 4px;
             position: relative;
             z-index: 1;
         }
 
         .protocol-arrow {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 20px;
             color: var(--green-dim);
             position: relative;
@@ -451,20 +395,20 @@
 
         /* Color coding by type */
         .module-box.type-core::before { background: var(--green-dark); }
-        .module-box.type-core:hover::before { background: var(--green); box-shadow: 0 0 10px rgba(0, 255, 65, 0.5); }
-        .module-box.type-core:hover { border-color: var(--green-dark); box-shadow: 0 0 25px rgba(0, 255, 65, 0.1); }
+        .module-box.type-core:hover::before { background: var(--green); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        .module-box.type-core:hover { border-color: var(--green-dark); box-shadow: 0 0 25px rgba(59, 130, 246, 0.1); }
 
         .module-box.type-emotional::before { background: var(--red-dim); opacity: 0.5; }
-        .module-box.type-emotional:hover::before { background: var(--red); opacity: 1; box-shadow: 0 0 10px rgba(255, 0, 64, 0.5); }
-        .module-box.type-emotional:hover { border-color: rgba(255, 0, 64, 0.3); box-shadow: 0 0 25px rgba(255, 0, 64, 0.1); }
+        .module-box.type-emotional:hover::before { background: var(--red); opacity: 1; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+        .module-box.type-emotional:hover { border-color: rgba(239, 68, 68, 0.3); box-shadow: 0 0 25px rgba(239, 68, 68, 0.1); }
 
         .module-box.type-productivity::before { background: var(--amber-dark); }
-        .module-box.type-productivity:hover::before { background: var(--amber); box-shadow: 0 0 10px rgba(255, 176, 0, 0.5); }
-        .module-box.type-productivity:hover { border-color: var(--amber-dark); box-shadow: 0 0 25px rgba(255, 176, 0, 0.1); }
+        .module-box.type-productivity:hover::before { background: var(--amber); box-shadow: 0 0 10px rgba(249, 115, 22, 0.5); }
+        .module-box.type-productivity:hover { border-color: var(--amber-dark); box-shadow: 0 0 25px rgba(249, 115, 22, 0.1); }
 
         .module-box.type-external::before { background: var(--cyan-dark); }
-        .module-box.type-external:hover::before { background: var(--cyan); box-shadow: 0 0 10px rgba(0, 229, 255, 0.5); }
-        .module-box.type-external:hover { border-color: var(--cyan-dark); box-shadow: 0 0 25px rgba(0, 229, 255, 0.1); }
+        .module-box.type-external:hover::before { background: var(--cyan); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        .module-box.type-external:hover { border-color: var(--cyan-dark); box-shadow: 0 0 25px rgba(59, 130, 246, 0.1); }
 
         .module-box:hover {
             background: var(--bg-card-hover);
@@ -478,7 +422,7 @@
         }
 
         .module-name {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 8px;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -490,7 +434,7 @@
         .module-box.type-external .module-name { color: var(--cyan); }
 
         .module-count {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 20px;
             line-height: 1;
         }
@@ -536,7 +480,7 @@
         .module-box.type-core .tool-chip:hover { border-color: var(--green-dark); color: var(--green); }
 
         .module-box.type-emotional .tool-chip { color: var(--red-dim); }
-        .module-box.type-emotional .tool-chip:hover { border-color: rgba(255, 0, 64, 0.3); color: var(--red); }
+        .module-box.type-emotional .tool-chip:hover { border-color: rgba(239, 68, 68, 0.3); color: var(--red); }
 
         .module-box.type-productivity .tool-chip { color: var(--amber-dim); }
         .module-box.type-productivity .tool-chip:hover { border-color: var(--amber-dark); color: var(--amber); }
@@ -574,7 +518,7 @@
         }
 
         .data-section-title {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 8px;
             color: var(--red);
             text-transform: uppercase;
@@ -643,7 +587,7 @@
         }
 
         .db-cylinder:hover .cylinder-top {
-            box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
         }
 
         .db-name {
@@ -654,7 +598,7 @@
 
         .db-cylinder:hover .db-name {
             color: var(--green);
-            text-shadow: 0 0 5px rgba(0, 255, 65, 0.3);
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
         }
 
         .file-list {
@@ -678,7 +622,7 @@
 
         .file-icon {
             color: var(--amber-dim);
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 16px;
             width: 20px;
             text-align: center;
@@ -708,15 +652,15 @@
         .external-box:hover {
             border-color: var(--cyan-dark);
             background: var(--bg-card-hover);
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
         }
 
         .external-icon {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 32px;
             color: var(--cyan);
             margin-bottom: 8px;
-            text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
         }
 
         .external-name {
@@ -755,7 +699,7 @@
         }
 
         .legend-swatch.core { background: var(--green-dark); border-color: var(--green-dim); }
-        .legend-swatch.emotional { background: rgba(255, 0, 64, 0.15); border-color: var(--red-dim); }
+        .legend-swatch.emotional { background: rgba(239, 68, 68, 0.15); border-color: var(--red-dim); }
         .legend-swatch.productivity { background: var(--amber-dark); border-color: var(--amber-dim); }
         .legend-swatch.external { background: var(--cyan-dark); border-color: var(--cyan-dim); }
 
@@ -794,10 +738,10 @@
         }
 
         .arch-stat-value {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 36px;
             color: var(--green);
-            text-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
             line-height: 1;
         }
 
@@ -855,7 +799,7 @@
         }
 
         .footer-ascii {
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 11px;
             color: var(--text-dim);
             margin-bottom: 24px;
@@ -1401,7 +1345,7 @@
         <div class="container">
             <div style="max-width: 700px; margin: 0 auto; background: var(--bg-card); border: 1px solid var(--border); padding: 28px; position: relative; overflow: hidden;">
                 <div style="position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--red-dim);"></div>
-                <div style="font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--red); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px;">[OVR] Overwatch Daemon</div>
+                <div style="font-family: 'Inter', -apple-system, sans-serif; font-size: 10px; color: var(--red); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px;">[OVR] Overwatch Daemon</div>
                 <p style="font-size: 13px; color: var(--text); margin-bottom: 12px;">
                     Runs independently alongside the MCP server. Watches conversation files in real-time, micro-ingests new exchanges into ChromaDB, and injects cross-session references.
                 </p>

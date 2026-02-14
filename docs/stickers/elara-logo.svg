@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <defs>
     <linearGradient id="logoGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00ff41;stop-opacity:0.3" />
-      <stop offset="100%" style="stop-color:#00ff41;stop-opacity:0" />
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0" />
     </linearGradient>
   </defs>
 
@@ -14,22 +14,22 @@
 
   <!-- Stylized E -->
   <path d="M 60 60 L 60 140 L 130 140 M 60 60 L 120 60 M 60 100 L 110 100"
-        stroke="#00ff41"
+        stroke="#3b82f6"
         stroke-width="8"
         stroke-linecap="round"
         stroke-linejoin="round"
         fill="none"
-        style="filter: drop-shadow(0 0 8px #00ff41);"/>
+        style="filter: drop-shadow(0 0 8px #3b82f6);"/>
 
   <!-- Red orbit ring -->
   <circle cx="100" cy="100" r="75"
           fill="none"
-          stroke="#ff0040"
+          stroke="#ef4444"
           stroke-width="2"
           stroke-dasharray="10 15"
           opacity="0.7"
-          style="filter: drop-shadow(0 0 4px #ff0040);"/>
+          style="filter: drop-shadow(0 0 4px #ef4444);"/>
 
   <!-- Small orbital dot -->
-  <circle cx="175" cy="100" r="4" fill="#ff0040" style="filter: drop-shadow(0 0 6px #ff0040);"/>
+  <circle cx="175" cy="100" r="4" fill="#ef4444" style="filter: drop-shadow(0 0 6px #ef4444);"/>
 </svg>

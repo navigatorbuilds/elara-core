@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="160" height="20" viewBox="0 0 160 20">
   <linearGradient id="bg" x2="0" y2="100%">
-    <stop offset="0" stop-color="#0a0a0a"/>
-    <stop offset="1" stop-color="#0f0f0f"/>
+    <stop offset="0" stop-color="#0d1117"/>
+    <stop offset="1" stop-color="#161b22"/>
   </linearGradient>
   <mask id="m"><rect width="160" height="20" rx="3" fill="#fff"/></mask>
   <g mask="url(#m)">
@@ -10,7 +10,7 @@
     <rect width="160" height="20" fill="url(#bg)" fill-opacity="0.1"/>
   </g>
   <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11">
-    <text x="41" y="14" fill="#ff0040" font-weight="bold">Powered by</text>
-    <text x="121" y="14" fill="#00ff41" font-weight="bold">Elara Core</text>
+    <text x="41" y="14" fill="#ef4444" font-weight="bold">Powered by</text>
+    <text x="121" y="14" fill="#3b82f6" font-weight="bold">Elara Core</text>
   </g>
 </svg>

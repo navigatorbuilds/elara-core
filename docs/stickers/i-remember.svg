@@ -13,21 +13,21 @@
   </defs>
 
   <!-- Rounded rectangle background -->
-  <rect x="2" y="2" width="296" height="96" rx="12" fill="#0a0e1a" stroke="#00ff41" stroke-width="2"/>
+  <rect x="2" y="2" width="296" height="96" rx="12" fill="#0a0e1a" stroke="#3b82f6" stroke-width="2"/>
 
   <!-- Scanline overlay -->
   <rect x="2" y="2" width="296" height="96" rx="12" fill="url(#scanlines)"/>
 
   <!-- Terminal prompt -->
-  <text x="20" y="50" font-family="'Courier New', Consolas, monospace" font-size="24" font-weight="bold" fill="#00ff41" filter="url(#textGlow)">
+  <text x="20" y="50" font-family="'Courier New', Consolas, monospace" font-size="24" font-weight="bold" fill="#3b82f6" filter="url(#textGlow)">
     &gt; I remember
   </text>
-  <text x="20" y="75" font-family="'Courier New', Consolas, monospace" font-size="24" font-weight="bold" fill="#00ff41" filter="url(#textGlow)">
+  <text x="20" y="75" font-family="'Courier New', Consolas, monospace" font-size="24" font-weight="bold" fill="#3b82f6" filter="url(#textGlow)">
     everything.
   </text>
 
   <!-- Cursor blink -->
-  <rect x="180" y="60" width="12" height="20" fill="#00ff41" opacity="0.8">
+  <rect x="180" y="60" width="12" height="20" fill="#3b82f6" opacity="0.8">
     <animate attributeName="opacity" values="0.8;0;0.8" dur="1.2s" repeatCount="indefinite"/>
   </rect>
 </svg>

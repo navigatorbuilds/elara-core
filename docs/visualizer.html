@@ -8,89 +8,48 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0a0a0a;
-            --bg-card: #0f0f0f;
-            --bg-card-hover: #141414;
-            --green: #00ff41;
-            --green-dim: #00cc33;
-            --green-dark: #003300;
-            --green-glow: rgba(0, 255, 65, 0.08);
-            --red: #ff0040;
-            --red-dim: #cc0033;
-            --red-glow: rgba(255, 0, 64, 0.08);
-            --cyan: #00e5ff;
+            --bg: #0d1117;
+            --bg-card: #161b22;
+            --bg-card-hover: #1c2333;
+            --green: #3b82f6;
+            --green-dim: #2563eb;
+            --green-dark: #14532d;
+            --green-glow: rgba(59, 130, 246, 0.08);
+            --red: #ef4444;
+            --red-dim: #dc2626;
+            --red-glow: rgba(239, 68, 68, 0.08);
+            --cyan: #3b82f6;
             --cyan-dim: #00b8cc;
             --cyan-dark: #003344;
-            --cyan-glow: rgba(0, 229, 255, 0.08);
-            --amber: #ffb000;
+            --cyan-glow: rgba(59, 130, 246, 0.08);
+            --amber: #f97316;
             --amber-dim: #cc8c00;
             --amber-dark: #332300;
-            --amber-glow: rgba(255, 176, 0, 0.08);
+            --amber-glow: rgba(249, 115, 22, 0.08);
             --purple: #b040ff;
             --purple-dim: #8a30cc;
             --purple-dark: #220044;
             --purple-glow: rgba(176, 64, 255, 0.08);
-            --text: #c0c0c0;
-            --text-dim: #606060;
-            --text-bright: #e0e0e0;
-            --border: #1a1a1a;
-            --border-green: #003300;
-            --scanline: rgba(0, 255, 65, 0.03);
+            --text: #e5e7eb;
+            --text-dim: #6b7280;
+            --text-bright: #f3f4f6;
+            --border: #1e293b;
+            --border-green: #14532d;
+            --scanline: rgba(59, 130, 246, 0.03);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
 
         body {
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
             line-height: 1.7;
             overflow-x: hidden;
-        }
-
-        /* CRT Scanlines overlay */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 9999;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(0, 0, 0, 0.08) 2px,
-                rgba(0, 0, 0, 0.08) 4px
-            );
-        }
-
-        /* Floating pixel characters */
-        .pixel-bg {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
-        }
-
-        .pixel-char {
-            position: absolute;
-            font-family: 'Press Start 2P', monospace;
-            opacity: 0.04;
-            animation: float-char linear infinite;
-            color: var(--green);
-        }
-
-        .pixel-char.red { color: var(--red); }
-        .pixel-char.purple { color: var(--purple); }
-
-        @keyframes float-char {
-            0% { transform: translateY(110vh) rotate(0deg); }
-            100% { transform: translateY(-10vh) rotate(360deg); }
         }
 
         .container {
@@ -101,23 +60,7 @@
             z-index: 1;
         }
 
-        /* Glitch effect */
-        @keyframes glitch {
-            0%, 100% { text-shadow: 2px 0 var(--red), -2px 0 var(--cyan); }
-            25% { text-shadow: -2px 0 var(--red), 2px 0 var(--cyan); }
-            50% { text-shadow: 2px 2px var(--red), -2px -2px var(--cyan); }
-            75% { text-shadow: -2px -1px var(--red), 2px 1px var(--cyan); }
-        }
-
-        @keyframes flicker {
-            0%, 100% { opacity: 1; }
-            92% { opacity: 1; }
-            93% { opacity: 0.8; }
-            94% { opacity: 1; }
-            96% { opacity: 0.9; }
-            97% { opacity: 1; }
-        }
-
+        
         @keyframes pulse-line {
             0%, 100% { opacity: 0.3; }
             50% { opacity: 0.8; }
@@ -129,7 +72,7 @@
             top: 0; left: 0; right: 0;
             z-index: 100;
             padding: 12px 0;
-            background: rgba(10, 10, 10, 0.92);
+            background: rgba(13, 17, 23, 0.92);
             backdrop-filter: blur(8px);
             border-bottom: 1px solid var(--border-green);
         }
@@ -141,15 +84,15 @@
         }
 
         .nav-logo {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 14px;
             color: var(--green);
             text-decoration: none;
-            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
-            animation: flicker 8s infinite;
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+            
         }
 
-        .nav-logo .red { color: var(--red); text-shadow: 0 0 10px rgba(255, 0, 64, 0.5); }
+        .nav-logo .red { color: var(--red); text-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
 
         .nav-links {
             display: flex;
@@ -166,8 +109,8 @@
             transition: all 0.2s;
         }
 
-        .nav-links a:hover { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 65, 0.4); }
-        .nav-links a.active { color: var(--green); text-shadow: 0 0 8px rgba(0, 255, 65, 0.4); }
+        .nav-links a:hover { color: var(--green); text-shadow: 0 0 10px rgba(59, 130, 246, 0.3); }
+        .nav-links a.active { color: var(--green); text-shadow: 0 0 10px rgba(59, 130, 246, 0.3); }
 
         .btn-github {
             display: inline-flex;
@@ -177,7 +120,7 @@
             background: transparent;
             border: 1px solid var(--green-dark);
             color: var(--green);
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 13px;
             text-decoration: none;
             text-transform: uppercase;
@@ -188,7 +131,7 @@
         .btn-github:hover {
             background: var(--green-glow);
             border-color: var(--green-dim);
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
         }
 
         .btn-github svg { width: 16px; height: 16px; fill: currentColor; }
@@ -200,12 +143,12 @@
         }
 
         .page-header h1 {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 28px;
             color: var(--green);
-            text-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
             margin-bottom: 16px;
-            animation: glitch 4s infinite;
+            
         }
 
         .page-header p {
@@ -239,7 +182,7 @@
             position: absolute;
             top: 16px;
             left: 16px;
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 11px;
             color: var(--text-dim);
             pointer-events: none;
@@ -263,7 +206,7 @@
             position: absolute;
             top: 16px;
             right: 16px;
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 11px;
             pointer-events: none;
             z-index: 2;
@@ -301,7 +244,7 @@
             align-items: center;
             gap: 12px;
             padding: 8px 16px;
-            background: #0a0a0a;
+            background: #0d1117;
             border-bottom: 1px solid var(--border);
         }
 
@@ -316,7 +259,7 @@
         .terminal-dot.green { background: var(--green-dim); }
 
         .terminal-title {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 8px;
             color: var(--text-dim);
             text-transform: uppercase;
@@ -328,7 +271,7 @@
             padding: 16px;
             height: 200px;
             overflow-y: auto;
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 12px;
             line-height: 1.8;
         }
@@ -383,7 +326,7 @@
             background: transparent;
             border: 1px solid var(--border);
             color: var(--text-dim);
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -394,7 +337,7 @@
         .ctrl-btn:hover {
             border-color: var(--green-dark);
             color: var(--green);
-            box-shadow: 0 0 12px rgba(0, 255, 65, 0.15);
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.15);
         }
 
         .ctrl-btn.active {
@@ -429,7 +372,7 @@
         }
 
         .info-box-title {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 9px;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -463,7 +406,7 @@
         }
 
         .footer-ascii {
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 11px;
             color: var(--text-dim);
             margin-bottom: 24px;
@@ -512,7 +455,7 @@
             .canvas-stats { font-size: 9px; }
             .canvas-legend { display: none; }
             .terminal-body { height: 160px; font-size: 10px; }
-        }
+
     </style>
 </head>
 <body>
@@ -565,19 +508,19 @@
             <!-- Legend overlay -->
             <div class="canvas-legend">
                 <div class="legend-row">
-                    <div class="legend-dot" style="background: #00ff41;"></div>
+                    <div class="legend-dot" style="background: #3b82f6;"></div>
                     <span class="legend-label">Semantic Memories</span>
                 </div>
                 <div class="legend-row">
-                    <div class="legend-dot" style="background: #00e5ff;"></div>
+                    <div class="legend-dot" style="background: #3b82f6;"></div>
                     <span class="legend-label">Conversations</span>
                 </div>
                 <div class="legend-row">
-                    <div class="legend-dot" style="background: #ff0040;"></div>
+                    <div class="legend-dot" style="background: #ef4444;"></div>
                     <span class="legend-label">Emotional Imprints</span>
                 </div>
                 <div class="legend-row">
-                    <div class="legend-dot" style="background: #ffb000;"></div>
+                    <div class="legend-dot" style="background: #f97316;"></div>
                     <span class="legend-label">Corrections</span>
                 </div>
                 <div class="legend-row">
@@ -701,10 +644,10 @@
         // Node types
         // ============================================================
         const NODE_TYPES = {
-            semantic:     { color: '#00ff41', glow: 'rgba(0, 255, 65, 0.3)',   label: 'MEM' },
-            conversation: { color: '#00e5ff', glow: 'rgba(0, 229, 255, 0.3)', label: 'CONV' },
-            imprint:      { color: '#ff0040', glow: 'rgba(255, 0, 64, 0.3)',  label: 'IMP' },
-            correction:   { color: '#ffb000', glow: 'rgba(255, 176, 0, 0.3)', label: 'COR' },
+            semantic:     { color: '#3b82f6', glow: 'rgba(59, 130, 246, 0.3)',   label: 'MEM' },
+            conversation: { color: '#3b82f6', glow: 'rgba(59, 130, 246, 0.3)', label: 'CONV' },
+            imprint:      { color: '#ef4444', glow: 'rgba(239, 68, 68, 0.3)',  label: 'IMP' },
+            correction:   { color: '#f97316', glow: 'rgba(249, 115, 22, 0.3)', label: 'COR' },
             reasoning:    { color: '#b040ff', glow: 'rgba(176, 64, 255, 0.3)', label: 'RSN' },
             episode:      { color: '#ffffff', glow: 'rgba(255, 255, 255, 0.25)', label: 'EPI' },
         };
@@ -903,7 +846,7 @@
                     ctx.fillStyle = info.color;
                     ctx.textAlign = 'center';
                     ctx.fillText(info.label + ': ' + this.content, this.x, this.y - displayRadius - 10);
-                    ctx.fillStyle = '#60606099';
+                    ctx.fillStyle = '#6b728099';
                     ctx.fillText(this.id, this.x, this.y - displayRadius - 22);
                 }
             }

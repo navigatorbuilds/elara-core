@@ -4,8 +4,8 @@
   "description": "Persistent presence for AI assistants — documentation",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#00ff41",
+  "background_color": "#0d1117",
+  "theme_color": "#3b82f6",
   "icons": [
     {
       "src": "/favicon.svg",

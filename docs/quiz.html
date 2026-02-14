@@ -8,29 +8,29 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0a0a0a;
-            --bg-card: #0f0f0f;
-            --green: #00ff41;
-            --green-dim: #00cc33;
-            --green-dark: #003300;
-            --red: #ff0040;
-            --cyan: #00e5ff;
-            --amber: #ffb000;
+            --bg: #0d1117;
+            --bg-card: #161b22;
+            --green: #3b82f6;
+            --green-dim: #2563eb;
+            --green-dark: #14532d;
+            --red: #ef4444;
+            --cyan: #3b82f6;
+            --amber: #f97316;
             --magenta: #ff00ff;
-            --text: #c0c0c0;
-            --text-dim: #606060;
-            --text-bright: #e0e0e0;
-            --border: #1a1a1a;
-            --border-green: #003300;
+            --text: #e5e7eb;
+            --text-dim: #6b7280;
+            --text-bright: #f3f4f6;
+            --border: #1e293b;
+            --border-green: #14532d;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
             line-height: 1.7;
@@ -53,8 +53,8 @@
         .header { padding: 40px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 30px; }
         .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 8px; }
         .header-nav a { font-size: 13px; color: var(--green-dim); text-decoration: none; padding: 6px 14px; border: 1px solid var(--green-dark); transition: all 0.2s; }
-        .header-nav a:hover { background: rgba(0, 255, 65, 0.08); border-color: var(--green); }
-        .header h1 { font-family: 'Press Start 2P', monospace; font-size: clamp(11px, 2.5vw, 18px); color: var(--green); letter-spacing: 2px; margin-bottom: 10px; }
+        .header-nav a:hover { background: rgba(59, 130, 246, 0.08); border-color: var(--green); }
+        .header h1 { font-family: 'Inter', -apple-system, sans-serif; font-size: clamp(11px, 2.5vw, 18px); color: var(--green); letter-spacing: 2px; margin-bottom: 10px; }
         .header p { color: var(--text-dim); font-size: 14px; }
 
         /* Progress bar */
@@ -79,7 +79,7 @@
             text-align: right;
             margin-bottom: 6px;
             letter-spacing: 1px;
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 16px;
         }
 
@@ -109,7 +109,7 @@
         }
 
         .question-number {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 18px;
             color: var(--green-dim);
             letter-spacing: 2px;
@@ -117,7 +117,7 @@
         }
 
         .question-text {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: clamp(22px, 4vw, 30px);
             color: var(--text-bright);
             margin-bottom: 28px;
@@ -153,12 +153,12 @@
 
         .option-card.selected {
             border-color: var(--green);
-            background: rgba(0, 255, 65, 0.04);
+            background: rgba(59, 130, 246, 0.04);
         }
         .option-card.selected::before { opacity: 1; }
 
         .option-label {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 15px;
             color: var(--green-dim);
             letter-spacing: 1px;
@@ -177,7 +177,7 @@
         }
 
         .result-label {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 18px;
             color: var(--text-dim);
             letter-spacing: 3px;
@@ -191,7 +191,7 @@
         }
 
         .result-name {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: clamp(16px, 3vw, 24px);
             letter-spacing: 2px;
             margin-bottom: 8px;
@@ -228,7 +228,7 @@
             margin-bottom: 8px;
         }
         .result-greeting-text {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 22px;
             line-height: 1.4;
         }
@@ -245,7 +245,7 @@
             flex-wrap: wrap;
         }
         .btn {
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 13px;
             padding: 10px 24px;
             border: 1px solid var(--green-dark);
@@ -258,16 +258,16 @@
         }
         .btn:hover {
             border-color: var(--green);
-            background: rgba(0, 255, 65, 0.08);
+            background: rgba(59, 130, 246, 0.08);
             color: var(--green);
         }
         .btn-primary {
             border-color: var(--green);
             color: var(--green);
-            background: rgba(0, 255, 65, 0.06);
+            background: rgba(59, 130, 246, 0.06);
         }
         .btn-primary:hover {
-            background: rgba(0, 255, 65, 0.14);
+            background: rgba(59, 130, 246, 0.14);
         }
 
         /* Glitch confetti */
@@ -285,25 +285,9 @@
             opacity: 0;
         }
 
-        @keyframes glitchFall {
-            0% { opacity: 1; transform: translateY(-20px) translateX(0) scaleX(1); }
-            10% { transform: translateY(10vh) translateX(15px) scaleX(3); }
-            20% { transform: translateY(20vh) translateX(-10px) scaleX(1); opacity: 1; }
-            30% { transform: translateY(30vh) translateX(20px) scaleX(2); }
-            50% { transform: translateY(50vh) translateX(-5px) scaleX(1); opacity: 0.8; }
-            70% { opacity: 0.5; }
-            100% { transform: translateY(110vh) translateX(10px) scaleX(1); opacity: 0; }
-        }
+        
 
-        @keyframes glitchFlicker {
-            0%, 100% { opacity: 0; }
-            5% { opacity: 1; }
-            10% { opacity: 0; }
-            15% { opacity: 1; }
-            50% { opacity: 0.6; }
-            55% { opacity: 0; }
-            60% { opacity: 1; }
-        }
+        
 
         /* Footer */
         footer { border-top: 1px solid var(--border); padding: 30px 0; margin-top: 60px; text-align: center; font-size: 13px; color: var(--text-dim); }
@@ -679,12 +663,12 @@
         container.innerHTML = '';
 
         const colorMap = {
-            'dev-partner': ['#00ff41', '#00cc33', '#003300'],
-            'mentor': ['#ffb000', '#ff8800', '#664400'],
-            'minimalist': ['#e0e0e0', '#c0c0c0', '#808080'],
+            'dev-partner': ['#3b82f6', '#2563eb', '#14532d'],
+            'mentor': ['#f97316', '#ff8800', '#664400'],
+            'minimalist': ['#f3f4f6', '#e5e7eb', '#808080'],
             'creative-partner': ['#ff00ff', '#cc00cc', '#ff66ff'],
-            'ops-engineer': ['#ff0040', '#cc0033', '#ff3366'],
-            'night-owl': ['#00e5ff', '#00bbcc', '#005566']
+            'ops-engineer': ['#ef4444', '#dc2626', '#ff3366'],
+            'night-owl': ['#3b82f6', '#00bbcc', '#005566']
         };
         const colors = colorMap[personaKey] || colorMap['dev-partner'];
         const particleCount = 60;

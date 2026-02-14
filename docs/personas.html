@@ -8,29 +8,29 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0a0a0a;
-            --bg-card: #0f0f0f;
-            --green: #00ff41;
-            --green-dim: #00cc33;
-            --green-dark: #003300;
-            --red: #ff0040;
-            --cyan: #00e5ff;
-            --amber: #ffb000;
+            --bg: #0d1117;
+            --bg-card: #161b22;
+            --green: #3b82f6;
+            --green-dim: #2563eb;
+            --green-dark: #14532d;
+            --red: #ef4444;
+            --cyan: #3b82f6;
+            --amber: #f97316;
             --magenta: #ff00ff;
-            --text: #c0c0c0;
-            --text-dim: #606060;
-            --text-bright: #e0e0e0;
-            --border: #1a1a1a;
-            --border-green: #003300;
+            --text: #e5e7eb;
+            --text-dim: #6b7280;
+            --text-bright: #f3f4f6;
+            --border: #1e293b;
+            --border-green: #14532d;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
             line-height: 1.7;
@@ -50,13 +50,13 @@
         .header { padding: 40px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
         .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 8px; }
         .header-nav a { font-size: 13px; color: var(--green-dim); text-decoration: none; padding: 6px 14px; border: 1px solid var(--green-dark); transition: all 0.2s; }
-        .header-nav a:hover { background: rgba(0, 255, 65, 0.08); border-color: var(--green); }
-        .header h1 { font-family: 'Press Start 2P', monospace; font-size: clamp(13px, 2.5vw, 20px); color: var(--green); letter-spacing: 2px; margin-bottom: 10px; }
+        .header-nav a:hover { background: rgba(59, 130, 246, 0.08); border-color: var(--green); }
+        .header h1 { font-family: 'Inter', -apple-system, sans-serif; font-size: clamp(13px, 2.5vw, 20px); color: var(--green); letter-spacing: 2px; margin-bottom: 10px; }
         .header p { color: var(--text-dim); font-size: 14px; }
 
         .intro { margin-bottom: 40px; font-size: 14px; color: var(--text); }
         .intro p { margin-bottom: 12px; }
-        .intro code { color: var(--cyan); background: rgba(0,229,255,0.06); padding: 2px 6px; }
+        .intro code { color: var(--cyan); background: rgba(59, 130, 246, 0.06); padding: 2px 6px; }
 
         .persona-grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-bottom: 50px; }
 
@@ -92,7 +92,7 @@
         .persona-meta { flex: 1; }
 
         .persona-name {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 26px;
             letter-spacing: 2px;
             margin-bottom: 4px;
@@ -128,11 +128,11 @@
         }
 
         .persona-card:nth-child(1) .trait { border-color: var(--green-dark); color: var(--green-dim); }
-        .persona-card:nth-child(2) .trait { border-color: rgba(255,176,0,0.2); color: var(--amber); }
+        .persona-card:nth-child(2) .trait { border-color: rgba(249, 115, 22, 0.2); color: var(--amber); }
         .persona-card:nth-child(3) .trait { border-color: var(--border); color: var(--text); }
         .persona-card:nth-child(4) .trait { border-color: rgba(255,0,255,0.2); color: var(--magenta); }
-        .persona-card:nth-child(5) .trait { border-color: rgba(255,0,64,0.2); color: var(--red); }
-        .persona-card:nth-child(6) .trait { border-color: rgba(0,229,255,0.2); color: var(--cyan); }
+        .persona-card:nth-child(5) .trait { border-color: rgba(239, 68, 68, 0.2); color: var(--red); }
+        .persona-card:nth-child(6) .trait { border-color: rgba(59, 130, 246, 0.2); color: var(--cyan); }
 
         .code-block {
             background: #050505;
@@ -145,7 +145,7 @@
             line-height: 1.7;
         }
 
-        .code-block code { font-family: 'Share Tech Mono', monospace; color: var(--green); white-space: pre; display: block; }
+        .code-block code { font-family: 'Inter', -apple-system, sans-serif; color: var(--green); white-space: pre; display: block; }
         .code-block .comment { color: var(--text-dim); }
         .code-block .key { color: var(--cyan); }
         .code-block .val { color: var(--amber); }
@@ -154,13 +154,13 @@
         .copy-btn {
             position: absolute; top: 8px; right: 8px;
             background: none; border: 1px solid var(--border);
-            color: var(--text-dim); font-family: 'Share Tech Mono', monospace;
+            color: var(--text-dim); font-family: 'Inter', -apple-system, sans-serif;
             font-size: 11px; padding: 3px 10px; cursor: pointer; transition: all 0.2s;
         }
         .copy-btn:hover { border-color: var(--green-dark); color: var(--green); }
 
         .section-title {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 28px;
             color: var(--amber);
             letter-spacing: 2px;
@@ -592,7 +592,7 @@ When user says <span class="str">"bye"</span>:
     <!-- Create Your Own -->
     <div class="create-own">
         <h2 class="section-title">// CREATE YOUR OWN</h2>
-        <p>A persona file is just a markdown document that tells your AI how to behave. Drop it in <code style="color:var(--cyan); background:rgba(0,229,255,0.06); padding:2px 6px;">~/.claude/CLAUDE.md</code> and it loads automatically with every session.</p>
+        <p>A persona file is just a markdown document that tells your AI how to behave. Drop it in <code style="color:var(--cyan); background:rgba(59, 130, 246, 0.06); padding:2px 6px;">~/.claude/CLAUDE.md</code> and it loads automatically with every session.</p>
 
         <ul class="tip-list">
             <li><strong>Start with identity.</strong> Give it a name, a role, and a one-line style description. This anchors everything else.</li>

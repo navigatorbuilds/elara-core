@@ -25,12 +25,12 @@
 
   <!-- Red X -->
   <line x1="50" y1="70" x2="150" y2="120"
-        stroke="#ff0040"
+        stroke="#ef4444"
         stroke-width="8"
         stroke-linecap="round"
         filter="url(#cloudGlow)"/>
   <line x1="150" y1="70" x2="50" y2="120"
-        stroke="#ff0040"
+        stroke="#ef4444"
         stroke-width="8"
         stroke-linecap="round"
         filter="url(#cloudGlow)"/>
@@ -40,7 +40,7 @@
         font-family="'Courier New', Consolas, monospace"
         font-size="18"
         font-weight="bold"
-        fill="#00ff41"
+        fill="#3b82f6"
         text-anchor="middle"
         filter="url(#cloudGlow)">ZERO CLOUD</text>
 </svg>

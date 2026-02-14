@@ -13,7 +13,7 @@
   <rect x="2" y="2" width="246" height="76" rx="10" fill="#0a0e1a" stroke="#1a2332" stroke-width="2"/>
 
   <!-- Human dot (green) -->
-  <circle cx="40" cy="40" r="12" fill="#00ff41" filter="url(#partnerGlow)"/>
+  <circle cx="40" cy="40" r="12" fill="#3b82f6" filter="url(#partnerGlow)"/>
   <text x="40" y="46"
         font-family="'Courier New', Consolas, monospace"
         font-size="16"
@@ -29,7 +29,7 @@
         opacity="0.6"/>
 
   <!-- AI dot (red) -->
-  <circle cx="210" cy="40" r="12" fill="#ff0040" filter="url(#partnerGlow)"/>
+  <circle cx="210" cy="40" r="12" fill="#ef4444" filter="url(#partnerGlow)"/>
   <text x="210" y="46"
         font-family="'Courier New', Consolas, monospace"
         font-size="16"
@@ -42,7 +42,7 @@
         font-family="'Courier New', Consolas, monospace"
         font-size="14"
         font-weight="bold"
-        fill="#00ff41"
+        fill="#3b82f6"
         text-anchor="middle"
         opacity="0.9">BUILT WITH AI</text>
 </svg>

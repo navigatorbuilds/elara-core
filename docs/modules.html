@@ -14,32 +14,32 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0a0a0a;
-            --bg-card: #0f0f0f;
-            --green: #00ff41;
-            --green-dim: #00cc33;
-            --green-dark: #003300;
-            --red: #ff0040;
-            --red-dim: #cc0033;
-            --cyan: #00e5ff;
+            --bg: #0d1117;
+            --bg-card: #161b22;
+            --green: #3b82f6;
+            --green-dim: #2563eb;
+            --green-dark: #14532d;
+            --red: #ef4444;
+            --red-dim: #dc2626;
+            --cyan: #3b82f6;
             --cyan-dim: #00b8cc;
-            --amber: #ffb000;
+            --amber: #f97316;
             --amber-dim: #cc8c00;
-            --text: #c0c0c0;
-            --text-dim: #606060;
-            --text-bright: #e0e0e0;
-            --border: #1a1a1a;
-            --border-green: #003300;
+            --text: #e5e7eb;
+            --text-dim: #6b7280;
+            --text-bright: #f3f4f6;
+            --border: #1e293b;
+            --border-green: #14532d;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
 
         body {
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
             line-height: 1.7;
@@ -80,7 +80,7 @@
         }
 
         .header-nav a {
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 13px;
             color: var(--green-dim);
             text-decoration: none;
@@ -90,12 +90,12 @@
         }
 
         .header-nav a:hover {
-            background: rgba(0, 255, 65, 0.08);
+            background: rgba(59, 130, 246, 0.08);
             border-color: var(--green);
         }
 
         .header h1 {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: clamp(16px, 3vw, 24px);
             color: var(--green);
             letter-spacing: 2px;
@@ -137,9 +137,9 @@
         }
 
         .legend-swatch.core { background: var(--green-dark); border-color: var(--green-dim); }
-        .legend-swatch.emotional { background: rgba(255, 0, 64, 0.15); border-color: var(--red-dim); }
-        .legend-swatch.productivity { background: rgba(255, 176, 0, 0.15); border-color: var(--amber-dim); }
-        .legend-swatch.external { background: rgba(0, 229, 255, 0.15); border-color: var(--cyan-dim); }
+        .legend-swatch.emotional { background: rgba(239, 68, 68, 0.15); border-color: var(--red-dim); }
+        .legend-swatch.productivity { background: rgba(249, 115, 22, 0.15); border-color: var(--amber-dim); }
+        .legend-swatch.external { background: rgba(59, 130, 246, 0.15); border-color: var(--cyan-dim); }
 
         .legend-text {
             font-size: 11px;
@@ -178,19 +178,19 @@
         .module.external .module-header::before { background: var(--cyan); }
 
         .module-icon {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 10px;
             padding: 6px 10px;
             border: 1px solid;
         }
 
-        .module.core .module-icon { color: var(--green); background: rgba(0, 255, 65, 0.08); border-color: var(--green-dark); }
-        .module.emotional .module-icon { color: var(--red); background: rgba(255, 0, 64, 0.08); border-color: rgba(255, 0, 64, 0.2); }
-        .module.productivity .module-icon { color: var(--amber); background: rgba(255, 176, 0, 0.08); border-color: rgba(255, 176, 0, 0.2); }
-        .module.external .module-icon { color: var(--cyan); background: rgba(0, 229, 255, 0.08); border-color: rgba(0, 229, 255, 0.2); }
+        .module.core .module-icon { color: var(--green); background: rgba(59, 130, 246, 0.08); border-color: var(--green-dark); }
+        .module.emotional .module-icon { color: var(--red); background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.2); }
+        .module.productivity .module-icon { color: var(--amber); background: rgba(249, 115, 22, 0.08); border-color: rgba(249, 115, 22, 0.2); }
+        .module.external .module-icon { color: var(--cyan); background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.2); }
 
         .module-header h2 {
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 28px;
             letter-spacing: 3px;
         }
@@ -261,7 +261,7 @@
         }
 
         summary:hover {
-            background: rgba(0, 255, 65, 0.03);
+            background: rgba(59, 130, 246, 0.03);
         }
 
         summary::marker {
@@ -270,7 +270,7 @@
 
         summary::before {
             content: '>';
-            font-family: 'VT323', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 18px;
             transition: transform 0.2s;
         }
@@ -309,7 +309,7 @@
         }
 
         .detail-content h4 {
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -349,7 +349,7 @@
         .module.external .tool-item::before { color: var(--cyan-dim); }
 
         .tool-name {
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
             font-weight: bold;
         }
 
@@ -359,7 +359,7 @@
         .module.external .tool-name { color: var(--cyan); }
 
         .interactions {
-            background: rgba(0, 255, 65, 0.03);
+            background: rgba(59, 130, 246, 0.03);
             border: 1px solid var(--green-dark);
             padding: 12px 16px;
             margin: 16px 0;
@@ -369,7 +369,7 @@
 
         .interactions strong {
             color: var(--green);
-            font-family: 'Share Tech Mono', monospace;
+            font-family: 'Inter', -apple-system, sans-serif;
         }
 
         /* Footer */
