@@ -438,6 +438,92 @@ class MemoryConsolidator:
         logger.info("Contradiction resolved: kept %s, archived %s", keep_id, archive_id)
         return keep_id
 
+    def sweep_junk(self, dry_run: bool = True) -> Dict[str, Any]:
+        """
+        Identify low-quality memories: test messages, trivially short notes,
+        content with no lasting information value.
+
+        Args:
+            dry_run: If True, just report. If False, archive them.
+
+        Returns:
+            List of junk memories and count.
+        """
+        if not self.vm.collection:
+            return {"junk": [], "count": 0}
+
+        all_data = self.vm.collection.get(include=["documents", "metadatas"])
+        if not all_data["ids"]:
+            return {"junk": [], "count": 0}
+
+        # Test/noise keywords (case-insensitive)
+        noise_keywords = [
+            "test", "tets", "debug", "hello test", "test fresh",
+            "test last", "last atempt", "chrome.test", "close dom",
+        ]
+
+        junk = []
+        for i, mid in enumerate(all_data["ids"]):
+            doc = (all_data["documents"][i] or "").strip()
+            meta = all_data["metadatas"][i] or {}
+            mem_type = meta.get("type", "")
+
+            is_junk = False
+            reason = ""
+
+            # Rule 1: Very short notes (< 30 chars of real content)
+            clean_doc = doc.replace("Note from mobile:", "").replace("[Also:", "").strip()
+            if len(clean_doc) < 30 and mem_type == "note":
+                is_junk = True
+                reason = "too short"
+
+            # Rule 2: Note containing test keywords
+            if not is_junk and mem_type == "note":
+                doc_lower = doc.lower()
+                for kw in noise_keywords:
+                    if kw in doc_lower:
+                        is_junk = True
+                        reason = f"test keyword: {kw}"
+                        break
+
+            # Never sweep protected types
+            if mem_type in ("decision", "moment"):
+                is_junk = False
+
+            # Never sweep high importance (original or current)
+            if meta.get("importance", 0) >= 0.75:
+                if not meta.get("merged_from"):  # merged items may have boosted importance
+                    is_junk = False
+
+            if is_junk:
+                junk.append({
+                    "memory_id": mid,
+                    "content": doc[:120],
+                    "type": mem_type,
+                    "importance": meta.get("importance", 0),
+                    "date": meta.get("date", ""),
+                    "reason": reason,
+                })
+
+        if not dry_run and junk:
+            archived = 0
+            for item in junk:
+                mid = item["memory_id"]
+                try:
+                    data = self.vm.collection.get(ids=[mid], include=["documents", "metadatas"])
+                    if data["ids"]:
+                        self._archive_memory(
+                            mid, data["documents"][0],
+                            data["metadatas"][0] or {}, reason="sweep"
+                        )
+                        self.vm.collection.delete(ids=[mid])
+                        archived += 1
+                except Exception as e:
+                    logger.warning("Sweep delete failed for %s: %s", mid, e)
+            return {"junk": junk, "count": len(junk), "archived": archived}
+
+        return {"junk": junk, "count": len(junk)}
+
     def merge_memories(self, id_a: str, id_b: str) -> Optional[str]:
         """
         Merge two memories. Keeps the higher-importance survivor.
