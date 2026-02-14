@@ -33,9 +33,9 @@ DEFAULT_CONFIG = {
     "max_tokens": 2048,
     "temperature": 0.7,
     "enable_research": True,
-    # 3D Cognition
-    "schedule_mode": "session_aware",
-    "scheduled_interval_hours": 6,
+    # Scheduler — continuous 24/7 mode
+    "schedule_mode": "continuous",
+    "interval_hours": 2.0,
     "enable_3d_cognition": True,
     # Memory Consolidation
     "enable_consolidation": True,
@@ -95,7 +95,20 @@ def load_queue() -> list:
 
 
 def today_dir() -> Path:
-    """Return today's output directory, creating it if needed."""
+    """Return today's date directory (for backwards compat only)."""
     d = OVERNIGHT_DIR / datetime.now().strftime("%Y-%m-%d")
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def run_dir(started: datetime = None) -> Path:
+    """
+    Return a unique per-run output directory.
+
+    Format: YYYY-MM-DD/HH-MM — each run gets its own folder.
+    Nothing ever gets overwritten.
+    """
+    ts = started or datetime.now()
+    d = OVERNIGHT_DIR / ts.strftime("%Y-%m-%d") / ts.strftime("%H-%M")
     d.mkdir(parents=True, exist_ok=True)
     return d

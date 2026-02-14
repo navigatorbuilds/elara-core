@@ -3,21 +3,21 @@
 # See LICENSE file in the project root for full license text.
 
 """
-Elara Brain Scheduler — always-on daemon that decides when to think.
+Elara Brain Scheduler — always-on 24/7 daemon.
 
-Watches for session activity. When sessions go quiet:
-  1. Waits a cooldown period (default 30 min)
-  2. Runs overnight thinking (exploratory + any queued problems)
-  3. Goes back to watching
+Runs the 32b model continuously. Thinks every INTERVAL_HOURS (default 2h).
+No longer blocked by active Claude sessions — the GPU can handle both.
 
-Also respects a schedule — won't think during active hours if sessions
-are frequent, but WILL think if there's been no session for 2+ hours.
+Control:
+  - Kill switch: ~/.claude/overnight/brain-pause
+    Touch file → brain pauses. Remove → brain resumes.
+    Elara can do this on "stop 32b" / "start 32b" commands.
 
-Lifecycle:
-  - Runs as systemd service (always on, survives reboots)
-  - Overwatch handles live session watching
-  - Brain scheduler handles between-session thinking
-  - They don't conflict — brain waits for overwatch to go idle
+  - Quiet hours: 3-6 AM (configurable) — no new runs start.
+
+  - Config: ~/.claude/overnight/overnight-config.json
+    "schedule_mode": "continuous" (default now)
+    "interval_hours": 2 (how often to run)
 """
 
 import json
@@ -34,155 +34,125 @@ from daemon.overnight.config import (
     load_config, PID_FILE, OVERNIGHT_DIR, LOG_FILE,
 )
 
-# Set up logging to file + stderr
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[
-        logging.FileHandler(str(LOG_FILE), mode="a"),
-        logging.StreamHandler(),
-    ],
-)
+# Set up logging — only for the brain scheduler logger, not root
+# (avoids double-logging when OvernightRunner adds its own handlers)
 logger = logging.getLogger("elara.brain")
+if not logger.handlers:
+    logger.setLevel(logging.INFO)
+    _fh = logging.FileHandler(str(LOG_FILE), mode="a")
+    _fh.setFormatter(logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    ))
+    logger.addHandler(_fh)
+    _sh = logging.StreamHandler()
+    _sh.setFormatter(logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    ))
+    logger.addHandler(_sh)
 
 _p = get_paths()
 
-# How long after last session activity before thinking starts
-COOLDOWN_MINUTES = 30
+# --- Configuration ---
 
-# Don't start thinking if it's almost morning (findings would be stale)
-QUIET_HOURS_START = 3   # 3 AM — stop starting new runs
-QUIET_HOURS_END = 6     # 6 AM — ok to start again
+# Default interval between thinking runs
+DEFAULT_INTERVAL_HOURS = 2.0
 
-# Minimum gap between thinking runs (don't run twice in a row)
-MIN_GAP_HOURS = 4
+# Quiet hours disabled — runs accumulate, nothing is overwritten.
+# To pause, use the brain-pause file instead.
+QUIET_HOURS_START = None
+QUIET_HOURS_END = None
 
-# How often to check for session activity
-POLL_INTERVAL = 60  # seconds
+# How often to check (seconds)
+POLL_INTERVAL = 60
 
+# Only log waiting status every N minutes (not every minute)
+LOG_INTERVAL_MINUTES = 15
 
-def _last_session_activity() -> datetime | None:
-    """Find when the last Claude Code session was active."""
-    sessions_dir = _p._root / "projects" / "-home-neboo"
-    if not sessions_dir.exists():
-        return None
+# Kill switch file — touch to pause, rm to resume
+PAUSE_FILE = OVERNIGHT_DIR / "brain-pause"
 
-    latest = None
-    for f in sessions_dir.glob("*.jsonl"):
-        mtime = datetime.fromtimestamp(f.stat().st_mtime)
-        if latest is None or mtime > latest:
-            latest = mtime
-    return latest
+# Last run tracking
+LAST_RUN_META = OVERNIGHT_DIR / "last-run-meta.json"
 
 
-def _overwatch_is_active() -> bool:
-    """Check if overwatch is actively processing a session."""
-    ow_pid = _p._root / "elara-overwatch.pid"
-    if not ow_pid.exists():
-        return False
-
-    try:
-        pid = int(ow_pid.read_text().strip())
-        os.kill(pid, 0)  # Check if process exists
-
-        # Also check if the overwatch log shows recent activity
-        ow_log = _p._root / "elara-overwatch.log"
-        if ow_log.exists():
-            mtime = datetime.fromtimestamp(ow_log.stat().st_mtime)
-            # If log was updated in last 2 minutes, session is active
-            if (datetime.now() - mtime).total_seconds() < 120:
-                return True
-        return True  # PID exists, assume active
-    except (ProcessLookupError, ValueError, OSError):
-        return False
+def _is_paused() -> bool:
+    """Check if the brain is paused via kill switch file."""
+    return PAUSE_FILE.exists()
 
 
 def _last_thinking_run() -> datetime | None:
-    """When did we last run overnight thinking?"""
-    meta = OVERNIGHT_DIR / "last-run-meta.json"
-    if not meta.exists():
-        return None
-    try:
-        data = json.loads(meta.read_text())
-        return datetime.fromisoformat(data.get("started", ""))
-    except (json.JSONDecodeError, ValueError, OSError):
-        return None
+    """When did we last complete a thinking run?"""
+    # Check the canonical last-run-meta.json first
+    if LAST_RUN_META.exists():
+        try:
+            data = json.loads(LAST_RUN_META.read_text())
+            return datetime.fromisoformat(data.get("ended", data.get("started", "")))
+        except (json.JSONDecodeError, ValueError, OSError):
+            pass
+
+    # Fallback: check today's meta.json
+    today = OVERNIGHT_DIR / datetime.now().strftime("%Y-%m-%d") / "meta.json"
+    if today.exists():
+        try:
+            data = json.loads(today.read_text())
+            return datetime.fromisoformat(data.get("ended", data.get("started", "")))
+        except (json.JSONDecodeError, ValueError, OSError):
+            pass
+
+    return None
+
+
+def _write_last_run_meta():
+    """Write last-run tracking file after a successful run."""
+    LAST_RUN_META.write_text(json.dumps({
+        "ended": datetime.now().isoformat(),
+        "started": datetime.now().isoformat(),
+    }))
 
 
 def _in_quiet_hours() -> bool:
-    """Check if we're in the no-start window."""
+    """Check if we're in the no-start window. Disabled — always returns False."""
+    if QUIET_HOURS_START is None:
+        return False
     hour = datetime.now().hour
     return QUIET_HOURS_START <= hour < QUIET_HOURS_END
 
 
-def _should_think() -> tuple[bool, str]:
+def _should_think(interval_hours: float = DEFAULT_INTERVAL_HOURS) -> tuple[bool, str]:
     """
-    Decide whether to start a thinking run (session-aware mode).
-    Returns (should_run, reason).
+    Decide whether to start a thinking run.
+    Simple: respect pause file, quiet hours, and interval. That's it.
     """
-    # Don't think during quiet hours
+    # Kill switch
+    if _is_paused():
+        return False, "paused (brain-pause file exists)"
+
+    # Quiet hours
     if _in_quiet_hours():
         return False, "quiet hours (3-6 AM)"
-
-    # Don't think if overwatch is actively processing
-    if _overwatch_is_active():
-        last = _last_session_activity()
-        if last and (datetime.now() - last).total_seconds() < COOLDOWN_MINUTES * 60:
-            return False, "session recently active"
-
-    # Check cooldown since last session
-    last_session = _last_session_activity()
-    if last_session is None:
-        return False, "no session data found"
-
-    idle_minutes = (datetime.now() - last_session).total_seconds() / 60
-    if idle_minutes < COOLDOWN_MINUTES:
-        return False, f"cooldown ({idle_minutes:.0f}/{COOLDOWN_MINUTES} min)"
-
-    # Check gap since last thinking run
-    last_run = _last_thinking_run()
-    if last_run:
-        gap_hours = (datetime.now() - last_run).total_seconds() / 3600
-        if gap_hours < MIN_GAP_HOURS:
-            return False, f"ran {gap_hours:.1f}h ago (min gap: {MIN_GAP_HOURS}h)"
-
-    # All clear — think!
-    return True, f"idle {idle_minutes:.0f} min, no recent run"
-
-
-def _should_think_scheduled(interval_hours: float = 6.0) -> tuple[bool, str]:
-    """
-    Decide whether to start a thinking run (scheduled mode).
-    Runs every N hours regardless of session state.
-    Returns (should_run, reason).
-    """
-    # Still respect quiet hours
-    if _in_quiet_hours():
-        return False, "quiet hours (3-6 AM)"
-
-    # Still avoid conflicts with active sessions
-    if _overwatch_is_active():
-        last = _last_session_activity()
-        if last and (datetime.now() - last).total_seconds() < 300:  # 5 min buffer
-            return False, "session currently active"
 
     # Check interval since last run
     last_run = _last_thinking_run()
     if last_run:
         gap_hours = (datetime.now() - last_run).total_seconds() / 3600
         if gap_hours < interval_hours:
-            return False, f"ran {gap_hours:.1f}h ago (interval: {interval_hours}h)"
-    # No previous run — run now
-    return True, f"scheduled (every {interval_hours}h)"
+            remaining = interval_hours - gap_hours
+            return False, f"next run in {remaining:.1f}h ({gap_hours:.1f}h since last)"
+        return True, f"interval reached ({gap_hours:.1f}h since last, threshold: {interval_hours}h)"
+
+    # No previous run found — run now
+    return True, "no previous run found — starting first run"
 
 
 class BrainScheduler:
-    """Always-on scheduler that triggers overnight thinking when appropriate."""
+    """Always-on 24/7 scheduler. Thinks every N hours, no session gating."""
 
     def __init__(self):
         self.stop_event = threading.Event()
         self.running = False
+        self._last_log_time = None
 
     def _handle_signal(self, signum, frame):
         logger.info("Signal %d received — shutting down", signum)
@@ -193,15 +163,14 @@ class BrainScheduler:
         signal.signal(signal.SIGTERM, self._handle_signal)
         signal.signal(signal.SIGINT, self._handle_signal)
 
-        # Write scheduler PID
         sched_pid = OVERNIGHT_DIR / "scheduler.pid"
         OVERNIGHT_DIR.mkdir(parents=True, exist_ok=True)
         sched_pid.write_text(str(os.getpid()))
 
-        logger.info("Brain scheduler started (PID %d)", os.getpid())
-        logger.info("Cooldown: %d min | Min gap: %dh | Quiet: %d-%d",
-                     COOLDOWN_MINUTES, MIN_GAP_HOURS,
+        logger.info("=== Brain scheduler started (PID %d) ===", os.getpid())
+        logger.info("Mode: continuous | Interval: configurable | Quiet: %d-%d",
                      QUIET_HOURS_START, QUIET_HOURS_END)
+        logger.info("Pause control: %s", PAUSE_FILE)
 
         try:
             self._loop()
@@ -214,30 +183,28 @@ class BrainScheduler:
 
     def _loop(self):
         """The actual polling loop."""
-        config = load_config()
-        schedule_mode = config.get("schedule_mode", "session_aware")
-        interval = config.get("scheduled_interval_hours", 6.0)
-        logger.info("Schedule mode: %s", schedule_mode)
-
         while not self.stop_event.is_set():
-            # Reload config each cycle to pick up changes
             config = load_config()
-            schedule_mode = config.get("schedule_mode", "session_aware")
-            interval = config.get("scheduled_interval_hours", 6.0)
+            interval = config.get("interval_hours", DEFAULT_INTERVAL_HOURS)
 
-            if schedule_mode == "scheduled":
-                should, reason = _should_think_scheduled(interval)
-            else:
-                should, reason = _should_think()
+            should, reason = _should_think(interval)
 
             if should:
                 logger.info("Triggering thinking run — %s", reason)
                 self._run_thinking()
+                self._last_log_time = None  # Reset log timer after run
             else:
-                logger.info("Not thinking — %s", reason)
+                self._log_waiting(reason)
 
-            # Wait before next check
             self.stop_event.wait(POLL_INTERVAL)
+
+    def _log_waiting(self, reason: str):
+        """Log waiting status, but only every LOG_INTERVAL_MINUTES to avoid spam."""
+        now = datetime.now()
+        if self._last_log_time is None or \
+           (now - self._last_log_time).total_seconds() >= LOG_INTERVAL_MINUTES * 60:
+            logger.info("Waiting — %s", reason)
+            self._last_log_time = now
 
     def _run_thinking(self):
         """Run the overnight thinking system."""
@@ -245,10 +212,13 @@ class BrainScheduler:
         try:
             from daemon.overnight import OvernightRunner
             runner = OvernightRunner()
-            # Share our stop event so thinking stops if scheduler stops
             runner.stop_event = self.stop_event
             result = runner.run()
             logger.info("Thinking complete: %s", result)
+
+            # Write last-run tracking so interval timer works
+            _write_last_run_meta()
+
         except Exception as e:
             logger.error("Thinking run failed: %s", e)
         finally:
