@@ -32,6 +32,8 @@ RECALL_BOOST = 0.03             # Per-recall importance boost
 REINFORCE_BOOST = 0.05          # Merge boost for survivor
 MAX_IMPORTANCE = 1.0
 PROTECTED_FLOOR = 0.3           # Decay floor for decisions / high-importance
+CONTRADICTION_LOW = 0.50        # Minimum similarity to check for contradictions
+CONTRADICTION_HIGH = 0.85       # Maximum (above this = duplicate, not contradiction)
 
 
 # ---------------------------------------------------------------------------
@@ -207,6 +209,234 @@ class MemoryConsolidator:
         # Sort by similarity descending
         duplicates.sort(key=lambda x: x[2], reverse=True)
         return duplicates
+
+    def find_contradictions(self) -> List[Dict[str, Any]]:
+        """
+        Find memory pairs that cover the same topic but say conflicting things.
+        Uses semantic similarity (0.50-0.85 range) + LLM classification.
+        Falls back to heuristic if Ollama is unavailable.
+        """
+        if not self.vm.collection:
+            return []
+
+        all_data = self.vm.collection.get(include=["documents", "metadatas"])
+        if not all_data["ids"]:
+            return []
+
+        ids = all_data["ids"]
+        docs = all_data["documents"]
+
+        # Find pairs in the contradiction similarity range
+        candidates = []
+        seen_pairs = set()
+
+        for i, doc in enumerate(docs):
+            if not doc or not doc.strip():
+                continue
+            try:
+                results = self.vm.collection.query(
+                    query_texts=[doc],
+                    n_results=min(10, len(ids)),
+                    include=["distances", "documents"],
+                )
+            except Exception:
+                continue
+
+            if not results["ids"] or not results["ids"][0]:
+                continue
+
+            for j, neighbor_id in enumerate(results["ids"][0]):
+                if neighbor_id == ids[i]:
+                    continue
+
+                distance = results["distances"][0][j]
+                similarity = max(0.0, 1.0 - distance)
+
+                if CONTRADICTION_LOW <= similarity < CONTRADICTION_HIGH:
+                    pair = tuple(sorted([ids[i], neighbor_id]))
+                    if pair not in seen_pairs:
+                        seen_pairs.add(pair)
+                        candidates.append({
+                            "id_a": ids[i],
+                            "id_b": neighbor_id,
+                            "doc_a": doc,
+                            "doc_b": results["documents"][0][j],
+                            "similarity": round(similarity, 4),
+                        })
+
+        if not candidates:
+            return []
+
+        # Classify each candidate pair using LLM
+        contradictions = []
+        for cand in candidates:
+            verdict = self._classify_pair(cand["doc_a"], cand["doc_b"])
+            if verdict == "contradicting":
+                meta_a = {}
+                meta_b = {}
+                try:
+                    d = self.vm.collection.get(ids=[cand["id_a"]], include=["metadatas"])
+                    if d["metadatas"]:
+                        meta_a = d["metadatas"][0] or {}
+                    d = self.vm.collection.get(ids=[cand["id_b"]], include=["metadatas"])
+                    if d["metadatas"]:
+                        meta_b = d["metadatas"][0] or {}
+                except Exception:
+                    pass
+
+                contradictions.append({
+                    "id_a": cand["id_a"],
+                    "id_b": cand["id_b"],
+                    "content_a": cand["doc_a"][:200],
+                    "content_b": cand["doc_b"][:200],
+                    "similarity": cand["similarity"],
+                    "date_a": meta_a.get("date", ""),
+                    "date_b": meta_b.get("date", ""),
+                    "importance_a": meta_a.get("importance", 0),
+                    "importance_b": meta_b.get("importance", 0),
+                    "detected_at": datetime.now().isoformat(),
+                })
+
+        # Save to file
+        if contradictions:
+            self._save_contradictions(contradictions)
+
+        return contradictions
+
+    def _classify_pair(self, doc_a: str, doc_b: str) -> str:
+        """
+        Classify a memory pair as 'same', 'complementary', or 'contradicting'.
+        Uses local LLM, falls back to 'unknown' if unavailable.
+        'contradicting' means they make CONFLICTING FACTUAL CLAIMS about the same topic.
+        """
+        # Skip short memories — test messages, greetings, noise
+        if len(doc_a.strip()) < 80 or len(doc_b.strip()) < 80:
+            return "same"
+
+        try:
+            from daemon.llm import query, is_available
+            if not is_available():
+                return "unknown"
+
+            prompt = (
+                f"Two memories from a knowledge base:\n\n"
+                f"A: {doc_a[:300]}\n\n"
+                f"B: {doc_b[:300]}\n\n"
+                f"Do these make CONFLICTING FACTUAL CLAIMS about the same topic? "
+                f"For example: one says a project uses dark theme, the other says light theme. "
+                f"Or one says a task is done, the other says it's pending.\n\n"
+                f"Answer ONLY one word: contradicting, complementary, or same"
+            )
+            result = query(prompt, temperature=0.1, max_tokens=5)
+            if result:
+                r = result.lower().strip().rstrip(".")
+                if "contradict" in r:
+                    return "contradicting"
+                if "complement" in r:
+                    return "complementary"
+                return "same"
+            return "unknown"
+        except Exception:
+            return "unknown"
+
+    def _save_contradictions(self, contradictions: List[Dict[str, Any]]) -> None:
+        """Save detected contradictions to file for boot review."""
+        p = self._paths.memory_contradictions
+        p.parent.mkdir(parents=True, exist_ok=True)
+
+        # Load existing, merge (avoid duplicates by pair key)
+        existing = []
+        if p.exists():
+            try:
+                existing = json.loads(p.read_text())
+            except (json.JSONDecodeError, OSError):
+                pass
+
+        # Key by sorted pair
+        existing_keys = set()
+        for c in existing:
+            key = tuple(sorted([c["id_a"], c["id_b"]]))
+            existing_keys.add(key)
+
+        for c in contradictions:
+            key = tuple(sorted([c["id_a"], c["id_b"]]))
+            if key not in existing_keys:
+                existing.append(c)
+                existing_keys.add(key)
+
+        p.write_text(json.dumps(existing, indent=2))
+
+    def get_contradictions(self) -> List[Dict[str, Any]]:
+        """Load saved contradictions from file."""
+        p = self._paths.memory_contradictions
+        if not p.exists():
+            return []
+        try:
+            data = json.loads(p.read_text())
+            return data if isinstance(data, list) else []
+        except (json.JSONDecodeError, OSError):
+            return []
+
+    def resolve_contradiction(self, id_a: str, id_b: str,
+                               keep: str = "newer") -> Optional[str]:
+        """
+        Resolve a contradiction by archiving one memory.
+        keep='newer' archives the older one, keep='a' or 'b' picks explicitly.
+        Returns the ID of the kept memory, or None on failure.
+        """
+        if not self.vm.collection:
+            return None
+
+        try:
+            data_a = self.vm.collection.get(ids=[id_a], include=["documents", "metadatas"])
+            data_b = self.vm.collection.get(ids=[id_b], include=["documents", "metadatas"])
+        except Exception:
+            return None
+
+        if not data_a["ids"] or not data_b["ids"]:
+            return None
+
+        meta_a = data_a["metadatas"][0] or {}
+        meta_b = data_b["metadatas"][0] or {}
+
+        if keep == "newer":
+            ts_a = meta_a.get("timestamp", "")
+            ts_b = meta_b.get("timestamp", "")
+            # Keep the newer one (higher timestamp)
+            if ts_a >= ts_b:
+                keep_id, archive_id = id_a, id_b
+                archive_doc = data_b["documents"][0]
+                archive_meta = meta_b
+            else:
+                keep_id, archive_id = id_b, id_a
+                archive_doc = data_a["documents"][0]
+                archive_meta = meta_a
+        elif keep == "a":
+            keep_id, archive_id = id_a, id_b
+            archive_doc = data_b["documents"][0]
+            archive_meta = meta_b
+        elif keep == "b":
+            keep_id, archive_id = id_b, id_a
+            archive_doc = data_a["documents"][0]
+            archive_meta = meta_a
+        else:
+            return None
+
+        self._archive_memory(archive_id, archive_doc, archive_meta, reason="contradiction")
+        try:
+            self.vm.collection.delete(ids=[archive_id])
+        except Exception as e:
+            logger.warning("Contradiction resolve delete failed: %s", e)
+            return None
+
+        # Remove from contradictions file
+        contras = self.get_contradictions()
+        contras = [c for c in contras
+                    if not (sorted([c["id_a"], c["id_b"]]) == sorted([id_a, id_b]))]
+        self._paths.memory_contradictions.write_text(json.dumps(contras, indent=2))
+
+        logger.info("Contradiction resolved: kept %s, archived %s", keep_id, archive_id)
+        return keep_id
 
     def merge_memories(self, id_a: str, id_b: str) -> Optional[str]:
         """
@@ -554,7 +784,15 @@ class MemoryConsolidator:
             logger.warning("Archive phase failed: %s", e)
             result["archived"] = 0
 
-        # 5. Final count
+        # 5. Contradiction detection
+        try:
+            contradictions = self.find_contradictions()
+            result["contradictions_found"] = len(contradictions)
+        except Exception as e:
+            logger.warning("Contradiction detection failed: %s", e)
+            result["contradictions_found"] = 0
+
+        # 6. Final count
         try:
             result["memories_after"] = self.vm.collection.count() if self.vm.collection else 0
         except Exception:
@@ -567,10 +805,10 @@ class MemoryConsolidator:
         self._save_state(state)
 
         logger.info(
-            "Consolidation complete: strengthened=%d, decayed=%d, merged=%d, archived=%d, remaining=%d",
+            "Consolidation complete: strengthened=%d, decayed=%d, merged=%d, archived=%d, contradictions=%d, remaining=%d",
             result.get("strengthened", 0), result.get("decayed", 0),
             result.get("merged", 0), result.get("archived", 0),
-            result.get("memories_after", -1),
+            result.get("contradictions_found", 0), result.get("memories_after", -1),
         )
 
         return result
@@ -602,12 +840,14 @@ class MemoryConsolidator:
                 pass
 
         at_risk = self.get_at_risk(threshold=0.2)
+        contradictions = self.get_contradictions()
 
         return {
             "memory_count": memory_count,
             "recall_log_entries": recall_log_size,
             "archive_size": archive_size,
             "at_risk_count": len(at_risk),
+            "contradictions_count": len(contradictions),
             "total_runs": state.get("runs", 0),
             "last_run": state.get("last_run"),
             "last_result": state.get("last_result"),

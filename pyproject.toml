@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "elara-core"
-version = "0.10.1"
+version = "0.10.2"
 description = "Persistent presence, mood, memory, and self-awareness for AI assistants"
 readme = "README.md"
 license = "LicenseRef-BSL-1.1"

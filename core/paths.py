@@ -164,6 +164,10 @@ class ElaraPaths:
         return self._root / "elara-memory-archive.jsonl"
 
     @property
+    def memory_contradictions(self) -> Path:
+        return self._root / "elara-memory-contradictions.json"
+
+    @property
     def conversations_db(self) -> Path:
         return self._root / "elara-conversations-db"
 

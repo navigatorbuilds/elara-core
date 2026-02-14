@@ -225,8 +225,10 @@ class OvernightRunner:
                 cognition_summary["memories_strengthened"] = consol_result.get("strengthened", 0)
                 cognition_summary["memories_decayed"] = consol_result.get("decayed", 0)
                 cognition_summary["memories_remaining"] = consol_result.get("memories_after", 0)
-                logger.info("Memory consolidation: merged=%d, archived=%d, remaining=%d",
+                cognition_summary["contradictions_found"] = consol_result.get("contradictions_found", 0)
+                logger.info("Memory consolidation: merged=%d, archived=%d, contradictions=%d, remaining=%d",
                             consol_result.get("merged", 0), consol_result.get("archived", 0),
+                            consol_result.get("contradictions_found", 0),
                             consol_result.get("memories_after", 0))
             except Exception as e:
                 logger.warning("Memory consolidation failed: %s", e)
