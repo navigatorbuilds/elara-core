@@ -7,14 +7,14 @@
 Consolidated from 3 → 2 tools.
 """
 
-from elara_mcp._app import mcp
+from elara_mcp._app import tool
 from daemon.dream import (
     weekly_dream, monthly_dream, emotional_dream,
     dream_status, read_latest_dream,
 )
 
 
-@mcp.tool()
+@tool()
 def elara_dream(dream_type: str = "weekly") -> str:
     """
     Run dream mode — pattern discovery across sessions.
@@ -124,7 +124,7 @@ def elara_dream(dream_type: str = "weekly") -> str:
         return f"Unknown dream type '{dream_type}'. Use 'weekly', 'monthly', or 'emotional'."
 
 
-@mcp.tool()
+@tool()
 def elara_dream_info(action: str = "status", dream_type: str = "weekly") -> str:
     """
     Check dream schedule or read the latest dream report.

@@ -8,7 +8,7 @@ Consolidated from 12 → 5 tools.
 """
 
 from typing import Optional
-from elara_mcp._app import mcp
+from elara_mcp._app import tool
 from memory.episodic import get_episodic
 from daemon.state import (
     get_current_episode, start_episode, end_episode,
@@ -21,7 +21,7 @@ from daemon.context import (
 )
 
 
-@mcp.tool()
+@tool()
 def elara_episode_start(
     session_type: Optional[str] = None,
     project: Optional[str] = None
@@ -60,7 +60,7 @@ def elara_episode_start(
     )
 
 
-@mcp.tool()
+@tool()
 def elara_episode_note(
     event: str,
     note_type: str = "milestone",
@@ -124,7 +124,7 @@ def elara_episode_note(
     return f"{note_type.capitalize()} recorded ({importance_label}): {event}"
 
 
-@mcp.tool()
+@tool()
 def elara_episode_end(
     summary: Optional[str] = None,
     was_meaningful: bool = False
@@ -176,7 +176,7 @@ def elara_episode_end(
     )
 
 
-@mcp.tool()
+@tool()
 def elara_episode_query(
     query: Optional[str] = None,
     project: Optional[str] = None,
@@ -285,7 +285,7 @@ def elara_episode_query(
     return "\n\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def elara_context(
     topic: Optional[str] = None,
     note: Optional[str] = None,

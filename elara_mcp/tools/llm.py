@@ -5,11 +5,11 @@
 """Local LLM (Ollama) tools — status, direct query, triage."""
 
 import json
-from elara_mcp._app import mcp
+from elara_mcp._app import tool
 from daemon import llm
 
 
-@mcp.tool()
+@tool()
 def elara_llm(
     action: str = "status",
     prompt: str = "",

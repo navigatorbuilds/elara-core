@@ -8,7 +8,7 @@ Consolidated from 8 → 5 tools.
 """
 
 from typing import Optional
-from elara_mcp._app import mcp
+from elara_mcp._app import tool
 from daemon.self_awareness import (
     reflect, pulse, blind_spots,
     set_intention, get_intention,
@@ -19,7 +19,7 @@ from daemon.self_awareness import (
 from daemon.state import get_temperament_status, reset_temperament
 
 
-@mcp.tool()
+@tool()
 def elara_reflect() -> str:
     """
     Self-reflection: "Who have I been lately?"
@@ -55,7 +55,7 @@ def elara_reflect() -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def elara_insight(insight_type: str = "pulse") -> str:
     """
     Relationship pulse, blind spot analysis, or user-state inference.
@@ -112,7 +112,7 @@ def elara_insight(insight_type: str = "pulse") -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def elara_intention(
     what: Optional[str] = None,
 ) -> str:
@@ -154,7 +154,7 @@ def elara_intention(
         return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def elara_observe(when: str = "now") -> str:
     """
     Run proactive observations — pattern detection at boot or mid-session.
@@ -199,7 +199,7 @@ def elara_observe(when: str = "now") -> str:
     return f"[{obs['type']}] {message} ({remaining} observations remaining)"
 
 
-@mcp.tool()
+@tool()
 def elara_temperament(do_reset: bool = False) -> str:
     """
     Check or reset my temperament — who I am at baseline.

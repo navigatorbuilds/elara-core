@@ -9,10 +9,10 @@
 
 import json
 from typing import Optional
-from elara_mcp._app import mcp
+from elara_mcp._app import tool
 
 
-@mcp.tool()
+@tool()
 def elara_model(
     action: str = "list",
     model_id: Optional[str] = None,
@@ -173,7 +173,7 @@ def elara_model(
     return f"Unknown action: {action}. Use: create, evidence, get, search, list, stats, invalidate"
 
 
-@mcp.tool()
+@tool()
 def elara_prediction(
     action: str = "list",
     prediction_id: Optional[str] = None,
@@ -358,7 +358,7 @@ def elara_prediction(
     return f"Unknown action: {action}. Use: predict, check, get, pending, expired, accuracy, search, list"
 
 
-@mcp.tool()
+@tool()
 def elara_principle(
     action: str = "list",
     principle_id: Optional[str] = None,

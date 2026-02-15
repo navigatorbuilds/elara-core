@@ -8,10 +8,10 @@
 """
 
 from typing import Optional
-from elara_mcp._app import mcp
+from elara_mcp._app import tool
 
 
-@mcp.tool()
+@tool()
 def elara_gmail(
     action: str = "inbox",
     message_id: Optional[str] = None,

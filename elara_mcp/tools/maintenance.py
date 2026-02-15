@@ -8,10 +8,10 @@
 """
 
 from typing import Optional
-from elara_mcp._app import mcp
+from elara_mcp._app import tool
 
 
-@mcp.tool()
+@tool()
 def elara_rebuild_indexes(
     collection: Optional[str] = None,
 ) -> str:
@@ -113,7 +113,7 @@ def _rebuild_collection(name: str) -> str:
     return f"Unknown collection: {name}"
 
 
-@mcp.tool()
+@tool()
 def elara_briefing(
     action: str = "today",
     query: Optional[str] = None,
@@ -232,7 +232,7 @@ def elara_briefing(
     return f"Unknown action: {action}. Use: today, search, feeds, add, remove, fetch, stats"
 
 
-@mcp.tool()
+@tool()
 def elara_snapshot() -> str:
     """
     Full status check: mood, presence, goals, business, memory counts.
@@ -293,7 +293,7 @@ def elara_snapshot() -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def elara_memory_consolidation(
     action: str = "stats",
     resolve_ids: Optional[str] = None,

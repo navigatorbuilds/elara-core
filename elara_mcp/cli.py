@@ -6,9 +6,11 @@
 Elara CLI — bootstrap and run the MCP server.
 
 Usage:
-    elara init [--force]     Create ~/.elara/ with default configs
-    elara serve              Start MCP server (stdio)
-    elara --data-dir PATH    Override data directory
+    elara init [--force]           Create ~/.elara/ with default configs
+    elara serve                    Start MCP server (stdio, lean profile)
+    elara serve --profile full     Start with all 39 tool schemas
+    elara serve --profile lean     Start with 7 core + elara_do (default)
+    elara --data-dir PATH          Override data directory
 """
 
 import argparse
@@ -75,11 +77,15 @@ def _init(data_dir: Path, force: bool = False) -> None:
     print("     See examples/CLAUDE.md.example for a template")
 
 
-def _serve(data_dir: Path) -> None:
+def _serve(data_dir: Path, profile: str = "lean") -> None:
     """Start the MCP server over stdio."""
     from core.paths import configure
 
     configure(data_dir)
+
+    # Set profile BEFORE importing server (which imports tool modules)
+    from elara_mcp._app import set_profile
+    set_profile(profile)
 
     from elara_mcp.server import mcp
     mcp.run()
@@ -110,6 +116,8 @@ def main() -> None:
     serve_parser = sub.add_parser("serve", help="Start MCP server (stdio)")
     serve_parser.add_argument("--data-dir", type=Path, default=None, dest="sub_data_dir",
                               help="Override data directory (default: $ELARA_DATA_DIR or ~/.elara/)")
+    serve_parser.add_argument("--profile", choices=["lean", "full"], default=None,
+                              help="Tool profile: lean (8 schemas, default) or full (all 39+1 schemas)")
 
     args = parser.parse_args()
 
@@ -128,7 +136,9 @@ def main() -> None:
     if args.command == "init":
         _init(data_dir, force=args.force)
     elif args.command == "serve":
-        _serve(data_dir)
+        # Resolve profile: CLI arg → env var → default "lean"
+        profile = args.profile or os.environ.get("ELARA_PROFILE", "lean")
+        _serve(data_dir, profile=profile)
     else:
         parser.print_help()
         sys.exit(1)

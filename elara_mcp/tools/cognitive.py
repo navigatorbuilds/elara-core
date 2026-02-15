@@ -8,7 +8,7 @@
 """
 
 from typing import Optional
-from elara_mcp._app import mcp
+from elara_mcp._app import tool
 from daemon.schemas import ElaraNotFoundError, ElaraValidationError
 from daemon.reasoning import (
     start_trail, add_hypothesis, update_hypothesis,
@@ -29,7 +29,7 @@ from daemon.synthesis import (
 )
 
 
-@mcp.tool()
+@tool()
 def elara_reasoning(
     action: str = "search",
     query: Optional[str] = None,
@@ -201,7 +201,7 @@ def elara_reasoning(
     return f"Unknown action: {action}. Use: start, hypothesis, evidence, abandon, solve, search, status, list"
 
 
-@mcp.tool()
+@tool()
 def elara_outcome(
     action: str = "list",
     outcome_id: Optional[str] = None,
@@ -388,7 +388,7 @@ def elara_outcome(
     return f"Unknown action: {action}. Use: record, check, list, stats, search, pitch, pitch_stats, pitch_lessons"
 
 
-@mcp.tool()
+@tool()
 def elara_synthesis(
     action: str = "list",
     synthesis_id: Optional[str] = None,

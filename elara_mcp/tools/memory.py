@@ -8,7 +8,7 @@ Consolidated from 7 → 4 tools.
 """
 
 from typing import Optional
-from elara_mcp._app import mcp
+from elara_mcp._app import tool
 from memory.vector import remember, recall, get_memory
 from memory.conversations import (
     recall_conversation, recall_conversation_with_context,
@@ -16,7 +16,7 @@ from memory.conversations import (
 )
 
 
-@mcp.tool()
+@tool()
 def elara_remember(
     content: str,
     memory_type: str = "conversation",
@@ -37,7 +37,7 @@ def elara_remember(
     return f"Remembered: {memory_id}"
 
 
-@mcp.tool()
+@tool()
 def elara_recall(
     query: str,
     n_results: int = 5,
@@ -77,7 +77,7 @@ def elara_recall(
     return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def elara_recall_conversation(
     query: Optional[str] = None,
     n_results: int = 5,
@@ -176,7 +176,7 @@ def elara_recall_conversation(
     return "\n\n---\n\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def elara_conversations(action: str = "stats", force: bool = False) -> str:
     """
     Conversation memory management — stats or ingestion.

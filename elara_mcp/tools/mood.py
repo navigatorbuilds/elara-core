@@ -8,7 +8,7 @@ Consolidated from 9 → 5 tools.
 """
 
 from typing import Optional
-from elara_mcp._app import mcp
+from elara_mcp._app import tool
 from memory.vector import get_memory
 from memory.episodic import get_episodic
 from daemon.state import (
@@ -51,7 +51,7 @@ MODE_PRESETS = {
 }
 
 
-@mcp.tool()
+@tool()
 def elara_mood(detail: str = "brief") -> str:
     """
     Get my current emotional state.
@@ -114,7 +114,7 @@ def elara_mood(detail: str = "brief") -> str:
     return f"{mood_desc}\nEmotion: {emo['blend']} ({emo['quadrant']})"
 
 
-@mcp.tool()
+@tool()
 def elara_mood_adjust(
     valence: float = 0,
     energy: float = 0,
@@ -152,7 +152,7 @@ def elara_mood_adjust(
     return f"{mood_desc}\nEmotion: {emo['blend']} ({emo['quadrant']})"
 
 
-@mcp.tool()
+@tool()
 def elara_imprint(
     feeling: Optional[str] = None,
     strength: float = 0.7
@@ -177,7 +177,7 @@ def elara_imprint(
     return get_residue_summary()
 
 
-@mcp.tool()
+@tool()
 def elara_mode(mode: str) -> str:
     """
     Switch to a personality mode. Sets mood to preset values.
@@ -223,7 +223,7 @@ def elara_mode(mode: str) -> str:
     return f"Switched to {mode_lower} mode (session-scoped, decays naturally). {preset['description']}. {describe_mood()}"
 
 
-@mcp.tool()
+@tool()
 def elara_status() -> str:
     """
     Full status check: presence, mood, self-description, and memory count.

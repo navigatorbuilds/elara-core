@@ -9,7 +9,7 @@ Consolidated from 8 → 4 tools + 1 handoff tool.
 
 import json
 from typing import Optional
-from elara_mcp._app import mcp
+from elara_mcp._app import tool
 from daemon.goals import (
     add_goal, update_goal, list_goals,
     boot_summary as goals_boot_summary,
@@ -23,7 +23,7 @@ from daemon.handoff import (
 )
 
 
-@mcp.tool()
+@tool()
 def elara_goal(
     action: str = "list",
     title: Optional[str] = None,
@@ -77,7 +77,7 @@ def elara_goal(
     return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def elara_goal_boot() -> str:
     """
     Boot-time goal check. Shows active goals, stale goals, and recent completions.
@@ -89,7 +89,7 @@ def elara_goal_boot() -> str:
     return goals_boot_summary()
 
 
-@mcp.tool()
+@tool()
 def elara_correction(
     action: str = "check",
     task: Optional[str] = None,
@@ -171,7 +171,7 @@ def elara_correction(
     return "\n".join(lines)
 
 
-@mcp.tool()
+@tool()
 def elara_correction_boot() -> str:
     """
     Boot-time corrections check. Returns recent mistakes to avoid repeating.
@@ -184,7 +184,7 @@ def elara_correction_boot() -> str:
     return result if result else "No corrections to review."
 
 
-@mcp.tool()
+@tool()
 def elara_handoff(
     action: str = "save",
     session_number: int = 0,

@@ -8,7 +8,7 @@
 """
 
 from typing import Optional
-from elara_mcp._app import mcp
+from elara_mcp._app import tool
 from daemon.schemas import ElaraNotFoundError, ElaraValidationError
 from daemon.business import (
     create_idea, add_competitor, score_idea, update_idea,
@@ -17,7 +17,7 @@ from daemon.business import (
 )
 
 
-@mcp.tool()
+@tool()
 def elara_business(
     action: str = "list",
     idea_id: Optional[str] = None,
