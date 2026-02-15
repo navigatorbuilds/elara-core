@@ -34,8 +34,8 @@ Weekly and monthly "dream" processing discovers patterns across sessions — pro
 
 ## Resources
 
-- [GitHub Repository](https://github.com/aivelikivodja-bot/elara-core)
+- [GitHub Repository](https://github.com/navigatorbuilds/elara-core)
 - [Documentation Site](https://elara.navigatorbuilds.com)
 - [PyPI Package](https://pypi.org/project/elara-core/)
-- [GitHub Discussions](https://github.com/aivelikivodja-bot/elara-core/discussions)
+- [GitHub Discussions](https://github.com/navigatorbuilds/elara-core/discussions)
 - [Changelog](https://elara.navigatorbuilds.com/changelog.html)

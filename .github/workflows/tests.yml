@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    if: github.repository == 'aivelikivodja-bot/elara-core'
+    if: github.repository == 'navigatorbuilds/elara-core'
     runs-on: ubuntu-latest
     strategy:
       matrix:

@@ -5,7 +5,7 @@ Thanks for your interest. Here's how to get started.
 ## Setup
 
 ```bash
-git clone https://github.com/aivelikivodja-bot/elara-core.git
+git clone https://github.com/navigatorbuilds/elara-core.git
 cd elara-core
 python3 -m venv venv
 source venv/bin/activate
@@ -43,7 +43,7 @@ elara-core/
 
 ## What to Work On
 
-Check the [issue tracker](https://github.com/aivelikivodja-bot/elara-core/issues) for open items. Good first issues are labeled accordingly.
+Check the [issue tracker](https://github.com/navigatorbuilds/elara-core/issues) for open items. Good first issues are labeled accordingly.
 
 Areas that welcome contributions:
 - **New MCP tools** — extend existing modules or propose new ones
@@ -60,7 +60,7 @@ Areas that welcome contributions:
 
 ## Reporting Issues
 
-Use the [bug report](https://github.com/aivelikivodja-bot/elara-core/issues/new?template=bug_report.yml) or [feature request](https://github.com/aivelikivodja-bot/elara-core/issues/new?template=feature_request.yml) templates.
+Use the [bug report](https://github.com/navigatorbuilds/elara-core/issues/new?template=bug_report.yml) or [feature request](https://github.com/navigatorbuilds/elara-core/issues/new?template=feature_request.yml) templates.
 
 ## License
 

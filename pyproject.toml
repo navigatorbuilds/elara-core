@@ -45,9 +45,9 @@ elara = "elara_mcp.cli:main"
 
 [project.urls]
 Homepage = "https://elara.navigatorbuilds.com"
-Repository = "https://github.com/aivelikivodja-bot/elara-core"
-Issues = "https://github.com/aivelikivodja-bot/elara-core/issues"
-Documentation = "https://github.com/aivelikivodja-bot/elara-core#readme"
+Repository = "https://github.com/navigatorbuilds/elara-core"
+Issues = "https://github.com/navigatorbuilds/elara-core/issues"
+Documentation = "https://github.com/navigatorbuilds/elara-core#readme"
 
 [tool.hatch.build]
 exclude = [

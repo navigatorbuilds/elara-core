@@ -1499,7 +1499,7 @@ The key contribution is the **3D Cognition architecture** — a framework where 
 
 The system is open-source, pip-installable, and runs locally. It serves as both a practical tool for human-AI collaboration and a reference implementation for Layer 3 of the Elara Protocol — demonstrating at single-node scale what the protocol aims to achieve at planetary scale. We welcome contributions, criticism, and collaboration.
 
-The code is available at: https://github.com/aivelikivodja-bot/elara-core
+The code is available at: https://github.com/navigatorbuilds/elara-core
 
 ---
 
@@ -1528,7 +1528,7 @@ The code is available at: https://github.com/aivelikivodja-bot/elara-core
 **Previous Hash (v1.0.0):** `784e598daad19e23ad39657a8814af11a7b11e68016d2b623aed5fb870e1e690`
 **OpenTimestamps Proof:** `ELARA-CORE-WHITEPAPER.v1.3.0.md.ots`
 **Companion Document:** `ELARA-PROTOCOL-WHITEPAPER.v0.2.5.md` — the universal validation protocol that Elara Core implements at Layer 3
-**Source Code:** https://github.com/aivelikivodja-bot/elara-core (v0.10.5)
+**Source Code:** https://github.com/navigatorbuilds/elara-core (v0.10.5)
 
 ---
 

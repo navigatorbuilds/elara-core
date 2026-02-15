@@ -2,10 +2,10 @@
 
 > **Your AI doesn't remember yesterday. Elara fixes that.**
 
-[![Tests](https://github.com/aivelikivodja-bot/elara-core/actions/workflows/tests.yml/badge.svg)](https://github.com/aivelikivodja-bot/elara-core/actions/workflows/tests.yml)
+[![Tests](https://github.com/navigatorbuilds/elara-core/actions/workflows/tests.yml/badge.svg)](https://github.com/navigatorbuilds/elara-core/actions/workflows/tests.yml)
 [![PyPI](https://img.shields.io/pypi/v/elara-core?color=%2300ff41&label=PyPI)](https://pypi.org/project/elara-core/)
 [![Python](https://img.shields.io/pypi/pyversions/elara-core?color=%2300e5ff)](https://pypi.org/project/elara-core/)
-[![License](https://img.shields.io/badge/license-BSL--1.1-ff0040)](https://github.com/aivelikivodja-bot/elara-core/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-BSL--1.1-ff0040)](https://github.com/navigatorbuilds/elara-core/blob/main/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-elara.navigatorbuilds.com-%23ffb000)](https://elara.navigatorbuilds.com)
 
 Elara gives your AI assistant persistent memory, mood, self-awareness, and overnight thinking — all through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io). **39 tools. 12 modules. 26K+ lines of Python. Everything runs locally.**
@@ -291,7 +291,7 @@ python3 -m daemon.overnight --mode exploratory
 ## Development
 
 ```bash
-git clone https://github.com/aivelikivodja-bot/elara-core.git
+git clone https://github.com/navigatorbuilds/elara-core.git
 cd elara-core
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
@@ -313,12 +313,12 @@ pytest
 
 ## Whitepapers & Protocol
 
-Elara Core is the **Layer 3 reference implementation** of the [Elara Protocol](https://github.com/aivelikivodja-bot/elara-protocol) — a post-quantum universal validation layer for digital work.
+Elara Core is the **Layer 3 reference implementation** of the [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) — a post-quantum universal validation layer for digital work.
 
 | Document | Description |
 |----------|-------------|
 | [**Elara Core Whitepaper v1.3.0**](ELARA-CORE-WHITEPAPER.v1.3.0.md) | Full architecture: 3D Cognition, persistent memory, emotional modeling, deployment modularity, continuous autonomous thinking |
-| [**Elara Protocol**](https://github.com/aivelikivodja-bot/elara-protocol) | The universal validation protocol — DAM architecture, post-quantum crypto, interplanetary operations |
+| [**Elara Protocol**](https://github.com/navigatorbuilds/elara-protocol) | The universal validation protocol — DAM architecture, post-quantum crypto, interplanetary operations |
 
 **Dual-use architecture:** Elara Core serves both industrial applications (manufacturing monitoring, research assistants, anomaly detection) and emotional companionship systems (humanoid robotics, therapeutic AI, personal companions) from a single codebase. See [Whitepaper Section 2.3](ELARA-CORE-WHITEPAPER.v1.3.0.md#23-deployment-modularity-two-independent-axes).
 
@@ -327,8 +327,8 @@ Elara Core is the **Layer 3 reference implementation** of the [Elara Protocol](h
 ## Community
 
 - **[Docs](https://elara.navigatorbuilds.com)** — Quickstart, tool reference, architecture, persona templates
-- **[Discussions](https://github.com/aivelikivodja-bot/elara-core/discussions)** — Questions, ideas, showcase
-- **[Issues](https://github.com/aivelikivodja-bot/elara-core/issues)** — Bug reports and feature requests
+- **[Discussions](https://github.com/navigatorbuilds/elara-core/discussions)** — Questions, ideas, showcase
+- **[Issues](https://github.com/navigatorbuilds/elara-core/issues)** — Bug reports and feature requests
 - **[Contributing](CONTRIBUTING.md)** — How to help
 
 ---
