@@ -117,6 +117,12 @@ class Events:
     PRINCIPLE_CONFIRMED = "principle_confirmed"
     PRINCIPLE_CHALLENGED = "principle_challenged"
 
+    # --- Workflows ---
+    WORKFLOW_CREATED = "workflow_created"
+    WORKFLOW_MATCHED = "workflow_matched"
+    WORKFLOW_COMPLETED = "workflow_completed"
+    WORKFLOW_RETIRED = "workflow_retired"
+
     # --- Handoff ---
     HANDOFF_SAVED = "handoff_saved"
 

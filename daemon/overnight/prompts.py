@@ -369,6 +369,64 @@ Rules:
 IMPORTANT: Return ONLY the JSON object, no other text.""",
     },
     {
+        "name": "workflow_detect",
+        "title": "Workflow Pattern Detection",
+        "is_3d": True,
+        "prompt": """\
+Analyze the episode milestones below for recurring ACTION SEQUENCES — tasks \
+that always follow the same pattern across multiple sessions.
+
+A workflow pattern is: a trigger event followed by a predictable sequence of \
+steps. Example: "whitepaper version updated" → update README → run OTS → \
+generate PDF → push to remote.
+
+Look for:
+- Sequences that appear in 2+ episodes with similar ordering
+- Multi-step tasks where forgetting a step causes problems later
+- Release/deploy/publish flows with a repeatable checklist
+
+EXISTING WORKFLOWS (don't duplicate):
+{workflows_context}
+
+EPISODES & MILESTONES:
+{context}
+
+PREVIOUS ROUNDS:
+{prev_output}
+
+{research}
+
+Respond with a JSON object:
+{{
+  "confirm": [
+    {{
+      "workflow_id": "...",
+      "episode_evidence": "episode ID or date where this pattern appeared again"
+    }}
+  ],
+  "new_workflows": [
+    {{
+      "name": "short descriptive name",
+      "domain": "development" | "deployment" | "documentation" | "maintenance",
+      "trigger": "what starts this workflow",
+      "steps": [
+        {{"action": "imperative step description", "artifact": "file or resource affected"}}
+      ],
+      "confidence": 0.3-0.7,
+      "evidence": "which episodes show this pattern"
+    }}
+  ]
+}}
+
+Rules:
+- Only detect patterns with real evidence from episodes (2+ occurrences)
+- Steps must be actionable imperatives ("update X", "run Y"), not observations
+- Maximum 3 new workflows per run
+- Don't duplicate existing workflows — confirm them instead
+
+IMPORTANT: Return ONLY the JSON object, no other text.""",
+    },
+    {
         "name": "synthesis",
         "title": "Final Synthesis",
         "prompt": """\

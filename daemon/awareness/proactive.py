@@ -294,6 +294,83 @@ def _check_imprint_weight() -> Optional[Dict]:
     return None
 
 
+def _check_workflow_match() -> Optional[Dict]:
+    """Detect if current activity matches a known workflow pattern."""
+    try:
+        from memory.episodic import get_episodic
+    except ImportError:
+        return None
+
+    episodic = get_episodic()
+    current = episodic.get_current_episode()
+    if not current:
+        return None
+
+    milestones = current.get("milestones", [])
+    if not milestones:
+        return None
+
+    # Use the most recent milestone as context
+    latest = milestones[-1]
+    event_text = latest.get("event", "")
+    if not event_text:
+        return None
+
+    try:
+        from daemon.workflows import check_workflows, record_match
+    except ImportError:
+        return None
+
+    matches = check_workflows(event_text, n=1)
+    if not matches:
+        return None
+
+    workflow = matches[0]
+    steps = workflow.get("steps", [])
+    if not steps:
+        return None
+
+    # Determine which steps might already be done based on milestones
+    done_events = {m.get("event", "").lower() for m in milestones}
+    remaining = []
+    for step in steps:
+        action = step.get("action", "")
+        # Simple heuristic: if any milestone mentions the same artifact or action words
+        action_lower = action.lower()
+        already_done = any(
+            word in done_events_str
+            for done_events_str in done_events
+            for word in action_lower.split()[:3]
+            if len(word) > 4
+        )
+        if not already_done:
+            remaining.append(action)
+
+    if not remaining:
+        return None
+
+    # Record the match
+    try:
+        record_match(workflow["workflow_id"])
+    except Exception:
+        pass
+
+    steps_text = " → ".join(remaining[:4])
+    return {
+        "type": "workflow_match",
+        "severity": "helpful",
+        "message": (
+            f"This looks like \"{workflow['name']}\". "
+            f"Remaining steps: {steps_text}"
+        ),
+        "suggestion": "follow_workflow",
+        "data": {
+            "workflow_id": workflow["workflow_id"],
+            "remaining_steps": remaining,
+        },
+    }
+
+
 # --- Proactive API ---
 
 def get_boot_observations() -> List[Dict]:
@@ -338,6 +415,7 @@ def get_mid_session_observations() -> List[Dict]:
 
     checkers = [
         _check_mood_trend,
+        _check_workflow_match,
         _check_milestone_streak,
         _check_imprint_weight,
     ]

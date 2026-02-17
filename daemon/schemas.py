@@ -525,6 +525,31 @@ class Principle(ElaraModel):
     tags: List[str] = Field(default_factory=list)
 
 
+class WorkflowStep(ElaraModel):
+    """Single step in a workflow pattern."""
+    action: str                          # imperative: "update README versions section"
+    artifact: Optional[str] = None       # file/resource affected
+    depends_on_previous: bool = True     # sequential by default
+
+
+class WorkflowPattern(ElaraModel):
+    """Learned action sequence: ~/.elara/elara-workflows/{workflow_id}.json"""
+    workflow_id: str
+    name: str                            # "whitepaper release flow"
+    domain: str = "development"          # development, deployment, documentation, maintenance
+    trigger: str                         # "whitepaper version updated"
+    steps: List[WorkflowStep] = Field(default_factory=list)
+    confidence: float = 0.5
+    source_episodes: List[str] = Field(default_factory=list)
+    times_matched: int = 0
+    times_completed: int = 0
+    times_skipped: int = 0
+    status: str = "active"              # active, evolved, retired
+    created: Optional[str] = None
+    last_matched: Optional[str] = None
+    tags: List[str] = Field(default_factory=list)
+
+
 class OvernightQueueItem(ElaraModel):
     """Single problem in the overnight directed-thinking queue."""
     problem: str

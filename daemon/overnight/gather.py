@@ -192,6 +192,15 @@ def gather_all(days: int = 30) -> Dict[str, Any]:
         logger.warning("  Principles failed: %s", e)
         context["principles"] = []
 
+    # --- Workflows (learned action sequences) ---
+    try:
+        from daemon.workflows import list_workflows
+        context["workflows"] = list_workflows(status="active")
+        logger.info("  Workflows: %d active", len(context["workflows"]))
+    except Exception as e:
+        logger.warning("  Workflows failed: %s", e)
+        context["workflows"] = []
+
     # --- Latest dream reports ---
     try:
         from daemon.dream_core import read_latest_dream
@@ -475,6 +484,20 @@ def format_context_for_prompt(context: Dict[str, Any], max_chars: int = 6000) ->
                 f"(conf={p.get('confidence',0)}, confirmed={p.get('times_confirmed',0)}x)"
             )
         sections.append(("CRYSTALLIZED PRINCIPLES", "\n".join(lines)))
+
+    # Workflows
+    workflows = context.get("workflows", [])
+    if workflows:
+        lines = []
+        for w in workflows[:8]:
+            steps = [s.get("action", "?")[:30] for s in w.get("steps", [])]
+            lines.append(
+                f"  - [{w.get('domain','?')}] {w.get('name','?')[:50]} "
+                f"(conf={w.get('confidence',0)}, matched={w.get('times_matched',0)}x)\n"
+                f"    Trigger: {w.get('trigger','?')[:60]}\n"
+                f"    Steps: {' → '.join(steps)}"
+            )
+        sections.append(("WORKFLOW PATTERNS", "\n".join(lines)))
 
     # Temporal scales
     temporal = context.get("temporal", {})

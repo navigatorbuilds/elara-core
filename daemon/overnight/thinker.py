@@ -62,6 +62,8 @@ class OvernightThinker:
             "predictions_created": 0,
             "principles_confirmed": 0,
             "principles_created": 0,
+            "workflows_detected": 0,
+            "workflows_confirmed": 0,
             "parse_failures": 0,
         }
 
@@ -188,6 +190,23 @@ class OvernightThinker:
             )
         return "\n".join(lines)
 
+    def _format_workflows_context(self) -> str:
+        """Format existing workflows for LLM prompt."""
+        workflows = self.context_dict.get("workflows", [])
+        if not workflows:
+            return "(no workflows yet)"
+        lines = []
+        for w in workflows[:10]:
+            steps = [s.get("action", "?")[:40] for s in w.get("steps", [])]
+            lines.append(
+                f"- [{w.get('workflow_id', '?')[:8]}] {w.get('name', '?')[:60]} "
+                f"(domain={w.get('domain', '?')}, conf={w.get('confidence', 0)}, "
+                f"matched={w.get('times_matched', 0)}x)\n"
+                f"  Trigger: {w.get('trigger', '?')[:80]}\n"
+                f"  Steps: {' → '.join(steps)}"
+            )
+        return "\n".join(lines)
+
     # ------------------------------------------------------------------
     # 3D Cognition JSON processing
     # ------------------------------------------------------------------
@@ -241,6 +260,8 @@ class OvernightThinker:
                 self._apply_new_models(parsed)
             elif phase_name == "crystallize":
                 self._apply_crystallization(parsed)
+            elif phase_name == "workflow_detect":
+                self._apply_workflow_detection(parsed)
         except Exception as e:
             logger.warning("3D apply failed for '%s': %s", phase_name, e)
             self._3d_stats["parse_failures"] += 1
@@ -372,6 +393,45 @@ class OvernightThinker:
             except Exception as e:
                 logger.warning("  Principle creation failed: %s", e)
 
+    def _apply_workflow_detection(self, data):
+        """Create new workflows and confirm existing ones from workflow_detect phase."""
+        if not isinstance(data, dict):
+            return
+
+        # Confirm existing workflows
+        from daemon.workflows import confirm_workflow, create_workflow
+        for confirm in data.get("confirm", []):
+            try:
+                wid = confirm.get("workflow_id", "")
+                episode = confirm.get("episode_evidence", "")
+                if wid:
+                    confirm_workflow(wid, episode_id=episode)
+                    self._3d_stats["workflows_confirmed"] += 1
+                    logger.info("  Workflow confirmed: %s", wid[:8])
+            except Exception as e:
+                logger.warning("  Workflow confirmation failed: %s", e)
+
+        # Create new workflows (max 3 per run)
+        for new in data.get("new_workflows", [])[:3]:
+            try:
+                name = new.get("name", "")
+                if not name:
+                    continue
+                steps = new.get("steps", [])
+                workflow = create_workflow(
+                    name=name,
+                    domain=new.get("domain", "development"),
+                    trigger=new.get("trigger", ""),
+                    steps=steps,
+                    confidence=new.get("confidence", 0.5),
+                    tags=["overnight"],
+                )
+                self._3d_stats["workflows_detected"] += 1
+                logger.info("  New workflow [%s]: %s (%d steps)",
+                           new.get("domain", "?"), name[:60], len(steps))
+            except Exception as e:
+                logger.warning("  Workflow creation failed: %s", e)
+
     @property
     def cognition_summary(self) -> Dict[str, Any]:
         """Summary of 3D cognition actions taken during this run."""
@@ -416,6 +476,7 @@ class OvernightThinker:
                     "predictions_context": self._format_predictions_context(),
                     "prediction_accuracy": self._format_prediction_accuracy(),
                     "principles_context": self._format_principles_context(),
+                    "workflows_context": self._format_workflows_context(),
                 })
 
             prompt = phase["prompt"].format(**format_vars)

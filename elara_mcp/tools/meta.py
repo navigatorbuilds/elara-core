@@ -67,6 +67,9 @@ def elara_do(tool: str, params: str = "{}") -> str:
       prediction(action, prediction_id, statement, confidence, deadline, ...)
       principle(action, principle_id, statement, domain, query, ...)
 
+    WORKFLOWS:
+      workflow(action, workflow_id, query, name, domain, trigger, steps, tags, n)
+
     BUSINESS:
       business(action, idea_id, name, description, ...)
 

@@ -371,6 +371,17 @@ class ElaraPaths:
         return self._root / "elara-knowledge-db"
 
     # ------------------------------------------------------------------
+    # Workflows (learned action sequences)
+    # ------------------------------------------------------------------
+    @property
+    def workflows_dir(self) -> Path:
+        return self._root / "elara-workflows"
+
+    @property
+    def workflows_db(self) -> Path:
+        return self._root / "elara-workflows-db"
+
+    # ------------------------------------------------------------------
     # Interface / storage
     # ------------------------------------------------------------------
     @property
@@ -423,6 +434,8 @@ class ElaraPaths:
             self.predictions_db,
             self.principles_db,
             self.knowledge_vector_db,
+            self.workflows_dir,
+            self.workflows_db,
         ]
         for d in dirs:
             d.mkdir(parents=True, exist_ok=True)
