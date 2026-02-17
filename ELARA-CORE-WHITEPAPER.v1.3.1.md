@@ -1513,7 +1513,7 @@ The code is available at: https://github.com/navigatorbuilds/elara-core
 
 [4] Walker, M. P. & Stickgold, R. (2006). "Sleep, memory, and plasticity." *Annual Review of Psychology*, 57, 139-166.
 
-[5] Vasic, N. (2026). "Elara Protocol: A Post-Quantum Universal Validation Layer for Digital Work." Version 0.2.5.
+[5] Vasic, N. (2026). "Elara Protocol: A Post-Quantum Universal Validation Layer for Digital Work." Version 0.2.7.
 
 [6] Model Context Protocol Specification. https://modelcontextprotocol.io
 
@@ -1521,7 +1521,7 @@ The code is available at: https://github.com/navigatorbuilds/elara-core
 
 ---
 
-**Document Hash (SHA-256, v1.3.1):** `832a8821544bb6b68c3e8e8df529a76846f960da5783bfcdf1a43116d161cdc7`
+**Document Hash (SHA-256, v1.3.1):** `de47fb536973050c90693414075161bbb2eac6e001353b7db1a6041c8b3a5c1c`
 **Hash verification:** To verify, replace the hash on the line above with the literal string `HASH_PLACEHOLDER` and compute SHA-256 of the file.
 **Previous Hash (v1.3.0):** `6b7da9f2b92e08344572f20f0098f3e686cf3ccc9bd0bd7af8b76e90bdc0a0e7`
 **Previous Hash (v1.2.0):** `5003c15fb0e7d339075974362d63801c5967ae244cad49868d13e40615bb7b7b`
