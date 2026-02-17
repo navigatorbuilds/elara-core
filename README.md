@@ -317,10 +317,10 @@ Elara Core is the **Layer 3 reference implementation** of the [Elara Protocol](h
 
 | Document | Description |
 |----------|-------------|
-| [**Elara Core Whitepaper v1.3.1**](ELARA-CORE-WHITEPAPER.v1.3.1.md) | Full architecture: 3D Cognition, persistent memory, emotional modeling, deployment modularity, continuous autonomous thinking |
+| [**Elara Core Whitepaper v1.3.2**](ELARA-CORE-WHITEPAPER.v1.3.2.md) | Full architecture: 3D Cognition, persistent memory, emotional modeling, deployment modularity, continuous autonomous thinking |
 | [**Elara Protocol**](https://github.com/navigatorbuilds/elara-protocol) | The universal validation protocol — DAM architecture, post-quantum crypto, interplanetary operations |
 
-**Dual-use architecture:** Elara Core serves both industrial applications (manufacturing monitoring, research assistants, anomaly detection) and emotional companionship systems (humanoid robotics, therapeutic AI, personal companions) from a single codebase. See [Whitepaper Section 2.3](ELARA-CORE-WHITEPAPER.v1.3.1.md#23-deployment-modularity-two-independent-axes).
+**Dual-use architecture:** Elara Core serves both industrial applications (manufacturing monitoring, research assistants, anomaly detection) and emotional companionship systems (humanoid robotics, therapeutic AI, personal companions) from a single codebase. See [Whitepaper Section 2.3](ELARA-CORE-WHITEPAPER.v1.3.2.md#23-deployment-modularity-two-independent-axes).
 
 ---
 
