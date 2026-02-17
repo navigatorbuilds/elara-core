@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/license-BSL--1.1-ff0040)](https://github.com/navigatorbuilds/elara-core/blob/main/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-elara.navigatorbuilds.com-%23ffb000)](https://elara.navigatorbuilds.com)
 
-Elara gives your AI assistant persistent memory, mood, self-awareness, and overnight thinking — all through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io). **39 tools. 12 modules. 26K+ lines of Python. Everything runs locally.**
+Elara gives your AI assistant persistent memory, mood, self-awareness, and overnight thinking — all through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io). **44 tools. 14 modules. 27K+ lines of Python. Everything runs locally.**
 
 ```
 You: "Morning."
@@ -148,8 +148,10 @@ That's the core loop: **remember → recall → track → reflect**.
 
 | Feature | What it does |
 |---------|-------------|
-| **3D Cognition** *(new in v0.10.0)* | Persistent models (understanding), predictions (foresight), and principles (wisdom) that accumulate over time. |
-| **Overnight thinking** | Autonomous analysis between sessions — runs 14 phases through a local LLM, builds cognitive models, makes predictions. |
+| **3D Cognition** *(new in v0.10.0)* | Persistent models (understanding), predictions (foresight), principles (wisdom), and workflow patterns (action) that accumulate over time. |
+| **Workflow Patterns** *(new in v0.10.7)* | Learned action sequences from episode history, proactively surfaced when a known trigger is detected mid-session. |
+| **Knowledge Graph** *(new in v0.10.6)* | Document cross-referencing with 6-tuple addressing, SQLite + ChromaDB, 4 validators for contradiction detection. |
+| **Overnight thinking** | Autonomous analysis between sessions — runs 15 phases through a local LLM, builds cognitive models, detects workflow patterns, makes predictions. |
 | **Creative drift** | The overnight brain's imagination — random context collisions at high temperature. Writes to an accumulating creative journal. |
 | **Dream mode** | Weekly/monthly pattern discovery across sessions, inspired by sleep consolidation. |
 | **Reasoning trails** | Track hypothesis chains when debugging. Includes what was abandoned and why. |
@@ -172,7 +174,7 @@ That's the core loop: **remember → recall → track → reflect**.
 | `elara_episode_start` | Begin tracking a work session |
 | `elara_status` | Full status check |
 
-**All 38 tools by module:**
+**All 44 tools by module:**
 
 <details>
 <summary>Click to expand full tool list</summary>
@@ -187,10 +189,12 @@ That's the core loop: **remember → recall → track → reflect**.
 | **Dreams** | `elara_dream`, `elara_dream_info` | 2 |
 | **Cognitive** | `elara_reasoning`, `elara_outcome`, `elara_synthesis` | 3 |
 | **3D Cognition** | `elara_model`, `elara_prediction`, `elara_principle` | 3 |
+| **Workflows** | `elara_workflow` | 1 |
+| **Knowledge** | `elara_kg_index`, `elara_kg_query`, `elara_kg_validate`, `elara_kg_diff` | 4 |
 | **Business** | `elara_business` | 1 |
 | **LLM** | `elara_llm` | 1 |
 | **Gmail** | `elara_gmail` | 1 |
-| **Maintenance** | `elara_rebuild_indexes`, `elara_briefing`, `elara_snapshot` | 3 |
+| **Maintenance** | `elara_rebuild_indexes`, `elara_briefing`, `elara_snapshot`, `elara_memory_consolidation` | 4 |
 
 </details>
 
@@ -210,22 +214,22 @@ That's the core loop: **remember → recall → track → reflect**.
 │              elara_mcp/tools/                     │
 │                                                  │
 │  Memory · Mood · Episodes · Goals · Awareness    │
-│  Dreams · Cognitive · 3D Cognition · Business    │
-│  LLM · Gmail · Maintenance                      │
-│                  (38 tools)                       │
+│  Dreams · Cognitive · 3D Cognition · Workflows   │
+│  Knowledge · Business · LLM · Gmail · Maintenance│
+│                  (44 tools)                       │
 └────────────────────┬────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────┐
 │              daemon/ + core/                      │
 │                                                  │
 │  State engine · Emotions · Models · Predictions  │
-│  Principles · Dreams · Overnight brain · Drift   │
+│  Principles · Workflows · Overnight brain · Drift│
 └────────────────────┬────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────┐
 │           ~/.elara/ (all local)                   │
 │                                                  │
-│  ChromaDB (7 collections) · JSON state files     │
+│  ChromaDB (9 collections) · JSON state files     │
 │  Overnight findings · Creative journal           │
 └─────────────────────────────────────────────────┘
 ```
@@ -317,10 +321,10 @@ Elara Core is the **Layer 3 reference implementation** of the [Elara Protocol](h
 
 | Document | Description |
 |----------|-------------|
-| [**Elara Core Whitepaper v1.3.2**](ELARA-CORE-WHITEPAPER.v1.3.2.md) | Full architecture: 3D Cognition, persistent memory, emotional modeling, deployment modularity, continuous autonomous thinking |
+| [**Elara Core Whitepaper v1.3.3**](ELARA-CORE-WHITEPAPER.v1.3.3.md) | Full architecture: 3D Cognition, workflow patterns, knowledge graph, persistent memory, emotional modeling, deployment modularity, continuous autonomous thinking |
 | [**Elara Protocol**](https://github.com/navigatorbuilds/elara-protocol) | The universal validation protocol — DAM architecture, post-quantum crypto, interplanetary operations |
 
-**Dual-use architecture:** Elara Core serves both industrial applications (manufacturing monitoring, research assistants, anomaly detection) and emotional companionship systems (humanoid robotics, therapeutic AI, personal companions) from a single codebase. See [Whitepaper Section 2.3](ELARA-CORE-WHITEPAPER.v1.3.2.md#23-deployment-modularity-two-independent-axes).
+**Dual-use architecture:** Elara Core serves both industrial applications (manufacturing monitoring, research assistants, anomaly detection) and emotional companionship systems (humanoid robotics, therapeutic AI, personal companions) from a single codebase. See [Whitepaper Section 2.3](ELARA-CORE-WHITEPAPER.v1.3.3.md#23-deployment-modularity-two-independent-axes).
 
 ---
 
@@ -333,14 +337,13 @@ Elara Core is the **Layer 3 reference implementation** of the [Elara Protocol](h
 
 ---
 
-## What's New in v0.10.0
+## What's New
 
-**3D Cognition System** — Elara now builds persistent understanding between sessions:
-- **Cognitive Models** — understanding that accumulates evidence and adjusts confidence over time
-- **Predictions** — explicit forecasts with deadlines and accuracy tracking
-- **Principles** — crystallized rules from repeated insights
+**v0.10.7 — Workflow Patterns** — Learned action sequences from episode history. The overnight brain detects recurring multi-step processes and crystallizes them into workflow patterns. When a known trigger is detected mid-session, remaining steps are proactively surfaced.
 
-**Creative Drift** — the overnight brain's imagination. Random context collisions at high temperature, writing to an accumulating creative journal.
+**v0.10.6 — Knowledge Graph** — Document cross-referencing with 6-tuple addressing. SQLite + ChromaDB backend. 4 validators for contradiction detection across whitepapers and documentation.
+
+**v0.10.0 — 3D Cognition** — Persistent models (understanding), predictions (foresight), and principles (wisdom) that accumulate over time. Plus creative drift — the overnight brain's imagination.
 
 **[Full changelog →](CHANGELOG.md)**
 

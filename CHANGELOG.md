@@ -2,6 +2,34 @@
 
 All notable changes to Elara Core.
 
+## [0.10.7] — 2026-02-17
+
+### Added — Workflow Patterns (4th 3D Cognition Output)
+- **Workflow Patterns** (`daemon/workflows.py`) — learned action sequences from episode history
+- **Proactive surfacing** — mid-session observations detect when current task matches a known workflow trigger, surfaces remaining steps
+- **Overnight detection** — new `workflow_detect` phase analyzes episode milestones for recurring multi-step processes
+- **Confidence mechanics** — completion strengthens (+0.05), skip weakens (-0.03), auto-retire below 0.15
+- **1 new MCP tool** (`elara_workflow`) — CRUD, semantic search, completion/skip tracking, stats
+- **ChromaDB collection** `elara_workflows` for semantic activation matching
+
+### Changed
+- Overnight phases expanded from 14 to 15 (+ workflow_detect)
+- 3D Cognition context in overnight brain now includes workflow data
+- 44 MCP tools across 14 modules (was 43/13)
+
+## [0.10.6] — 2026-02-17
+
+### Added — Knowledge Graph
+- **Knowledge Graph module** (`daemon/knowledge.py`) — document cross-referencing with 6-tuple addressing (semantic_id, time, source_doc, source_section, source_line, type)
+- **SQLite backend** for structured node/edge/document storage
+- **ChromaDB collection** `elara_knowledge` for semantic node search
+- **4 validators** — internal consistency, cross-document contradiction detection, metric conflicts, dependency gaps
+- **4 new MCP tools** (`elara_kg_index`, `elara_kg_query`, `elara_kg_validate`, `elara_kg_diff`)
+- **Alias system** — maps variant names to canonical semantic IDs
+
+### Changed
+- 43 MCP tools across 13 modules (was 39/12)
+
 ## [0.10.0] — 2026-02-14
 
 ### Added — 3D Cognition System
