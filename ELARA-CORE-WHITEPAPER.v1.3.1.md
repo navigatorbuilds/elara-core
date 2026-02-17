@@ -1,7 +1,7 @@
 # Elara Core: A Cognitive Architecture for Persistent AI Awareness
 
-**Version 1.3.0**
-**Date:** February 15, 2026
+**Version 1.3.1**
+**Date:** February 17, 2026
 **Author:** Nenad Vasic
 **Contact:** nenadvasic@protonmail.com
 
@@ -1320,8 +1320,8 @@ The Elara Protocol claims universality — a teenager in Kenya with a $30 phone 
 
 | Operation | Computation | Hardware | Latency |
 |-----------|------------|----------|---------|
-| SHA-256 hash | Cryptographic hash | Any processor | < 10ms |
-| Ed25519 sign | Asymmetric signature | Any processor | < 5ms |
+| SHA3-256 hash | Cryptographic hash | Any processor | < 1ms |
+| CRYSTALS-Dilithium sign | Post-quantum signature | Any processor | < 1ms |
 | DAM insertion | Local data structure | ~1KB memory | < 1ms |
 | **Total** | | **$30 phone, microcontroller, Raspberry Pi** | **< 50ms** |
 
@@ -1521,13 +1521,14 @@ The code is available at: https://github.com/navigatorbuilds/elara-core
 
 ---
 
-**Document Hash (SHA-256, v1.3.0):** `6b7da9f2b92e08344572f20f0098f3e686cf3ccc9bd0bd7af8b76e90bdc0a0e7`
+**Document Hash (SHA-256, v1.3.1):** `832a8821544bb6b68c3e8e8df529a76846f960da5783bfcdf1a43116d161cdc7`
 **Hash verification:** To verify, replace the hash on the line above with the literal string `HASH_PLACEHOLDER` and compute SHA-256 of the file.
+**Previous Hash (v1.3.0):** `6b7da9f2b92e08344572f20f0098f3e686cf3ccc9bd0bd7af8b76e90bdc0a0e7`
 **Previous Hash (v1.2.0):** `5003c15fb0e7d339075974362d63801c5967ae244cad49868d13e40615bb7b7b`
 **Previous Hash (v1.1.0):** `aca7b0ff4f798cc8d58076775ca42cff0dc7146ecb9d30b6acbb0ec988e9330d`
 **Previous Hash (v1.0.0):** `784e598daad19e23ad39657a8814af11a7b11e68016d2b623aed5fb870e1e690`
-**OpenTimestamps Proof:** `ELARA-CORE-WHITEPAPER.v1.3.0.md.ots`
-**Companion Document:** `ELARA-PROTOCOL-WHITEPAPER.v0.2.5.md` — the universal validation protocol that Elara Core implements at Layer 3
+**OpenTimestamps Proof:** `ELARA-CORE-WHITEPAPER.v1.3.1.md.ots`
+**Companion Document:** `ELARA-PROTOCOL-WHITEPAPER.v0.2.7.md` — the universal validation protocol that Elara Core implements at Layer 3
 **Source Code:** https://github.com/navigatorbuilds/elara-core (v0.10.5)
 
 ---
