@@ -313,7 +313,7 @@
             { type: 'type',    text: '[BOOT] 3 corrections loaded',                           style: 'boot-line', speed: 25, delay: 100 },
             { type: 'type',    text: '[BOOT] Overwatch daemon: ACTIVE',                       style: 'boot-line', speed: 22, delay: 400 },
             { type: 'instant', text: '',                                                      delay: 300 },
-            { type: 'type',    text: '> Ready. 44 tools across 14 modules.',                  style: 'ready-line', speed: 30, delay: 200 },
+            { type: 'type',    text: '> Ready. 45 tools across 15 modules.',                  style: 'ready-line', speed: 30, delay: 200 },
             { type: 'type',    text: '> Type something. I\'ll remember.',                     style: 'ready-line', speed: 35, delay: 0 },
         ];
 
@@ -337,7 +337,7 @@
             } else if (style === 'ready-line') {
                 const colored = text
                     .replace(/^>/, '<span class="accent">></span>')
-                    .replace(/44 tools across 14 modules\./, '<span class="ready">44 tools across 14 modules.</span>')
+                    .replace(/45 tools across 15 modules\./, '<span class="ready">45 tools across 15 modules.</span>')
                     .replace(/I'll remember\./, '<span class="ready">I\'ll remember.</span>')
                     ;
                 span.innerHTML = colored;

@@ -6,7 +6,7 @@
     <title>ELARA CORE // Changelog</title>
     <meta name="description" content="Version history and changelog for Elara Core — all notable changes, features, fixes, and improvements.">
     <meta property="og:title" content="Elara Core — Changelog">
-    <meta property="og:description" content="Track every release, from 0.9.0 to the latest.">
+    <meta property="og:description" content="Track every release, from 0.9.0 to v0.12.0.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://elara.navigatorbuilds.com/changelog.html">
     <meta name="twitter:card" content="summary">
@@ -343,6 +343,108 @@
     <div class="subscribe-box">
         <p>Get notified when new versions drop.</p>
         <a href="https://github.com/navigatorbuilds/elara-core/releases" target="_blank" rel="noopener noreferrer">Subscribe on GitHub &rarr;</a>
+    </div>
+
+    <!-- Version 0.12.0 -->
+    <div class="version">
+        <div class="version-header">
+            <div class="version-number">[0.12.0]</div>
+            <div class="version-date">2026-02-18</div>
+        </div>
+
+        <div class="changes-section">
+            <h3>Added &mdash; Layer 2 Testnet + Witness Persistence</h3>
+            <ul class="changes-list">
+                <li><strong>Testnet script</strong> (<code>scripts/testnet.py</code>) &mdash; 2+ node end-to-end proof: create record, exchange, witness, verify trust score</li>
+                <li><strong>Testnet integration tests</strong> (<code>tests/test_testnet.py</code>) &mdash; 4 tests covering status, exchange, witness, submit</li>
+                <li><strong>CLI: <code>elara testnet</code></strong> &mdash; run N-node testnet demo with <code>--nodes</code>, <code>--port-base</code>, <code>--verbose</code></li>
+                <li><strong>Witness persistence</strong> &mdash; SQLite-backed attestation store (was in-memory only), survives restarts</li>
+                <li>Attestation dedup via PRIMARY KEY <code>(record_id, witness_identity)</code> enforced at DB level</li>
+            </ul>
+        </div>
+
+        <div class="changes-section">
+            <h3>Changed</h3>
+            <ul class="changes-list">
+                <li><code>WitnessManager</code> accepts optional <code>db_path</code>; falls back to in-memory if not provided</li>
+                <li><code>NetworkServer</code> accepts <code>attestations_db</code> parameter</li>
+                <li>MCP <code>elara_network</code> start action passes <code>attestations_db</code> from <code>core.paths</code></li>
+                <li>Scheduler quiet hours log fixed (was crashing when quiet hours disabled)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Version 0.11.0 -->
+    <div class="version">
+        <div class="version-header">
+            <div class="version-number">[0.11.0]</div>
+            <div class="version-date">2026-02-18</div>
+        </div>
+
+        <div class="changes-section">
+            <h3>Added &mdash; Layer 2 Network Stub + CLI Crypto Tools</h3>
+            <ul class="changes-list">
+                <li><strong>Layer 2 network package</strong> (<code>network/</code>) &mdash; minimum viable network with 6 files (~985 lines)</li>
+                <li><strong>Peer discovery</strong> &mdash; mDNS via zeroconf (zero-config LAN) + hardcoded peer lists</li>
+                <li><strong>Network server</strong> &mdash; aiohttp HTTP endpoints: <code>POST /records</code>, <code>GET /records</code>, <code>POST /witness</code>, <code>GET /status</code></li>
+                <li><strong>Network client</strong> &mdash; async HTTP client for all 4 server endpoints</li>
+                <li><strong>Witness attestation</strong> &mdash; counter-signing with dedup</li>
+                <li><strong>Trust scoring</strong> &mdash; <code>T = 1 - 1/(1 + n)</code> formula</li>
+                <li><strong><code>elara_network</code> MCP tool</strong> &mdash; status, peers, start, stop, push, sync, witness (7 actions)</li>
+                <li><strong>CLI: <code>elara sign &lt;file&gt;</code></strong> &mdash; dual-sign with Dilithium3+SPHINCS+, write <code>.elara.proof</code></li>
+                <li><strong>CLI: <code>elara verify &lt;proof&gt;</code></strong> &mdash; verify signature + content hash</li>
+                <li><strong>CLI: <code>elara identity</code></strong> &mdash; show identity hash, entity type, profile, key sizes</li>
+                <li><strong>CLI: <code>elara dag stats</code></strong> &mdash; record count, edges, tips, roots, time range</li>
+                <li><strong>Bridge hardening</strong> &mdash; dedup cache (10K), rate limit (120/min), <code>BridgeMetrics</code> with 6 counters</li>
+            </ul>
+        </div>
+
+        <div class="changes-section">
+            <h3>Changed</h3>
+            <ul class="changes-list">
+                <li>6 new event types: RECORD_RECEIVED, RECORD_WITNESSED, PEER_DISCOVERED, PEER_LOST, NETWORK_STARTED, NETWORK_STOPPED</li>
+                <li>45 MCP tools across 15 modules (was 44/14)</li>
+                <li>Optional dependencies: <code>pip install elara-core[network]</code> (aiohttp, zeroconf)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Version 0.10.8 -->
+    <div class="version">
+        <div class="version-header">
+            <div class="version-number">[0.10.8]</div>
+            <div class="version-date">2026-02-17</div>
+        </div>
+
+        <div class="changes-section">
+            <h3>Added &mdash; Layer 1 Bridge</h3>
+            <ul class="changes-list">
+                <li><strong>Layer 1 Bridge</strong> (<code>core/layer1_bridge.py</code>) &mdash; connects Layer 3 cognition to Layer 1 cryptographic validation</li>
+                <li><strong>Post-quantum dual signatures</strong> &mdash; Dilithium3 + SPHINCS+ on every cognitive artifact</li>
+                <li>10 event types validated: model, prediction, principle, workflow, correction, dream, episode, handoff, synthesis, outcome</li>
+                <li>Local DAG storage with parent chaining for causal history</li>
+                <li>Persistent AI identity (generated once, reused across sessions)</li>
+                <li>SOVEREIGN classification &mdash; cognitive artifacts never leave the device by default</li>
+                <li>Optional dependency &mdash; if <code>elara-protocol</code> not installed, bridge is dormant</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Version 0.10.7 -->
+    <div class="version">
+        <div class="version-header">
+            <div class="version-number">[0.10.7]</div>
+            <div class="version-date">2026-02-15</div>
+        </div>
+
+        <div class="changes-section">
+            <h3>Added &mdash; Lean Profile</h3>
+            <ul class="changes-list">
+                <li><strong>Lean profile</strong> (<code>--profile lean</code>) &mdash; 8 tool schemas at boot instead of 45, ~17% context savings</li>
+                <li><code>elara_do</code> meta-tool dispatches to all remaining tools by short name</li>
+                <li>Zero breaking changes &mdash; all tools still accessible</li>
+            </ul>
+        </div>
     </div>
 
     <!-- Version 0.9.2 -->
