@@ -168,8 +168,8 @@ class BrainScheduler:
         sched_pid.write_text(str(os.getpid()))
 
         logger.info("=== Brain scheduler started (PID %d) ===", os.getpid())
-        logger.info("Mode: continuous | Interval: configurable | Quiet: %d-%d",
-                     QUIET_HOURS_START, QUIET_HOURS_END)
+        quiet_str = f"{QUIET_HOURS_START}-{QUIET_HOURS_END}" if QUIET_HOURS_START is not None else "disabled"
+        logger.info("Mode: continuous | Interval: configurable | Quiet: %s", quiet_str)
         logger.info("Pause control: %s", PAUSE_FILE)
 
         try:
