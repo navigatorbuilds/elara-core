@@ -144,7 +144,23 @@ def _start() -> str:
     )
     _discovery.start()
 
-    return f"Network started — discovery active, port {net_port}"
+    # Start HTTP server in a background thread with its own event loop
+    import asyncio
+    import threading
+    from network.server import NetworkServer
+
+    _server = NetworkServer(bridge._identity, bridge._dag, port=net_port)
+
+    def _run_server():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(_server.start())
+        loop.run_forever()
+
+    thread = threading.Thread(target=_run_server, daemon=True, name="elara-network")
+    thread.start()
+
+    return f"Network started — discovery + server on port {net_port}"
 
 
 def _stop() -> str:
@@ -154,6 +170,20 @@ def _stop() -> str:
     if _discovery:
         _discovery.stop()
         _discovery = None
+
+    if _server:
+        import asyncio
+        import concurrent.futures
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    pool.submit(asyncio.run, _server.stop()).result(timeout=5)
+            else:
+                asyncio.run(_server.stop())
+        except Exception:
+            pass
+        _server = None
 
     return "Network stopped."
 

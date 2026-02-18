@@ -201,6 +201,6 @@ class NetworkServer:
         return web.json_response({
             "identity": self._identity.identity_hash,
             "entity_type": self._identity.entity_type.name,
-            "dag_records": stats.get("record_count", 0),
+            "dag_records": stats.get("total_records", 0),
             "port": self._port,
         })

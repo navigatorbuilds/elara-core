@@ -14,6 +14,8 @@ Usage:
     elara verify <proof>           Verify an .elara.proof file
     elara identity                 Show identity info
     elara dag stats                Show DAG statistics
+    elara testnet                  Run 2-node testnet demo
+    elara testnet --nodes 3        Run N-node testnet
     elara --data-dir PATH          Override data directory
 """
 
@@ -330,6 +332,26 @@ def _dag_stats(data_dir: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Testnet
+# ---------------------------------------------------------------------------
+
+def _testnet(nodes: int = 2, port_base: int = 9473, verbose: bool = False) -> None:
+    """Run the Layer 2 testnet demo."""
+    try:
+        import asyncio
+        from scripts.testnet import run_testnet
+    except ImportError:
+        print("Error: testnet script not found or dependencies missing.")
+        print("  pip install elara-core[network] elara-protocol")
+        sys.exit(1)
+
+    success = asyncio.run(run_testnet(
+        num_nodes=nodes, port_base=port_base, verbose=verbose,
+    ))
+    sys.exit(0 if success else 1)
+
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
@@ -389,6 +411,15 @@ def main() -> None:
     dag_parser.add_argument("--data-dir", type=Path, default=None, dest="sub_data_dir",
                             help="Override data directory")
 
+    # testnet
+    testnet_parser = sub.add_parser("testnet", help="Run 2-node testnet demo")
+    testnet_parser.add_argument("--nodes", type=int, default=2,
+                                help="Number of nodes (default: 2)")
+    testnet_parser.add_argument("--port-base", type=int, default=9473,
+                                help="Starting port (default: 9473)")
+    testnet_parser.add_argument("--verbose", "-v", action="store_true",
+                                help="Detailed output")
+
     args = parser.parse_args()
 
     # Resolve data dir: subcommand flag → top-level flag → env → default
@@ -415,6 +446,8 @@ def main() -> None:
         _verify(data_dir, args.proof)
     elif args.command == "identity":
         _identity(data_dir)
+    elif args.command == "testnet":
+        _testnet(args.nodes, args.port_base, args.verbose)
     elif args.command == "dag":
         if getattr(args, "dag_command", None) == "stats":
             _dag_stats(data_dir)
