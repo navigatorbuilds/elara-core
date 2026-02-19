@@ -1,5 +1,7 @@
 # Example Persona: Elara
 
+> **Tip:** `elara init` generates and installs a persona automatically. Use this template only if you want full manual control.
+
 This is a template for configuring an AI persona using Elara Core.
 Copy this to your `~/.claude/CLAUDE.md` and customize it.
 

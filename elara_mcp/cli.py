@@ -6,9 +6,12 @@
 Elara CLI — bootstrap, run MCP server, and Layer 1 crypto operations.
 
 Usage:
-    elara init [--force]           Create ~/.elara/ with default configs
+    elara init                     Interactive setup wizard
+    elara init --yes               Non-interactive init (CI/scripts)
+    elara init --force             Reinitialize existing setup
+    elara doctor                   Diagnostic health check
     elara serve                    Start MCP server (stdio, lean profile)
-    elara serve --profile full     Start with all 39 tool schemas
+    elara serve --profile full     Start with all 45 tool schemas
     elara serve --profile lean     Start with 7 core + elara_do (default)
     elara sign <file>              Sign a file with Dilithium3+SPHINCS+
     elara verify <proof>           Verify an .elara.proof file
@@ -26,62 +29,16 @@ import sys
 from pathlib import Path
 
 
-def _init(data_dir: Path, force: bool = False) -> None:
-    """Bootstrap a fresh Elara data directory."""
-    from core.paths import configure
+def _init(data_dir: Path, force: bool = False, yes: bool = False) -> None:
+    """Bootstrap Elara — interactive wizard or silent init (--yes)."""
+    from elara_mcp.wizard import run_wizard
+    run_wizard(data_dir, force=force, yes=yes)
 
-    paths = configure(data_dir)
 
-    if paths.data_dir.exists() and not force:
-        print(f"Elara data directory already exists: {paths.data_dir}")
-        print("Use --force to reinitialize.")
-        return
-
-    paths.ensure_dirs()
-
-    # Create default state file
-    if not paths.state_file.exists() or force:
-        default_state = {
-            "valence": 0.55,
-            "energy": 0.5,
-            "openness": 0.65,
-            "session_active": False,
-            "flags": {},
-            "imprints": [],
-        }
-        paths.state_file.write_text(json.dumps(default_state, indent=2))
-
-    # Create default presence file
-    if not paths.presence_file.exists() or force:
-        default_presence = {
-            "last_ping": None,
-            "session_start": None,
-            "is_present": False,
-            "total_sessions": 0,
-            "total_seconds": 0,
-        }
-        paths.presence_file.write_text(json.dumps(default_presence, indent=2))
-
-    # Create default feeds config
-    if not paths.feeds_config.exists() or force:
-        paths.feeds_config.write_text(json.dumps({"feeds": {}}, indent=2))
-
-    # Create default goals file
-    if not paths.goals_file.exists() or force:
-        paths.goals_file.write_text("[]")
-
-    # Create default corrections file
-    if not paths.corrections_file.exists() or force:
-        paths.corrections_file.write_text("[]")
-
-    print(f"Elara initialized at {paths.data_dir}")
-    print()
-    print("Next steps:")
-    print("  1. Add Elara to your MCP client:")
-    print("     claude mcp add elara -- elara serve")
-    print()
-    print("  2. (Optional) Create a persona in your CLAUDE.md:")
-    print("     See examples/CLAUDE.md.example for a template")
+def _doctor(data_dir: Path) -> None:
+    """Run diagnostic health checks."""
+    from elara_mcp.wizard import run_doctor
+    run_doctor(data_dir)
 
 
 def _serve(data_dir: Path, profile: str = "lean") -> None:
@@ -371,10 +328,17 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command")
 
     # init
-    init_parser = sub.add_parser("init", help="Bootstrap Elara data directory")
+    init_parser = sub.add_parser("init", help="Interactive setup wizard")
     init_parser.add_argument("--force", action="store_true", help="Overwrite existing files")
+    init_parser.add_argument("--yes", "-y", action="store_true",
+                             help="Non-interactive mode (for CI/scripts)")
     init_parser.add_argument("--data-dir", type=Path, default=None, dest="sub_data_dir",
                              help="Override data directory (default: $ELARA_DATA_DIR or ~/.elara/)")
+
+    # doctor
+    doctor_parser = sub.add_parser("doctor", help="Diagnostic health check")
+    doctor_parser.add_argument("--data-dir", type=Path, default=None, dest="sub_data_dir",
+                               help="Override data directory")
 
     # serve
     serve_parser = sub.add_parser("serve", help="Start MCP server (stdio)")
@@ -435,7 +399,9 @@ def main() -> None:
             data_dir = Path.home() / ".elara"
 
     if args.command == "init":
-        _init(data_dir, force=args.force)
+        _init(data_dir, force=args.force, yes=args.yes)
+    elif args.command == "doctor":
+        _doctor(data_dir)
     elif args.command == "serve":
         # Resolve profile: CLI arg → env var → default "lean"
         profile = args.profile or os.environ.get("ELARA_PROFILE", "lean")

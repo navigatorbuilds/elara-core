@@ -1,6 +1,6 @@
 # Elara Core
 
-> **Layer 3 of the [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) — a cognitive architecture for persistent AI awareness.**
+> **Layer 3 of the Elara Protocol — persistent memory, cognition, and awareness for AI systems.**
 
 [![Tests](https://github.com/navigatorbuilds/elara-core/actions/workflows/tests.yml/badge.svg)](https://github.com/navigatorbuilds/elara-core/actions/workflows/tests.yml)
 [![PyPI](https://img.shields.io/pypi/v/elara-core?color=%2300ff41&label=PyPI)](https://pypi.org/project/elara-core/)
@@ -8,17 +8,17 @@
 [![License](https://img.shields.io/badge/license-BSL--1.1-ff0040)](https://github.com/navigatorbuilds/elara-core/blob/main/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-elara.navigatorbuilds.com-%23ffb000)](https://elara.navigatorbuilds.com)
 
-Elara Core is the **Layer 3 reference implementation** of the [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) — a post-quantum universal validation layer for digital work. Where Layers 1 and 1.5 handle cryptographic signing and validation, and Layer 2 handles network consensus, **Layer 3 provides the intelligence**: persistent memory, emotional modeling, autonomous reasoning, and cognitive output that feeds back into the protocol's cryptographic proof chain.
-
-**45 tools. 15 modules. 32K+ lines of Python. Everything runs locally.** Delivered via [Model Context Protocol (MCP)](https://modelcontextprotocol.io).
+This is **one layer** of the [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) — a post-quantum universal validation layer for digital work. The full stack spans cryptographic signing, a Rust VM, decentralized network consensus, and this cognitive layer. **The full system is in active development and not yet ready for public deployment.**
 
 ```
 The Elara Protocol Stack:
-Layer 1   — Local validation (hash, sign, prove) — post-quantum, offline, 2ms
-Layer 1.5 — Rust DAM VM (optional performance path)
-Layer 2   — Network consensus (Adaptive Witness Consensus)
-Layer 3   — AI intelligence (THIS REPO) — memory, cognition, awareness
+Layer 1   — Post-quantum cryptography (Dilithium3 + SPHINCS+), DAG signing, offline validation
+Layer 1.5 — Rust DAM Virtual Machine (PyO3 bindings, record processing)
+Layer 2   — Decentralized network (Adaptive Witness Consensus, peer discovery, trust scoring)
+Layer 3   — AI cognition (THIS REPO) — memory, mood, reasoning, awareness
 ```
+
+**45 tools. 15 modules. 34K+ lines of Python. 145 tests. Everything runs locally.** Cognitive outputs are dual-signed and stored in the cryptographic DAG. Pattern recognition feeds back into the validation chain.
 
 ```
 You: "Morning."
@@ -32,119 +32,28 @@ Elara: "3 work sessions. Auth module shipped. Goal #4 is stalling —
 
 ---
 
-## What is MCP?
+## Project Status
 
-[Model Context Protocol](https://modelcontextprotocol.io) is how AI assistants (Claude Code, Cursor, Windsurf, etc.) connect to external tools. Think of it as a USB port for AI — plug Elara in and your assistant gains memory, mood, and awareness. No code changes needed.
+**This project is in active development.** The protocol layers are being built and integrated. Here's where things stand:
 
----
+| Layer | Status | Repository |
+|-------|--------|------------|
+| **Layer 1** — Post-quantum crypto | Done | Private (pre-release) |
+| **Layer 1.5** — Rust DAM VM | Done | [elara-runtime](https://github.com/navigatorbuilds/elara-runtime) |
+| **Layer 2** — Network consensus | In development | Included in this repo (`network/`) |
+| **Layer 3** — AI cognition | Done | This repo |
+| **Protocol specs** | v0.4.0 | [elara-protocol](https://github.com/navigatorbuilds/elara-protocol) |
+| **US Provisional Patent** | Filed | Application No. 63/983,064 (Feb 14, 2026) |
 
-## Install (2 minutes)
-
-### Prerequisites
-
-- **Python 3.10+** — [python.org/downloads](https://www.python.org/downloads/)
-- **An MCP client** — [Claude Code](https://claude.ai/code), [Cursor](https://cursor.sh), or any MCP-compatible editor
-
-> **Windows users:** When installing Python, check **"Add python.exe to PATH"** at the bottom of the installer.
-
-### Step 1: Install Elara
-
-```bash
-pip install elara-core
-```
-
-<details>
-<summary>Windows? Use <code>py -m pip install elara-core</code></summary>
-
-If `pip` isn't recognized, try:
-```
-py -m pip install elara-core
-```
-Or:
-```
-python -m pip install elara-core
-```
-</details>
-
-### Step 2: Initialize
-
-```bash
-elara init
-```
-
-You should see:
-```
-Elara initialized at /home/yourname/.elara
-
-Next steps:
-  1. Add Elara to your MCP client:
-     claude mcp add elara -- elara serve
-
-  2. (Optional) Create a persona in your CLAUDE.md:
-     See examples/CLAUDE.md.example for a template
-```
-
-This creates `~/.elara/` with default config files. All your data lives here.
-
-### Step 3: Connect to your AI
-
-**Claude Code:**
-```bash
-claude mcp add elara -- elara serve
-```
-
-**Cursor / Other MCP clients:**
-
-Add this to your MCP config (usually `~/.cursor/mcp.json` or similar):
-```json
-{
-  "mcpServers": {
-    "elara": {
-      "command": "elara",
-      "args": ["serve"]
-    }
-  }
-}
-```
-
-### Step 4: Verify it works
-
-Open a new session in your AI client and say:
-
-> "Use elara_status to check if Elara is running."
-
-You should get back a status message with mood, presence, and memory counts. If you see that, **you're done**.
+The full stack — where nodes run, records are witnessed across the network, and cognitive artifacts are cryptographically validated — is not yet packaged for public use. When it is, there will be a single install path for the complete system.
 
 ---
 
-## First 5 Minutes
+## What This Repo Contains
 
-Once Elara is connected, try these in your AI session:
+Elara Core is the cognitive layer (Layer 3). It provides persistent intelligence for AI assistants via [Model Context Protocol (MCP)](https://modelcontextprotocol.io):
 
-```
-"Remember that I prefer dark themes and use pytest for testing."
-→ Stored in semantic memory. Elara will recall this by meaning, not keywords.
-
-"How am I doing?"
-→ Returns mood state (valence, energy, openness).
-
-"Start an episode — we're working on the auth module."
-→ Begins tracking this work session with milestones and decisions.
-
-"What do you remember about my preferences?"
-→ Searches semantic memory and returns relevant matches.
-
-"Set a goal: Ship auth module by Friday."
-→ Tracked persistently. Elara will remind you if it stalls.
-```
-
-That's the core loop: **remember → recall → track → reflect**.
-
----
-
-## What Elara Does
-
-### Core (works out of the box)
+### Core
 
 | Feature | What it does |
 |---------|-------------|
@@ -158,21 +67,22 @@ That's the core loop: **remember → recall → track → reflect**.
 
 | Feature | What it does |
 |---------|-------------|
-| **3D Cognition** *(new in v0.10.0)* | Persistent models (understanding), predictions (foresight), principles (wisdom), and workflow patterns (action) that accumulate over time. |
-| **Workflow Patterns** *(new in v0.10.7)* | Learned action sequences from episode history, proactively surfaced when a known trigger is detected mid-session. |
-| **Knowledge Graph** *(new in v0.10.6)* | Document cross-referencing with 6-tuple addressing, SQLite + ChromaDB, 4 validators for contradiction detection. |
+| **3D Cognition** | Persistent models (understanding), predictions (foresight), principles (wisdom), and workflow patterns (action) that accumulate over time. |
+| **Workflow Patterns** | Learned action sequences from episode history, proactively surfaced when a known trigger is detected mid-session. |
+| **Knowledge Graph** | Document cross-referencing with 6-tuple addressing, SQLite + ChromaDB, 4 validators for contradiction detection. |
 | **Overnight thinking** | Autonomous analysis between sessions — runs 15 phases through a local LLM, builds cognitive models, detects workflow patterns, makes predictions. |
 | **Creative drift** | The overnight brain's imagination — random context collisions at high temperature. Writes to an accumulating creative journal. |
 | **Dream mode** | Weekly/monthly pattern discovery across sessions, inspired by sleep consolidation. |
 | **Reasoning trails** | Track hypothesis chains when debugging. Includes what was abandoned and why. |
 | **Self-reflection** | Mood trends, blind spots, growth intentions. |
-| **RSS briefing** | External news feeds for context. |
+| **Layer 1 bridge** | Cognitive artifacts are dual-signed (Dilithium3 + SPHINCS+) and stored in the cryptographic DAG. |
+| **Layer 2 network** | Peer discovery (mDNS), record exchange, witness attestation, weighted trust scoring. |
 
-> **Note:** Overnight thinking and creative drift require [Ollama](https://ollama.ai) with a local LLM (e.g., `qwen2.5:32b`). Everything else works without it.
+> **Note:** Overnight thinking requires [Ollama](https://ollama.ai) with a local LLM. Layer 1 bridge requires [elara-protocol](https://github.com/navigatorbuilds/elara-protocol). Layer 2 network requires `elara-core[network]`.
 
 ---
 
-## Tools Quick Reference
+## Tools (45)
 
 **Start here** (5 essential tools):
 
@@ -184,10 +94,8 @@ That's the core loop: **remember → recall → track → reflect**.
 | `elara_episode_start` | Begin tracking a work session |
 | `elara_status` | Full status check |
 
-**All 45 tools by module:**
-
 <details>
-<summary>Click to expand full tool list</summary>
+<summary>All 45 tools by module</summary>
 
 | Module | Tools | Count |
 |--------|-------|-------|
@@ -241,71 +149,17 @@ That's the core loop: **remember → recall → track → reflect**.
 │                                                  │
 │  State engine · Emotions · Models · Predictions  │
 │  Principles · Workflows · Overnight brain · Drift│
-└────────────────────┬────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────┐
-│           ~/.elara/ (all local)                   │
-│                                                  │
-│  ChromaDB (14 collections) · JSON state files    │
-│  Overnight findings · Creative journal           │
-└─────────────────────────────────────────────────┘
+└────────┬───────────────────────┬────────────────┘
+         │                       │
+┌────────▼────────┐    ┌────────▼────────────────┐
+│   ~/.elara/      │    │   Layer 1 Bridge        │
+│   (all local)    │    │   Dilithium3 + SPHINCS+ │
+│                  │    │   DAG signing            │
+│  ChromaDB (14)   │    │   → Layer 2 Network     │
+│  JSON state      │    │   → Witness consensus   │
+│  Overnight data  │    │   → Trust scoring       │
+└─────────────────┘    └─────────────────────────┘
 ```
-
----
-
-## Configuration
-
-### Data directory
-
-Default: `~/.elara/`. Override with:
-
-```bash
-export ELARA_DATA_DIR=/your/custom/path
-# or
-elara serve --data-dir /your/custom/path
-```
-
-### Persona
-
-Elara's personality comes from your AI client's system prompt (e.g., `CLAUDE.md`), not from the code. Copy the included template to get started:
-
-```bash
-cp examples/CLAUDE.md.example ~/.claude/CLAUDE.md
-```
-
-Edit it to make Elara yours — name, personality, boot behavior, session-end behavior.
-
-### Overnight thinking (optional)
-
-Requires [Ollama](https://ollama.ai) with a model installed:
-
-```bash
-# Install Ollama (Linux)
-curl -fsSL https://ollama.ai/install.sh | sh
-
-# Pull a model
-ollama pull qwen2.5:32b
-
-# Run overnight thinking manually
-cd /path/to/elara-core
-python3 -m daemon.overnight --mode exploratory
-```
-
----
-
-## Troubleshooting
-
-**"elara: command not found"**
-→ Your Python scripts directory isn't in PATH. Try: `python -m elara_mcp.cli serve`
-
-**"No module named 'chromadb'"**
-→ Reinstall: `pip install elara-core --force-reinstall`
-
-**MCP client doesn't see Elara tools**
-→ Make sure you restarted your client after adding the MCP config. Check with: `claude mcp list`
-
-**"Elara initialized" but tools don't work**
-→ Run `elara serve` in a terminal to see error output. Most common: Python version too old (need 3.10+).
 
 ---
 
@@ -318,6 +172,20 @@ python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -e ".[dev]"
 pytest
+```
+
+### CLI commands (for development)
+
+```
+elara init                     Interactive setup wizard
+elara init --yes               Non-interactive init (CI/scripts)
+elara doctor                   Diagnostic health check
+elara serve                    Start MCP server (stdio)
+elara sign <file>              Sign a file with Layer 1 crypto
+elara verify <proof>           Verify an .elara.proof file
+elara identity                 Show identity info
+elara dag stats                Show DAG statistics
+elara testnet                  Run Layer 2 testnet demo
 ```
 
 ---
@@ -334,7 +202,7 @@ pytest
 
 ## The Elara Protocol
 
-Elara Core is one layer of a larger system. The [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) is a post-quantum universal validation layer for digital work — from a poem written on a $30 phone in Kenya to telemetry from a Mars colony. It introduces the **Directed Acyclic Mesh (DAM)**, a novel 5-dimensional data structure with partition-tolerant consensus across planetary distances.
+The [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) is a post-quantum universal validation layer for digital work — from a poem written on a $30 phone in Kenya to telemetry from a Mars colony. It introduces the **Directed Acyclic Mesh (DAM)**, a novel 5-dimensional data structure with partition-tolerant consensus across planetary distances.
 
 | Document | Where |
 |----------|-------|
@@ -350,28 +218,28 @@ Elara Core is one layer of a larger system. The [Elara Protocol](https://github.
 
 ---
 
-## Community
-
-- **[Docs](https://elara.navigatorbuilds.com)** — Quickstart, tool reference, architecture, persona templates
-- **[Discussions](https://github.com/navigatorbuilds/elara-core/discussions)** — Questions, ideas, showcase
-- **[Issues](https://github.com/navigatorbuilds/elara-core/issues)** — Bug reports and feature requests
-- **[Contributing](CONTRIBUTING.md)** — How to help
-
----
-
 ## What's New
 
-**v0.11.0 — Layer 2 Network + CLI Tools** — Minimum viable network: mDNS peer discovery, HTTP record exchange, witness attestation, trust scoring. CLI: `elara sign/verify/identity/dag`. Bridge hardened with validation guards, dedup (10K cache), and rate limiting (120/min). Optional — `pip install elara-core[network]`.
+**v0.11.0 — Layer 2 Network + CLI Tools** — Minimum viable network: mDNS peer discovery, HTTP record exchange, witness attestation, trust scoring. CLI: `elara sign/verify/identity/dag`. Bridge hardened with validation guards, dedup (10K cache), and rate limiting (120/min).
 
-**v0.10.8 — Layer 1 Bridge** — Cryptographic validation of cognitive artifacts. Predictions, corrections, models, principles, and other significant events are dual-signed (Dilithium3 + SPHINCS+) and stored in a local DAG. Optional — dormant if `elara-protocol` not installed.
+**v0.10.8 — Layer 1 Bridge** — Cryptographic validation of cognitive artifacts. Predictions, corrections, models, principles, and other significant events are dual-signed (Dilithium3 + SPHINCS+) and stored in a local DAG.
 
-**v0.10.7 — Workflow Patterns** — Learned action sequences from episode history. The overnight brain detects recurring multi-step processes and crystallizes them into workflow patterns. When a known trigger is detected mid-session, remaining steps are proactively surfaced.
+**v0.10.7 — Workflow Patterns** — Learned action sequences from episode history. The overnight brain detects recurring multi-step processes and crystallizes them into workflow patterns.
 
-**v0.10.6 — Knowledge Graph** — Document cross-referencing with 6-tuple addressing. SQLite + ChromaDB backend. 4 validators for contradiction detection across whitepapers and documentation.
+**v0.10.6 — Knowledge Graph** — Document cross-referencing with 6-tuple addressing. SQLite + ChromaDB backend. 4 validators for contradiction detection.
 
 **v0.10.0 — 3D Cognition** — Persistent models (understanding), predictions (foresight), and principles (wisdom) that accumulate over time. Plus creative drift — the overnight brain's imagination.
 
 **[Full changelog →](CHANGELOG.md)**
+
+---
+
+## Community
+
+- **[Docs](https://elara.navigatorbuilds.com)** — Architecture, tool reference, persona templates
+- **[Discussions](https://github.com/navigatorbuilds/elara-core/discussions)** — Questions, ideas, showcase
+- **[Issues](https://github.com/navigatorbuilds/elara-core/issues)** — Bug reports and feature requests
+- **[Contributing](CONTRIBUTING.md)** — How to help
 
 ---
 
