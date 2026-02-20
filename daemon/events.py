@@ -155,6 +155,12 @@ class Events:
     NETWORK_STARTED = "network_started"
     NETWORK_STOPPED = "network_stopped"
 
+    # --- Tier System ---
+    TIER_CHANGED = "tier_changed"
+
+    # --- Cognitive Continuity ---
+    CONTINUITY_CHECKPOINT = "continuity_checkpoint"
+
     # --- Cortical Layer 3 — Brain ---
     BRAIN_THINKING_STARTED = "brain_thinking_started"
     BRAIN_THINKING_COMPLETED = "brain_thinking_completed"

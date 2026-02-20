@@ -371,6 +371,13 @@ class ElaraPaths:
         return self._root / "elara-knowledge-db"
 
     # ------------------------------------------------------------------
+    # Cognitive Continuity Chain
+    # ------------------------------------------------------------------
+    @property
+    def continuity_file(self) -> Path:
+        return self._root / "elara-continuity.json"
+
+    # ------------------------------------------------------------------
     # Layer 1 Bridge (cryptographic validation)
     # ------------------------------------------------------------------
     @property

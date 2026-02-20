@@ -515,8 +515,22 @@ def run_wizard(data_dir: Path, force: bool = False, yes: bool = False) -> None:
                     print(f"    claude mcp add elara -- elara serve")
     print()
 
-    # Step 5: Network node
-    print(bold("  Step 5:") + " Network node")
+    # Step 5: Hardware tier
+    print(bold("  Step 5:") + " Hardware tier")
+    tier_choice = _choose(
+        "  Deployment tier (controls which modules load):",
+        ["Tier 0 — VALIDATE: Crypto + DAG only (IoT, embedded)",
+         "Tier 1 — REMEMBER: Memory, episodes, goals ($30 phones)",
+         "Tier 2 — THINK: Full cognitive stack (desktop, recommended)",
+         "Tier 3 — CONNECT: Everything + mesh network (full node)"],
+        default=2,
+    )
+    tier_num = int(tier_choice[5])  # extract digit from "Tier N"
+    print(f"  {green('✓')} Tier {tier_num} selected")
+    print()
+
+    # Step 6: Network node
+    print(bold("  Step 6:") + " Network node")
     node_enable = _ask("  Enable network node? (Y/n)", "y")
     node_enabled = node_enable.lower() != "n"
     _create_network_config(data_dir, enabled=node_enabled)
@@ -529,9 +543,9 @@ def run_wizard(data_dir: Path, force: bool = False, yes: bool = False) -> None:
         print(f"  {dim('○')} Node disabled. Enable later with: " + bold("elara node start"))
     print()
 
-    # Step 6: Persona
+    # Step 7: Persona
     if style != "skip":
-        print(bold("  Step 6:") + " Installing persona")
+        print(bold("  Step 7:") + " Installing persona")
         persona_text = _generate_persona(style, ai_name, user_name)
 
         target = Path.home() / ".claude" / "CLAUDE.md"
@@ -552,11 +566,11 @@ def run_wizard(data_dir: Path, force: bool = False, yes: bool = False) -> None:
                 print(f"  {red('✗')} Failed to write {target}")
         print()
     else:
-        print(bold("  Step 6:") + " Persona " + dim("skipped"))
+        print(bold("  Step 7:") + " Persona " + dim("skipped"))
         print()
 
-    # Step 7: Health check
-    print(bold("  Step 7:") + " Health check")
+    # Step 8: Health check
+    print(bold("  Step 8:") + " Health check")
     results = run_health_check(data_dir)
     passed = 0
     failed = 0

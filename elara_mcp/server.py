@@ -16,6 +16,15 @@ Cortical Execution Model:
   Layer 3 — CONTEMPLATIVE: Overnight brain (daemon/overnight/)
   Layer 4 — SOCIAL:       Peer network (network/)
 
+Tier System (hardware capability gating):
+  Tier 0 — VALIDATE:  Crypto + DAG only (IoT, embedded)
+  Tier 1 — REMEMBER:  + memory, episodes, goals, maintenance
+  Tier 2 — THINK:     + mood, awareness, dreams, cognitive, etc. (DEFAULT)
+  Tier 3 — CONNECT:   + network (full mesh)
+
+  Tier controls which modules LOAD. Profile controls which loaded tools
+  get MCP schemas. They're orthogonal.
+
 Profiles:
   --profile full  → 39 individual tool schemas (backward compatible)
   --profile lean  → 7 core schemas + 1 elara_do meta-tool (default, ~5% context)
@@ -41,6 +50,7 @@ Profiles:
 import atexit
 import logging
 import os as _os
+import sys as _sys
 
 from elara_mcp._app import mcp, get_profile, set_profile, shutdown_executor
 
@@ -52,33 +62,81 @@ _env_profile = _os.environ.get("ELARA_PROFILE")
 if _env_profile and _env_profile != get_profile():
     set_profile(_env_profile)
 
-# Import tool modules — each registers its tools via @tool() on import
-import elara_mcp.tools.memory
-import elara_mcp.tools.mood
-import elara_mcp.tools.episodes
-import elara_mcp.tools.goals
-import elara_mcp.tools.awareness
-import elara_mcp.tools.dreams
-import elara_mcp.tools.cognitive
-import elara_mcp.tools.cognition_3d
-import elara_mcp.tools.workflows
-import elara_mcp.tools.business
-import elara_mcp.tools.llm
-import elara_mcp.tools.gmail
-import elara_mcp.tools.knowledge
-import elara_mcp.tools.maintenance
-import elara_mcp.tools.network
+# ---------------------------------------------------------------------------
+# Tier-gated tool module imports
+# ---------------------------------------------------------------------------
+# Each import registers tools via @tool() decorator on import.
+# Tier controls which modules load; profile controls which get MCP schemas.
+
+from core.tiers import get_tier, tier_permits, tier_name, get_permitted_modules
+
+_loaded_modules: list[str] = []
+
+# Map of module name -> import path
+_MODULE_IMPORTS = {
+    "memory":       "elara_mcp.tools.memory",
+    "mood":         "elara_mcp.tools.mood",
+    "episodes":     "elara_mcp.tools.episodes",
+    "goals":        "elara_mcp.tools.goals",
+    "awareness":    "elara_mcp.tools.awareness",
+    "dreams":       "elara_mcp.tools.dreams",
+    "cognitive":    "elara_mcp.tools.cognitive",
+    "cognition_3d": "elara_mcp.tools.cognition_3d",
+    "workflows":    "elara_mcp.tools.workflows",
+    "business":     "elara_mcp.tools.business",
+    "llm":          "elara_mcp.tools.llm",
+    "gmail":        "elara_mcp.tools.gmail",
+    "knowledge":    "elara_mcp.tools.knowledge",
+    "maintenance":  "elara_mcp.tools.maintenance",
+    "network":      "elara_mcp.tools.network",
+}
+
+import importlib
+
+for _mod_name, _import_path in _MODULE_IMPORTS.items():
+    if tier_permits(_mod_name):
+        try:
+            importlib.import_module(_import_path)
+            _loaded_modules.append(_mod_name)
+        except Exception as _e:
+            logger.warning("Failed to load module %s: %s", _mod_name, _e)
+
+_tier = get_tier()
+logger.info(
+    "Tier %d (%s) — %d modules loaded: %s",
+    _tier, tier_name(), len(_loaded_modules), ", ".join(_loaded_modules) or "none",
+)
+# Also print to stderr for CLI visibility
+print(
+    f"Tier {_tier} ({tier_name()}) — {len(_loaded_modules)} modules active",
+    file=_sys.stderr,
+)
 
 # In lean mode, register the elara_do meta-tool for dispatching
-if get_profile() == "lean":
+if get_profile() == "lean" and _loaded_modules:
     import elara_mcp.tools.meta
 
 # Initialize Layer 1 bridge (optional — silent if not installed)
+_bridge_instance = None
 try:
-    from core.layer1_bridge import setup as setup_bridge
+    from core.layer1_bridge import setup as setup_bridge, get_bridge
     setup_bridge()
+    _bridge_instance = get_bridge()
 except Exception:
     pass
+
+# Initialize Cognitive Continuity Chain (requires bridge, tier >= 1)
+_chain_instance = None
+if _bridge_instance is not None and _tier >= 1:
+    try:
+        from daemon.events import bus as _event_bus
+        from core.paths import get_paths as _get_paths
+        from core.continuity import setup_chain
+        _chain_instance = setup_chain(_get_paths(), _bridge_instance, _event_bus)
+        if _chain_instance:
+            logger.info("Continuity chain active — %d checkpoints", _chain_instance._chain_count)
+    except Exception as _e:
+        logger.warning("Continuity chain not started: %s", _e)
 
 
 # ---------------------------------------------------------------------------
