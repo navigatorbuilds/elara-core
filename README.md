@@ -48,7 +48,7 @@ Network Topology:
   └──────────────────────────────┘
 ```
 
-**45 tools. 15 modules. 36K+ lines of Python. 222 tests. Everything runs locally.** Cognitive outputs are dual-signed and stored in the cryptographic DAG. Pattern recognition feeds back into the validation chain.
+**45 tools. 15 modules. 37K+ lines of Python. 222 tests. Everything runs locally.** Cognitive outputs are dual-signed and stored in the cryptographic DAG. Pattern recognition feeds back into the validation chain.
 
 ```
 You: "Morning."
@@ -72,7 +72,7 @@ Elara: "3 work sessions. Auth module shipped. Goal #4 is stalling —
 | **Layer 1.5** — Rust DAM VM | Done | [elara-runtime](https://github.com/navigatorbuilds/elara-runtime) |
 | **Layer 2** — Network consensus | Active (node-by-default) | Included in this repo (`network/`) |
 | **Layer 3** — AI cognition | Done | This repo |
-| **Protocol specs** | v0.4.1 | [elara-protocol](https://github.com/navigatorbuilds/elara-protocol) |
+| **Protocol specs** | v0.5.1 | [elara-protocol](https://github.com/navigatorbuilds/elara-protocol) |
 | **US Provisional Patent** | Filed | Application No. 63/983,064 (Feb 14, 2026) |
 
 Every install is a node. When you run `elara serve`, your instance participates in the decentralized mesh — sharing anonymized validation records, not personal data. The install scripts handle everything in one line.
@@ -109,6 +109,8 @@ Elara Core is the cognitive layer (Layer 3). It provides persistent intelligence
 | **Self-reflection** | Mood trends, blind spots, growth intentions. |
 | **Layer 1 bridge** | Cognitive artifacts are dual-signed (Dilithium3 + SPHINCS+) and stored in the cryptographic DAG. |
 | **Layer 2 network** | Peer discovery (mDNS), record exchange, witness attestation, weighted trust scoring. |
+| **Tier system** | 4 hardware deployment levels (VALIDATE/REMEMBER/THINK/CONNECT) controlling which modules load at runtime. Runs on anything from IoT sensors to GPU servers. |
+| **Cognitive continuity** | Hash-chained, dual-signed (Dilithium3 + SPHINCS+) cognitive state snapshots in the DAG. Cryptographic proof of unbroken AI experience. |
 
 > **Note:** Overnight thinking requires [Ollama](https://ollama.ai) with a local LLM. Layer 1 bridge requires [elara-protocol](https://github.com/navigatorbuilds/elara-protocol). Layer 2 network requires `elara-core[network]`.
 
@@ -232,6 +234,9 @@ elara sign <file>              Sign a file with Layer 1 crypto
 elara verify <proof>           Verify an .elara.proof file
 elara identity                 Show identity info
 elara dag stats                Show DAG statistics
+elara serve --tier {0,1,2,3}   Set hardware deployment tier
+elara continuity status        Show cognitive continuity chain info
+elara continuity verify        Verify chain integrity
 elara testnet                  Run Layer 2 testnet demo
 elara --version                Show version
 ```
@@ -254,8 +259,8 @@ The [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) is a pos
 
 | Document | Where |
 |----------|-------|
-| **Elara Protocol Whitepaper v0.4.1** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
-| **Elara Core Whitepaper v1.4.0** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
+| **Elara Protocol Whitepaper v0.5.1** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
+| **Elara Core Whitepaper v1.5.1** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
 | **US Provisional Patent** | Application No. 63/983,064 (Feb 14, 2026) |
 
 **What Layer 3 adds to the protocol:**
@@ -267,6 +272,8 @@ The [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) is a pos
 ---
 
 ## What's New
+
+**v0.15.0 — Tier System + Cognitive Continuity Chain** — 4 hardware deployment tiers (VALIDATE/REMEMBER/THINK/CONNECT) so Elara runs on anything from a $30 phone to a satellite. Cognitive Continuity Chain: hash-chained, dual-signed state snapshots in the DAG — cryptographic proof of unbroken AI experience. `elara serve --tier`, `elara continuity status/verify`.
 
 **v0.14.0 — One-Line Install + Every Install Is a Node** — One-line install scripts for Linux, macOS, and Windows. `elara serve` now automatically starts a LEAF network node (opt out with `--no-node`). New `elara node` subcommand for node management. Seed node bootstrap with GitHub peer list fallback. PyPI version check on startup. `elara --version` flag.
 
