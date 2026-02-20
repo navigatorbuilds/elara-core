@@ -17,6 +17,7 @@ from typing import Optional
 
 from core.paths import get_paths
 from daemon.schemas import Presence, load_validated, save_validated
+from daemon.cache import cache, CacheKeys, CACHE_TTLS
 
 logger = logging.getLogger("elara.presence")
 
@@ -114,13 +115,17 @@ def end_session() -> dict:
 
 
 def get_stats() -> dict:
-    """Get presence statistics."""
+    """Get presence statistics. Layer 0 cached."""
+    cached = cache.get(CacheKeys.PRESENCE_STATS)
+    if cached is not None:
+        return cached
+
     data = _load_presence()
 
     absence = get_absence_duration()
     session = get_session_duration()
 
-    return {
+    stats = {
         "last_seen": data["last_seen"],
         "absence_minutes": round(absence.total_seconds() / 60, 1) if absence else None,
         "session_minutes": round(session.total_seconds() / 60, 1) if session else None,
@@ -128,6 +133,8 @@ def get_stats() -> dict:
         "total_hours_together": round(data["total_time_together"] / 3600, 1),
         "history": data["history"][-5:]  # Last 5 sessions
     }
+    cache.set(CacheKeys.PRESENCE_STATS, stats, CACHE_TTLS[CacheKeys.PRESENCE_STATS])
+    return stats
 
 
 def format_absence() -> str:

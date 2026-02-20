@@ -209,6 +209,16 @@ class BrainScheduler:
     def _run_thinking(self):
         """Run the overnight thinking system."""
         self.running = True
+
+        # Cortical Layer 3 — emit brain start event
+        try:
+            from daemon.events import bus, Events
+            bus.emit(Events.BRAIN_THINKING_STARTED, {
+                "timestamp": datetime.now().isoformat(),
+            }, source="brain.scheduler")
+        except Exception:
+            pass
+
         try:
             from daemon.overnight import OvernightRunner
             runner = OvernightRunner()
@@ -218,6 +228,16 @@ class BrainScheduler:
 
             # Write last-run tracking so interval timer works
             _write_last_run_meta()
+
+            # Cortical Layer 3 — emit brain complete event
+            try:
+                from daemon.events import bus, Events
+                bus.emit(Events.BRAIN_THINKING_COMPLETED, {
+                    "timestamp": datetime.now().isoformat(),
+                    "result": str(result)[:200] if result else None,
+                }, source="brain.scheduler")
+            except Exception:
+                pass
 
         except Exception as e:
             logger.error("Thinking run failed: %s", e)

@@ -39,7 +39,7 @@ gmail = [
     "google-api-python-client>=2.0.0",
 ]
 network = ["aiohttp>=3.9.0", "zeroconf>=0.131.0"]
-dev = ["pytest>=7.0", "flask>=3.0.0"]
+dev = ["pytest>=7.0", "pytest-asyncio>=0.23.0", "flask>=3.0.0"]
 
 [project.scripts]
 elara = "elara_mcp.cli:main"

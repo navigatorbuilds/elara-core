@@ -5,6 +5,9 @@
 """
 Elara Event Bus — Decoupled pub/sub for cross-module communication.
 
+Cortical Layer 1 — REACTIVE: Dual-mode event bus supporting both
+synchronous and asynchronous handlers.
+
 Instead of modules importing and calling each other directly:
     from daemon.goals import stale_goals  # tight coupling
 
@@ -12,33 +15,46 @@ They emit/subscribe to events:
     bus.emit("goal_stalled", {"goal_id": 1, "days": 14})  # loose coupling
 
 Core design:
-- Synchronous dispatch (no async needed — we're single-threaded in MCP)
+- Dual dispatch: sync handlers called inline, async handlers scheduled
 - Typed events with payload schemas
 - Subscriber priority ordering
 - Event history for debugging
-- Thread-safe for Overwatch daemon compatibility
+- Thread-safe for concurrent tool execution
+- Recursion depth limit (max 3) as safety valve
 
 Usage:
     from daemon.events import bus, Events
 
-    # Subscribe
+    # Subscribe (sync — same as before)
     bus.on(Events.MOOD_CHANGED, my_handler)
-    bus.on(Events.MOOD_CHANGED, my_handler, priority=10)  # higher = earlier
+    bus.on(Events.MOOD_CHANGED, my_handler, priority=10)
 
-    # Emit
-    bus.emit(Events.MOOD_CHANGED, {"valence": 0.6, "energy": 0.4, "reason": "good session"})
+    # Subscribe (async — new)
+    async def my_async_handler(event):
+        await some_io_operation(event.data)
+    bus.on(Events.MOOD_CHANGED, my_async_handler)
+
+    # Emit (sync — backward compatible, schedules async handlers)
+    bus.emit(Events.MOOD_CHANGED, {"valence": 0.6, "energy": 0.4})
+
+    # Emit async (new — awaits async handlers)
+    await bus.emit_async(Events.MOOD_CHANGED, {"valence": 0.6})
 
     # One-shot listener
     bus.once(Events.SESSION_ENDED, cleanup_handler)
 """
 
+import asyncio
 import logging
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 logger = logging.getLogger("elara.events")
+
+# Recursion safety — max emit depth before refusing
+_MAX_EMIT_DEPTH = 3
 
 
 # ============================================================================
@@ -139,6 +155,10 @@ class Events:
     NETWORK_STARTED = "network_started"
     NETWORK_STOPPED = "network_stopped"
 
+    # --- Cortical Layer 3 — Brain ---
+    BRAIN_THINKING_STARTED = "brain_thinking_started"
+    BRAIN_THINKING_COMPLETED = "brain_thinking_completed"
+
 
 # ============================================================================
 # EVENT DATA
@@ -164,6 +184,7 @@ class Subscriber:
     priority: int = 0  # higher = called first
     once: bool = False  # auto-remove after first call
     source: Optional[str] = None  # for debugging
+    is_async: bool = False  # auto-detected from callback
 
 
 # ============================================================================
@@ -172,10 +193,10 @@ class Subscriber:
 
 class EventBus:
     """
-    Central event bus for Elara.
+    Central event bus for Elara — Cortical Layer 1.
 
-    Synchronous, priority-ordered dispatch with history.
-    Thread-safe via lock for Overwatch compatibility.
+    Dual-mode dispatch: sync handlers inline, async handlers scheduled.
+    Priority-ordered with history. Thread-safe via lock.
     """
 
     def __init__(self, history_size: int = 100):
@@ -183,22 +204,23 @@ class EventBus:
         self._history: List[Event] = []
         self._history_size = history_size
         self._lock = threading.Lock()
-        self._muted: Set[str] = set()  # muted event types
+        self._muted: Set[str] = set()
         self._emit_count = 0
+        self._emit_depth = 0  # recursion guard
 
     def on(
         self,
         event_type: str,
-        callback: Callable[[Event], None],
+        callback: Callable,
         priority: int = 0,
         source: Optional[str] = None,
     ) -> None:
         """
-        Subscribe to an event type.
+        Subscribe to an event type. Accepts both sync and async callbacks.
 
         Args:
             event_type: Event type string (use Events.* constants)
-            callback: Function called with Event when fired
+            callback: Function called with Event when fired (sync or async)
             priority: Higher = called first (default 0)
             source: Optional label for debugging
         """
@@ -210,15 +232,15 @@ class EventBus:
                 callback=callback,
                 priority=priority,
                 source=source,
+                is_async=asyncio.iscoroutinefunction(callback),
             )
             self._subscribers[event_type].append(sub)
-            # Keep sorted by priority (highest first)
             self._subscribers[event_type].sort(key=lambda s: -s.priority)
 
     def once(
         self,
         event_type: str,
-        callback: Callable[[Event], None],
+        callback: Callable,
         priority: int = 0,
         source: Optional[str] = None,
     ) -> None:
@@ -232,6 +254,7 @@ class EventBus:
                 priority=priority,
                 once=True,
                 source=source,
+                is_async=asyncio.iscoroutinefunction(callback),
             )
             self._subscribers[event_type].append(sub)
             self._subscribers[event_type].sort(key=lambda s: -s.priority)
@@ -255,7 +278,11 @@ class EventBus:
         source: Optional[str] = None,
     ) -> Event:
         """
-        Emit an event, dispatching to all subscribers synchronously.
+        Emit an event — backward compatible sync dispatch.
+
+        Sync handlers: called inline (same as before).
+        Async handlers: scheduled via asyncio.create_task() if a loop
+        is running, otherwise skipped with a warning.
 
         Args:
             event_type: Event type (use Events.* constants)
@@ -271,44 +298,139 @@ class EventBus:
             source=source,
         )
 
-        with self._lock:
-            self._emit_count += 1
+        # Recursion guard
+        self._emit_depth += 1
+        if self._emit_depth > _MAX_EMIT_DEPTH:
+            logger.warning(
+                "Event recursion depth %d exceeded for %s — skipping",
+                self._emit_depth, event_type,
+            )
+            self._emit_depth -= 1
+            return event
 
-            # Record in history
-            self._history.append(event)
-            if len(self._history) > self._history_size:
-                self._history = self._history[-self._history_size:]
-
-            # Skip if muted
-            if event_type in self._muted:
-                return event
-
-            # Get subscribers (copy to avoid mutation during iteration)
-            subs = list(self._subscribers.get(event_type, []))
-
-        # Dispatch outside lock to prevent deadlocks
-        to_remove = []
-        for sub in subs:
-            try:
-                sub.callback(event)
-            except Exception as e:
-                logger.error(
-                    f"Event handler error: {event_type} -> "
-                    f"{sub.source or sub.callback.__name__}: {e}"
-                )
-            if sub.once:
-                to_remove.append(sub)
-
-        # Clean up one-shot subscribers
-        if to_remove:
+        try:
             with self._lock:
-                for sub in to_remove:
-                    try:
-                        self._subscribers[event_type].remove(sub)
-                    except (ValueError, KeyError):
-                        pass
+                self._emit_count += 1
 
-        return event
+                # Record in history
+                self._history.append(event)
+                if len(self._history) > self._history_size:
+                    self._history = self._history[-self._history_size:]
+
+                # Skip if muted
+                if event_type in self._muted:
+                    return event
+
+                # Get subscribers (copy to avoid mutation during iteration)
+                subs = list(self._subscribers.get(event_type, []))
+
+            # Dispatch outside lock to prevent deadlocks
+            to_remove = []
+            for sub in subs:
+                try:
+                    if sub.is_async:
+                        # Schedule async handler if loop is running
+                        try:
+                            loop = asyncio.get_running_loop()
+                            loop.create_task(sub.callback(event))
+                        except RuntimeError:
+                            # No running loop — skip async handler
+                            logger.debug(
+                                "No event loop for async handler %s on %s",
+                                sub.source or sub.callback.__name__,
+                                event_type,
+                            )
+                    else:
+                        sub.callback(event)
+                except Exception as e:
+                    logger.error(
+                        "Event handler error: %s -> %s: %s",
+                        event_type,
+                        sub.source or sub.callback.__name__,
+                        e,
+                    )
+                if sub.once:
+                    to_remove.append(sub)
+
+            # Clean up one-shot subscribers
+            if to_remove:
+                with self._lock:
+                    for sub in to_remove:
+                        try:
+                            self._subscribers[event_type].remove(sub)
+                        except (ValueError, KeyError):
+                            pass
+
+            return event
+        finally:
+            self._emit_depth -= 1
+
+    async def emit_async(
+        self,
+        event_type: str,
+        data: Optional[Dict[str, Any]] = None,
+        source: Optional[str] = None,
+    ) -> Event:
+        """
+        Emit an event — async dispatch. Awaits async handlers,
+        calls sync handlers directly.
+
+        Use this from async code paths for full handler execution.
+        """
+        event = Event(
+            type=event_type,
+            data=data or {},
+            source=source,
+        )
+
+        # Recursion guard
+        self._emit_depth += 1
+        if self._emit_depth > _MAX_EMIT_DEPTH:
+            logger.warning(
+                "Event recursion depth %d exceeded for %s — skipping",
+                self._emit_depth, event_type,
+            )
+            self._emit_depth -= 1
+            return event
+
+        try:
+            with self._lock:
+                self._emit_count += 1
+                self._history.append(event)
+                if len(self._history) > self._history_size:
+                    self._history = self._history[-self._history_size:]
+                if event_type in self._muted:
+                    return event
+                subs = list(self._subscribers.get(event_type, []))
+
+            to_remove = []
+            for sub in subs:
+                try:
+                    if sub.is_async:
+                        await sub.callback(event)
+                    else:
+                        sub.callback(event)
+                except Exception as e:
+                    logger.error(
+                        "Event handler error: %s -> %s: %s",
+                        event_type,
+                        sub.source or sub.callback.__name__,
+                        e,
+                    )
+                if sub.once:
+                    to_remove.append(sub)
+
+            if to_remove:
+                with self._lock:
+                    for sub in to_remove:
+                        try:
+                            self._subscribers[event_type].remove(sub)
+                        except (ValueError, KeyError):
+                            pass
+
+            return event
+        finally:
+            self._emit_depth -= 1
 
     def mute(self, event_type: str) -> None:
         """Temporarily stop dispatching an event type."""
@@ -331,6 +453,7 @@ class EventBus:
                     "priority": s.priority,
                     "once": s.once,
                     "source": s.source,
+                    "is_async": s.is_async,
                 }
                 for s in self._subscribers.get(event_type, [])
             ]
@@ -357,11 +480,16 @@ class EventBus:
             sub_counts = {
                 k: len(v) for k, v in self._subscribers.items() if v
             }
+            async_count = sum(
+                1 for subs in self._subscribers.values()
+                for s in subs if s.is_async
+            )
             return {
                 "total_emitted": self._emit_count,
                 "history_size": len(self._history),
                 "subscriber_counts": sub_counts,
                 "total_subscribers": sum(sub_counts.values()),
+                "async_subscribers": async_count,
                 "muted_events": list(self._muted),
             }
 
@@ -372,6 +500,7 @@ class EventBus:
             self._history.clear()
             self._muted.clear()
             self._emit_count = 0
+            self._emit_depth = 0
 
 
 # ============================================================================

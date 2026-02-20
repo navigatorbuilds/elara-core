@@ -206,8 +206,8 @@ The [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) is a pos
 
 | Document | Where |
 |----------|-------|
-| **Elara Protocol Whitepaper v0.5.0** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
-| **Elara Core Whitepaper v1.3.6** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
+| **Elara Protocol Whitepaper v0.4.1** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
+| **Elara Core Whitepaper v1.3.7** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
 | **US Provisional Patent** | Application No. 63/983,064 (Feb 14, 2026) |
 
 **What Layer 3 adds to the protocol:**

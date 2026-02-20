@@ -90,18 +90,39 @@ def reset_proactive_session() -> None:
 # --- Observation generators — each returns an observation dict or None ---
 
 def _check_session_gap() -> Optional[Dict]:
-    """Detect notable gaps between sessions."""
+    """Detect notable gaps between sessions.
+
+    Uses the most recent signal from either presence (last_seen) or
+    handoff (timestamp).  Presence can go stale if ping() isn't called,
+    so the handoff timestamp acts as a reliable fallback.
+    """
+    last_contact: Optional[datetime] = None
+
+    # Signal 1: presence last_seen
     try:
         from daemon.presence import get_stats
         stats = get_stats()
-    except ImportError:
+        ls = stats.get("last_seen")
+        if ls:
+            last_contact = datetime.fromisoformat(ls)
+    except (ImportError, ValueError):
+        pass
+
+    # Signal 2: handoff timestamp (always written at session end)
+    try:
+        from daemon.handoff import load_handoff
+        ho = load_handoff()
+        if ho and ho.get("timestamp"):
+            ho_dt = datetime.fromisoformat(ho["timestamp"])
+            if last_contact is None or ho_dt > last_contact:
+                last_contact = ho_dt
+    except (ImportError, ValueError):
+        pass
+
+    if last_contact is None:
         return None
 
-    absence_min = stats.get("absence_minutes")
-    if absence_min is None:
-        return None
-
-    absence_hours = absence_min / 60
+    absence_hours = (datetime.now() - last_contact).total_seconds() / 3600
 
     if absence_hours > 48:
         days = int(absence_hours / 24)
@@ -376,8 +397,17 @@ def _check_workflow_match() -> Optional[Dict]:
 def get_boot_observations() -> List[Dict]:
     """
     Run all checks at session start. Returns observations worth surfacing.
-    Resets session counter.
+    Resets session counter.  Also pings presence so last_seen stays current.
     """
+    # Keep presence alive — ping() updates last_seen and starts a new
+    # session record.  Without this, last_seen goes stale when the
+    # lean profile is active (presence isn't a core tool).
+    try:
+        from daemon.presence import ping
+        ping()
+    except Exception:
+        pass  # non-critical
+
     reset_proactive_session()
 
     observations = []

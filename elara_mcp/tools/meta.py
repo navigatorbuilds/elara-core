@@ -6,16 +6,21 @@
 
 Only loaded in lean profile. Registered directly via @mcp.tool() so it
 always gets a full MCP schema.
+
+Cortical integration: elara_do runs dispatched tools in the thread pool
+executor so they don't block the MCP event loop.
 """
 
+import asyncio
 import inspect
 import json
+from concurrent.futures import ThreadPoolExecutor
 
-from elara_mcp._app import mcp, _TOOL_REGISTRY, _CORE_TOOLS
+from elara_mcp._app import mcp, _TOOL_REGISTRY, _CORE_TOOLS, _executor
 
 
 @mcp.tool()
-def elara_do(tool: str, params: str = "{}") -> str:
+async def elara_do(tool: str, params: str = "{}") -> str:
     """
     Run any Elara tool by short name. Use this to access all tools not
     loaded as individual schemas in lean profile.
@@ -104,7 +109,7 @@ def elara_do(tool: str, params: str = "{}") -> str:
 
     full_name = f"elara_{name}"
 
-    # Look up in registry
+    # Look up in registry (raw sync functions)
     fn = _TOOL_REGISTRY.get(full_name)
     if fn is None:
         available = sorted(
@@ -143,8 +148,9 @@ def elara_do(tool: str, params: str = "{}") -> str:
             f"Expected signature:\n" + "\n".join(param_info)
         )
 
-    # Dispatch
+    # Dispatch via executor — non-blocking
     try:
-        return fn(**kwargs)
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(_executor, lambda: fn(**kwargs))
     except Exception as e:
         return f"Error running '{name}': {type(e).__name__}: {e}"

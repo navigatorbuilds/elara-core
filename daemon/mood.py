@@ -22,16 +22,22 @@ from daemon.state_core import (
     TEMPERAMENT, MOOD_JOURNAL_FILE, IMPRINT_ARCHIVE_FILE,
 )
 from daemon.events import bus, Events
+from daemon.cache import cache, CacheKeys, CACHE_TTLS
 
 
 logger = logging.getLogger("elara.mood")
 
 def get_mood() -> dict:
-    """Get current mood state (with decay applied)."""
+    """Get current mood state (with decay applied). Layer 0 cached."""
+    cached = cache.get(CacheKeys.MOOD_STATE)
+    if cached is not None:
+        return cached
     state = _load_state()
     state = _apply_time_decay(state)
     _save_state(state)
-    return state["mood"]
+    mood = state["mood"]
+    cache.set(CacheKeys.MOOD_STATE, mood, CACHE_TTLS[CacheKeys.MOOD_STATE])
+    return mood
 
 
 def get_temperament() -> dict:

@@ -4,6 +4,10 @@
 
 """Network tool — Layer 2 peer discovery, record exchange, and witnessing.
 
+Cortical Layer 4 — SOCIAL: Network operations. With the cortical model,
+the tool handler runs in a thread pool (Layer 2 async wrapper), so
+asyncio.run() works cleanly without event loop conflicts.
+
 1 tool: elara_network(action)
 """
 
@@ -75,6 +79,7 @@ def elara_network(
 
 _discovery = None
 _server = None
+_server_loop = None  # Event loop for the network server thread
 
 
 def _get_bridge():
@@ -129,13 +134,16 @@ def _peers() -> str:
 
 def _start() -> str:
     """Start discovery and server."""
-    global _discovery, _server
+    global _discovery, _server, _server_loop
     bridge = _get_bridge()
     if bridge is None:
         return "Cannot start — Layer 1 bridge not initialized."
 
     import os
+    import asyncio
+    import threading
     from core.paths import get_paths
+    from daemon.events import bus, Events
 
     paths = get_paths()
     net_port = int(os.environ.get("ELARA_NETWORK_PORT", "9473"))
@@ -158,8 +166,6 @@ def _start() -> str:
     _discovery.start()
 
     # Start HTTP server in a background thread with its own event loop
-    import asyncio
-    import threading
     from network.server import NetworkServer
 
     _paths = get_paths()
@@ -170,40 +176,55 @@ def _start() -> str:
     )
 
     def _run_server():
+        global _server_loop
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        _server_loop = loop
         loop.run_until_complete(_server.start())
         loop.run_forever()
 
     thread = threading.Thread(target=_run_server, daemon=True, name="elara-network")
     thread.start()
 
+    # Emit network start event
+    bus.emit(Events.NETWORK_STARTED, {
+        "port": net_port,
+        "node_type": node_type_str,
+    }, source="network")
+
     return f"Network started — discovery + server on port {net_port}"
 
 
 def _stop() -> str:
     """Stop network."""
-    global _discovery, _server
+    global _discovery, _server, _server_loop
+    from daemon.events import bus, Events
 
     if _discovery:
         _discovery.stop()
         _discovery = None
 
-    if _server:
+    if _server and _server_loop:
         import asyncio
-        import concurrent.futures
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                with concurrent.futures.ThreadPoolExecutor() as pool:
-                    pool.submit(asyncio.run, _server.stop()).result(timeout=5)
-            else:
-                asyncio.run(_server.stop())
+            asyncio.run_coroutine_threadsafe(_server.stop(), _server_loop).result(timeout=5)
+        except Exception:
+            pass
+        try:
+            _server_loop.call_soon_threadsafe(_server_loop.stop)
         except Exception:
             pass
         _server = None
+        _server_loop = None
 
+    bus.emit(Events.NETWORK_STOPPED, {}, source="network")
     return "Network stopped."
+
+
+def _run_async(coro):
+    """Run an async coroutine from sync context (tool runs in thread pool)."""
+    import asyncio
+    return asyncio.run(coro)
 
 
 def _push(host: str, port: int, limit: int) -> str:
@@ -212,7 +233,6 @@ def _push(host: str, port: int, limit: int) -> str:
     if bridge is None:
         return "Cannot push — Layer 1 bridge not initialized."
 
-    import asyncio
     from network.client import NetworkClient
 
     async def _do_push():
@@ -234,13 +254,7 @@ def _push(host: str, port: int, limit: int) -> str:
         return f"Pushed {pushed} records to {host}:{port} ({errors} errors)"
 
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                result = pool.submit(asyncio.run, _do_push()).result()
-            return result
-        return asyncio.run(_do_push())
+        return _run_async(_do_push())
     except Exception as e:
         return f"Push failed: {e}"
 
@@ -251,7 +265,6 @@ def _sync(host: str, port: int, limit: int) -> str:
     if bridge is None:
         return "Cannot sync — Layer 1 bridge not initialized."
 
-    import asyncio
     from network.client import NetworkClient
 
     async def _do_sync():
@@ -278,20 +291,13 @@ def _sync(host: str, port: int, limit: int) -> str:
         return f"Synced {inserted}/{len(records)} records from {host}:{port}"
 
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                result = pool.submit(asyncio.run, _do_sync()).result()
-            return result
-        return asyncio.run(_do_sync())
+        return _run_async(_do_sync())
     except Exception as e:
         return f"Sync failed: {e}"
 
 
 def _attestations(host: str, port: int, record_id: str) -> str:
     """Query attestations for a record from a remote node."""
-    import asyncio
     from network.client import NetworkClient
 
     async def _do_query():
@@ -310,13 +316,7 @@ def _attestations(host: str, port: int, record_id: str) -> str:
         return "\n".join(lines)
 
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                result = pool.submit(asyncio.run, _do_query()).result()
-            return result
-        return asyncio.run(_do_query())
+        return _run_async(_do_query())
     except Exception as e:
         return f"Query attestations failed: {e}"
 
@@ -338,7 +338,6 @@ def _witness(host: str, port: int, record_id: str) -> str:
     if target is None:
         return f"Record {record_id} not found in local DAG."
 
-    import asyncio
     from network.client import NetworkClient
     from network.trust import TrustScore
 
@@ -352,9 +351,7 @@ def _witness(host: str, port: int, record_id: str) -> str:
             return f"Witness request failed: {result['error']}"
 
         witness_hash = result.get("witness", "?")
-        # Compute trust score (including this new witness)
-        witness_count = 1  # at least this one
-        score = TrustScore.compute(witness_count)
+        score = TrustScore.compute(1)
         level = TrustScore.level(score)
 
         return (
@@ -363,12 +360,6 @@ def _witness(host: str, port: int, record_id: str) -> str:
         )
 
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                result = pool.submit(asyncio.run, _do_witness()).result()
-            return result
-        return asyncio.run(_do_witness())
+        return _run_async(_do_witness())
     except Exception as e:
         return f"Witness failed: {e}"

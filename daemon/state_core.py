@@ -14,6 +14,7 @@ import json
 import math
 import os
 import random
+import threading
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
@@ -24,6 +25,9 @@ from daemon.schemas import atomic_write_json
 from daemon.emotions import get_primary_emotion
 
 logger = logging.getLogger("elara.state_core")
+
+# Thread safety for concurrent tool calls (Cortical Layer 2)
+_state_lock = threading.Lock()
 
 _p = get_paths()
 STATE_FILE = _p.state_file
@@ -128,40 +132,42 @@ def _archive_imprint(imprint: dict) -> None:
 
 
 def _load_state() -> dict:
-    """Load current emotional state with crash recovery."""
+    """Load current emotional state with crash recovery. Thread-safe."""
     logger.debug("Loading state from %s", STATE_FILE)
-    tmp_file = STATE_FILE.with_suffix(".json.tmp")
+    with _state_lock:
+        tmp_file = STATE_FILE.with_suffix(".json.tmp")
 
-    # Crash recovery: if .tmp exists but .json doesn't, the rename was interrupted
-    if tmp_file.exists() and not STATE_FILE.exists():
-        os.rename(str(tmp_file), str(STATE_FILE))
-    elif tmp_file.exists():
-        # Both exist — .tmp is stale from a failed write, discard it
-        tmp_file.unlink()
+        # Crash recovery: if .tmp exists but .json doesn't, the rename was interrupted
+        if tmp_file.exists() and not STATE_FILE.exists():
+            os.rename(str(tmp_file), str(STATE_FILE))
+        elif tmp_file.exists():
+            # Both exist — .tmp is stale from a failed write, discard it
+            tmp_file.unlink()
 
-    if STATE_FILE.exists():
-        try:
-            state = json.loads(STATE_FILE.read_text())
-            if "temperament" not in state:
-                state["temperament"] = TEMPERAMENT.copy()
-            if "imprints" not in state:
-                state["imprints"] = []
-            if "consolidation" not in state:
-                state["consolidation"] = DEFAULT_STATE["consolidation"].copy()
-            if "allostatic_load" not in state:
-                state["allostatic_load"] = 0
-            if "current_session" not in state:
-                state["current_session"] = DEFAULT_STATE["current_session"].copy()
-            return state
-        except json.JSONDecodeError:
-            logger.error("Corrupt state file %s, using defaults", STATE_FILE)
-    return DEFAULT_STATE.copy()
+        if STATE_FILE.exists():
+            try:
+                state = json.loads(STATE_FILE.read_text())
+                if "temperament" not in state:
+                    state["temperament"] = TEMPERAMENT.copy()
+                if "imprints" not in state:
+                    state["imprints"] = []
+                if "consolidation" not in state:
+                    state["consolidation"] = DEFAULT_STATE["consolidation"].copy()
+                if "allostatic_load" not in state:
+                    state["allostatic_load"] = 0
+                if "current_session" not in state:
+                    state["current_session"] = DEFAULT_STATE["current_session"].copy()
+                return state
+            except json.JSONDecodeError:
+                logger.error("Corrupt state file %s, using defaults", STATE_FILE)
+        return DEFAULT_STATE.copy()
 
 
 def _save_state(data: dict) -> None:
-    """Save emotional state via atomic rename (write .tmp then rename)."""
-    data["last_update"] = datetime.now().isoformat()
-    atomic_write_json(STATE_FILE, data)
+    """Save emotional state via atomic rename (write .tmp then rename). Thread-safe."""
+    with _state_lock:
+        data["last_update"] = datetime.now().isoformat()
+        atomic_write_json(STATE_FILE, data)
 
 
 def _apply_time_decay(state: dict) -> dict:
