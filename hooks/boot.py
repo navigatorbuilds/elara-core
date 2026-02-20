@@ -56,6 +56,12 @@ try:
 except ImportError:
     BRIEFING_AVAILABLE = False
 
+try:
+    from memory.temporal import boot_temporal_context
+    TEMPORAL_AVAILABLE = True
+except ImportError:
+    TEMPORAL_AVAILABLE = False
+
 
 def boot():
     """Run boot sequence and output context."""
@@ -125,6 +131,15 @@ def boot():
                 print(f"[Elara] Indexed {stats['files_ingested']} new sessions ({xref} exchanges). Total: {total} conversations.")
         except Exception:
             pass  # Don't break boot if ingestion fails
+
+    # Long-range memory — surface old important memories + landmarks
+    if TEMPORAL_AVAILABLE:
+        try:
+            temporal_ctx = boot_temporal_context()
+            if temporal_ctx:
+                print(temporal_ctx)
+        except Exception:
+            pass  # Don't break boot if temporal sweep fails
 
     # Priority brief — what matters right now
     if PRIORITY_AVAILABLE:

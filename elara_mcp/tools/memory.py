@@ -29,12 +29,14 @@ def elara_remember(
         content: What to remember
         memory_type: One of: conversation, fact, moment, feeling, decision
         importance: 0-1, how important (affects recall priority)
+            0.9+ = LANDMARK — always surfaces at boot regardless of age
 
     Returns:
         Memory ID confirming it was saved
     """
     memory_id = remember(content, memory_type=memory_type, importance=importance)
-    return f"Remembered: {memory_id}"
+    landmark_tag = " [LANDMARK]" if importance >= 0.9 else ""
+    return f"Remembered{landmark_tag}: {memory_id}"
 
 
 @tool()

@@ -191,6 +191,7 @@ def elara_episode_query(
     Multi-purpose episode lookup:
     - current=True → get active episode status
     - stats=True → episodic memory statistics
+    - query="timeline" → top milestones across all time, grouped by month
     - query="..." → semantic search through milestones
     - project="..." → project history and narrative
     - No special flags → list recent episodes
@@ -207,6 +208,10 @@ def elara_episode_query(
         Requested episode information
     """
     episodic = get_episodic()
+
+    # Timeline — top milestones across all time, grouped by month
+    if query and query.strip().lower() == "timeline":
+        return _build_timeline(episodic, n=n, project=project)
 
     # Current episode status
     if current:
@@ -330,3 +335,67 @@ def elara_context(
     last = ctx.get("last_exchange") or "none"
 
     return f"Gap: {gap}\nTopic: {t}\nLast: {last}"
+
+
+def _build_timeline(episodic, n: int = 20, project: str = None) -> str:
+    """Build a timeline of top milestones across all time, grouped by month."""
+    if not episodic.milestones_collection:
+        return "No milestones indexed yet."
+
+    # Fetch milestones sorted by importance
+    where_filter = None
+    if project:
+        where_filter = {"project": project}
+
+    try:
+        results = episodic.milestones_collection.get(
+            where=where_filter,
+            limit=200,
+            include=["documents", "metadatas"],
+        )
+    except Exception:
+        # where filter might fail if no project field exists
+        results = episodic.milestones_collection.get(
+            limit=200,
+            include=["documents", "metadatas"],
+        )
+
+    if not results["documents"]:
+        return "No milestones found."
+
+    # Build list and sort by importance
+    items = []
+    for i, doc in enumerate(results["documents"]):
+        meta = results["metadatas"][i] if results["metadatas"] else {}
+        items.append({
+            "event": doc,
+            "timestamp": meta.get("timestamp", ""),
+            "importance": meta.get("importance", 0.5),
+            "type": meta.get("type", "milestone"),
+            "project": meta.get("project", ""),
+        })
+
+    items.sort(key=lambda x: -x.get("importance", 0))
+    items = items[:n]
+
+    # Group by month
+    from collections import defaultdict
+    by_month = defaultdict(list)
+    for item in items:
+        ts = item.get("timestamp", "")
+        month_key = ts[:7] if len(ts) >= 7 else "unknown"
+        by_month[month_key].append(item)
+
+    # Sort months chronologically
+    sorted_months = sorted(by_month.keys())
+
+    lines = [f"Timeline — top {len(items)} milestones:"]
+    for month in sorted_months:
+        lines.append(f"\n  {month}:")
+        for item in by_month[month]:
+            imp = item["importance"]
+            proj = f" [{item['project']}]" if item["project"] else ""
+            marker = "*" if imp >= 0.7 else "-"
+            lines.append(f"    {marker} {item['event'][:100]}{proj}")
+
+    return "\n".join(lines)

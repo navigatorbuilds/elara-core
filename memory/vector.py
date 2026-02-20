@@ -132,6 +132,10 @@ class VectorMemory:
             **(metadata or {})
         }
 
+        # Landmark: importance >= 0.9 → always surface at boot
+        if importance >= 0.9:
+            meta["landmark"] = True
+
         # Tag with emotional context at time of encoding
         if tag_with_emotion:
             emotional_context = self._get_current_emotional_context()
