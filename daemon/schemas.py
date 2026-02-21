@@ -175,6 +175,8 @@ class Goal(ElaraModel):
     created: str
     last_touched: str
     notes: Optional[str] = None
+    decision: Optional[str] = None     # what was decided (action/plan/judgment)
+    build_order: Optional[int] = None  # sequencing (1=first, 2=second, etc.)
 
 
 # ============================================================================

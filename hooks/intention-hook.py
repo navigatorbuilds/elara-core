@@ -264,10 +264,11 @@ def get_workflows(prompt: str) -> list:
 
 
 def get_active_goals() -> list:
-    """Get active goals (max 3)."""
+    """Get active goals (max 5), sorted by build_order."""
     try:
         from daemon.goals import list_goals
-        return list_goals(status="active")[:3]
+        goals = list_goals(status="active")[:5]
+        return sorted(goals, key=lambda g: g.get("build_order") or 999)
     except Exception:
         return []
 
@@ -332,11 +333,18 @@ def build_enrichment(prompt: str) -> str:
             # Update dedup cache
             update_injection_cache([m.get("memory_id", "") for m in fresh_memories[:3]])
 
-    # 3. Active goals
+    # 3. Active goals (with decision context + build order)
     goals = get_active_goals()
     if goals:
-        names = [g["title"] for g in goals]
-        sections.append("[GOALS] " + " | ".join(names))
+        lines = []
+        for i, g in enumerate(goals, 1):
+            order = g.get("build_order") or i
+            decision = g.get("decision") or g.get("notes", "")
+            if decision:
+                lines.append(f"  {order}. {g['title']} — {decision[:60]}")
+            else:
+                lines.append(f"  {order}. {g['title']}")
+        sections.append("[GOALS] Active build order:\n" + "\n".join(lines))
 
     # 4. Corrections (self-check — past mistakes to avoid)
     #    Now uses compound query for better matching

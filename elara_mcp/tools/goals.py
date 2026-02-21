@@ -32,6 +32,8 @@ def elara_goal(
     project: Optional[str] = None,
     notes: Optional[str] = None,
     priority: str = "medium",
+    decision: Optional[str] = None,
+    build_order: Optional[int] = None,
 ) -> str:
     """
     Manage goals — add, update, or list.
@@ -44,6 +46,8 @@ def elara_goal(
         project: Project filter/association
         notes: Additional context
         priority: "high", "medium", or "low"
+        decision: What was decided (action/plan/judgment)
+        build_order: Sequencing (1=first, 2=second, etc.)
 
     Returns:
         Goal info or list
@@ -51,13 +55,15 @@ def elara_goal(
     if action == "add":
         if not title:
             return "Error: title is required for adding a goal."
-        goal = add_goal(title=title, project=project, notes=notes, priority=priority)
+        goal = add_goal(title=title, project=project, notes=notes, priority=priority,
+                        decision=decision, build_order=build_order)
         return f"Goal #{goal['id']} added: {title} [{priority}]"
 
     if action == "update":
         if goal_id is None:
             return "Error: goal_id is required for updating a goal."
-        result = update_goal(goal_id=goal_id, status=status, notes=notes, priority=priority, title=title)
+        result = update_goal(goal_id=goal_id, status=status, notes=notes, priority=priority,
+                             title=title, decision=decision, build_order=build_order)
         if "error" in result:
             return result["error"]
         return f"Goal #{goal_id} updated -> {result['status']}: {result['title']}"
@@ -68,11 +74,13 @@ def elara_goal(
         return "No goals found."
 
     lines = []
-    for g in goals:
+    for g in sorted(goals, key=lambda x: x.get("build_order") or 999):
         proj = f" [{g['project']}]" if g.get("project") else ""
         pri = " !" if g.get("priority") == "high" else ""
+        dec = f" — {g['decision'][:60]}" if g.get("decision") else ""
         status_icon = {"active": "○", "done": "✓", "stalled": "⏸", "dropped": "✗"}.get(g["status"], "?")
-        lines.append(f"  {status_icon} #{g['id']}{pri} {g['title']}{proj} ({g['status']})")
+        order = f"[{g['build_order']}] " if g.get("build_order") else ""
+        lines.append(f"  {status_icon} {order}#{g['id']}{pri} {g['title']}{proj}{dec} ({g['status']})")
 
     return "\n".join(lines)
 

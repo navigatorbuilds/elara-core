@@ -46,6 +46,8 @@ def add_goal(
     project: Optional[str] = None,
     notes: Optional[str] = None,
     priority: str = "medium",
+    decision: Optional[str] = None,
+    build_order: Optional[int] = None,
 ) -> Dict:
     logger.info("Adding goal: %s (priority=%s)", title, priority)
     goals = _load()
@@ -59,6 +61,8 @@ def add_goal(
         created=now,
         last_touched=now,
         notes=notes,
+        decision=decision,
+        build_order=build_order,
     ).model_dump()
     goals.append(goal)
     _save(goals)
@@ -77,6 +81,8 @@ def update_goal(
     notes: Optional[str] = None,
     priority: Optional[str] = None,
     title: Optional[str] = None,
+    decision: Optional[str] = None,
+    build_order: Optional[int] = None,
 ) -> Dict:
     goals = _load()
     for g in goals:
@@ -93,6 +99,12 @@ def update_goal(
                 changed = True
             if title:
                 g["title"] = title
+                changed = True
+            if decision is not None:
+                g["decision"] = decision
+                changed = True
+            if build_order is not None:
+                g["build_order"] = build_order
                 changed = True
             if not changed:
                 return g
@@ -165,10 +177,11 @@ def boot_summary() -> str:
     lines = []
     if active:
         lines.append(f"Active goals ({len(active)}):")
-        for g in sorted(active, key=lambda x: {"high": 0, "medium": 1, "low": 2}.get(x.get("priority", "medium"), 1)):
+        for g in sorted(active, key=lambda x: (x.get("build_order") or 999, {"high": 0, "medium": 1, "low": 2}.get(x.get("priority", "medium"), 1))):
             proj = f" [{g['project']}]" if g.get("project") else ""
             pri = f" !" if g.get("priority") == "high" else ""
-            lines.append(f"  #{g['id']}{pri} {g['title']}{proj}")
+            dec = f" — {g['decision'][:60]}" if g.get("decision") else ""
+            lines.append(f"  #{g['id']}{pri} {g['title']}{proj}{dec}")
 
     if stale:
         lines.append(f"\nStale ({len(stale)} not touched in 7+ days):")
