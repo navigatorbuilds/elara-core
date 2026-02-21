@@ -48,7 +48,7 @@ Network Topology:
   └──────────────────────────────┘
 ```
 
-**45 tools. 15 modules. 37K+ lines of Python. 222 tests. Everything runs locally.** Cognitive outputs are dual-signed and stored in the cryptographic DAG. Pattern recognition feeds back into the validation chain.
+**46 tools. 17 modules. 39K+ lines of Python. 240 tests. Everything runs locally.** Cognitive outputs are dual-signed and stored in the cryptographic DAG. Pattern recognition feeds back into the validation chain.
 
 ```
 You: "Morning."
@@ -72,7 +72,7 @@ Elara: "3 work sessions. Auth module shipped. Goal #4 is stalling —
 | **Layer 1.5** — Rust DAM VM | Done | [elara-runtime](https://github.com/navigatorbuilds/elara-runtime) |
 | **Layer 2** — Network consensus | Active (node-by-default) | Included in this repo (`network/`) |
 | **Layer 3** — AI cognition | Done | This repo |
-| **Protocol specs** | v0.5.1 | [elara-protocol](https://github.com/navigatorbuilds/elara-protocol) |
+| **Protocol specs** | v0.5.2 | [elara-protocol](https://github.com/navigatorbuilds/elara-protocol) |
 | **US Provisional Patent** | Filed | Application No. 63/983,064 (Feb 14, 2026) |
 
 Every install is a node. When you run `elara serve`, your instance participates in the decentralized mesh — sharing anonymized validation records, not personal data. The install scripts handle everything in one line.
@@ -92,6 +92,7 @@ Elara Core is the cognitive layer (Layer 3). It provides persistent intelligence
 | **Mood system** | Tracks valence, energy, openness. Decays naturally between sessions. |
 | **Session tracking** | Episodes with milestones, decisions, project tagging, and timeline view. |
 | **Goals & corrections** | Persistent goals with staleness detection. Mistakes saved and surfaced before you repeat them. |
+| **Decision registry** | SQLite-backed ledger of permanent verdicts (UDR). Crystallized decisions auto-fed from corrections and outcomes. O(1) hook injection prevents repeating failed actions. |
 | **Session handoff** | Structured carry-forward between sessions so nothing gets lost. |
 
 ### Advanced
@@ -116,7 +117,7 @@ Elara Core is the cognitive layer (Layer 3). It provides persistent intelligence
 
 ---
 
-## Tools (45)
+## Tools (46)
 
 **Start here** (5 essential tools):
 
@@ -129,7 +130,7 @@ Elara Core is the cognitive layer (Layer 3). It provides persistent intelligence
 | `elara_status` | Full status check |
 
 <details>
-<summary>All 45 tools by module</summary>
+<summary>All 46 tools by module</summary>
 
 | Module | Tools | Count |
 |--------|-------|-------|
@@ -142,6 +143,7 @@ Elara Core is the cognitive layer (Layer 3). It provides persistent intelligence
 | **Cognitive** | `elara_reasoning`, `elara_outcome`, `elara_synthesis` | 3 |
 | **3D Cognition** | `elara_model`, `elara_prediction`, `elara_principle` | 3 |
 | **Workflows** | `elara_workflow` | 1 |
+| **UDR** | `elara_udr` (record/check/scan/list/review/stats/boot/backfill) | 1 |
 | **Knowledge** | `elara_kg_index`, `elara_kg_query`, `elara_kg_validate`, `elara_kg_diff` | 4 |
 | **Business** | `elara_business` | 1 |
 | **LLM** | `elara_llm` | 1 |
@@ -179,12 +181,12 @@ Elara Core is the cognitive layer (Layer 3). It provides persistent intelligence
 │  L3 CONTEMPLATE — Overnight brain, dreams        │
 │  L4 SOCIAL     — Peer network, witness consensus │
 ├──────────────────────────────────────────────────┤
-│              elara_mcp/tools/ (45 tools)          │
+│              elara_mcp/tools/ (46 tools)          │
 │                                                  │
 │  Memory · Mood · Episodes · Goals · Awareness    │
 │  Dreams · Cognitive · 3D Cognition · Workflows   │
-│  Knowledge · Business · LLM · Gmail · Maintenance│
-│  Network                                          │
+│  UDR · Knowledge · Business · LLM · Gmail        │
+│  Maintenance · Network                            │
 └────────────────────┬────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────┐
@@ -225,7 +227,7 @@ elara init --yes               Non-interactive init (CI/scripts)
 elara doctor                   Diagnostic health check
 elara serve                    Start MCP server + network node (stdio)
 elara serve --no-node          Start MCP server without network
-elara serve --profile full     Start with all 45 tool schemas
+elara serve --profile full     Start with all 46 tool schemas
 elara node status              Show node info (type, port, peers)
 elara node peers               List connected peers
 elara node stop                Disable network node
@@ -259,7 +261,7 @@ The [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) is a pos
 
 | Document | Where |
 |----------|-------|
-| **Elara Protocol Whitepaper v0.5.1** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
+| **Elara Protocol Whitepaper v0.5.2** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
 | **Elara Core Whitepaper v1.5.1** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
 | **US Provisional Patent** | Application No. 63/983,064 (Feb 14, 2026) |
 
@@ -272,6 +274,8 @@ The [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) is a pos
 ---
 
 ## What's New
+
+**v0.16.0 — Unified Decision Registry (UDR)** — SQLite-backed decision ledger that crystallizes permanent verdicts from corrections and outcomes. In-memory Python set for O(1) hook checks — zero LLM overhead. Auto-feeds from corrections (mistakes) and outcomes (losses). New `elara_udr` tool with 8 actions. Intention hook now injects `[DECISION-CHECK]` warnings before you repeat failed actions. 46 tools across 17 modules. 240 tests.
 
 **v0.15.0 — Tier System + Cognitive Continuity Chain** — 4 hardware deployment tiers (VALIDATE/REMEMBER/THINK/CONNECT) so Elara runs on anything from a $30 phone to a satellite. Cognitive Continuity Chain: hash-chained, dual-signed state snapshots in the DAG — cryptographic proof of unbroken AI experience. `elara serve --tier`, `elara continuity status/verify`.
 
