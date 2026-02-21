@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELARA CORE // System Prompts vs. Architecture</title>
+    <meta name="description" content="Every AI coding tool ships as a system prompt. Elara is 39K lines of actual architecture. Here's the raw comparison.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta property="og:title" content="System Prompts vs. Architecture — Elara Core">
+    <meta property="og:description" content="Claude Code, Cursor, Devin, Windsurf, Copilot — they're all system prompts. Elara is a brain.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://elara.navigatorbuilds.com/system-prompts.html">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-card: #161b22;
+            --green: #3b82f6;
+            --green-dim: #2563eb;
+            --green-dark: #14532d;
+            --red: #ef4444;
+            --cyan: #3b82f6;
+            --amber: #f97316;
+            --text: #e5e7eb;
+            --text-dim: #6b7280;
+            --border: #1e293b;
+            --border-green: #14532d;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            padding: 40px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 50px;
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-nav a {
+            font-size: 13px;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid var(--green-dark);
+            transition: all 0.2s;
+        }
+
+        .header-nav a:hover {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: var(--green);
+        }
+
+        .header h1 {
+            font-family: 'Inter', -apple-system, sans-serif;
+            font-size: clamp(13px, 2.5vw, 20px);
+            color: var(--green);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        /* Hero Statement */
+        .hero-statement {
+            background: var(--bg-card);
+            border: 1px solid var(--border-green);
+            padding: 40px;
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .hero-statement h2 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(16px, 3vw, 28px);
+            color: var(--text);
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        .hero-statement h2 em {
+            color: var(--green);
+            font-style: normal;
+        }
+
+        .hero-statement p {
+            font-size: 14px;
+            color: var(--text-dim);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        /* Competitor Cards */
+        .competitors {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 50px;
+        }
+
+        .competitor-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 16px;
+        }
+
+        .competitor-card.elara-card {
+            border-color: var(--green);
+            background: rgba(59, 130, 246, 0.04);
+        }
+
+        .competitor-card h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--amber);
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+
+        .competitor-card.elara-card h3 {
+            color: var(--green);
+        }
+
+        .competitor-card .lines {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .competitor-card.elara-card .lines {
+            color: var(--green);
+        }
+
+        .competitor-card p {
+            font-size: 12px;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        /* Section Headers */
+        .section-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            color: var(--amber);
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        /* Comparison Table */
+        .comparison-section {
+            margin-bottom: 60px;
+        }
+
+        .comparison-table {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(59, 130, 246, 0.04);
+        }
+
+        th {
+            padding: 14px 10px;
+            text-align: left;
+            font-size: 11px;
+            color: var(--green);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border);
+            font-weight: normal;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: rgba(59, 130, 246, 0.02);
+        }
+
+        .feature-label {
+            color: var(--text);
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .yes { color: var(--green); }
+        .no { color: var(--text-dim); }
+        .partial { color: var(--amber); }
+        .highlight { color: var(--cyan); font-weight: 500; }
+
+        /* Code Block */
+        .code-comparison {
+            background: #050505;
+            border: 1px solid var(--border);
+            padding: 24px;
+            margin-bottom: 50px;
+            overflow-x: auto;
+        }
+
+        .code-comparison pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            color: var(--text-dim);
+        }
+
+        .code-comparison .comment { color: #6b7280; }
+        .code-comparison .keyword { color: var(--green); }
+        .code-comparison .string { color: #22c55e; }
+        .code-comparison .number { color: var(--amber); }
+
+        /* Why Section */
+        .why-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-green);
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+
+        .why-section h2 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            color: var(--green);
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .why-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .why-item h3 {
+            font-size: 14px;
+            color: var(--green-dim);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .why-item p {
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Honest section */
+        .honest-section {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 24px;
+            margin-bottom: 40px;
+        }
+
+        .honest-section h2 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            color: var(--red);
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .honest-section ul {
+            margin-left: 20px;
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        .honest-section li { margin-bottom: 6px; }
+
+        /* Disclaimer */
+        .disclaimer {
+            font-size: 12px;
+            color: var(--text-dim);
+            font-style: italic;
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+        }
+
+        /* CTA */
+        .cta {
+            text-align: center;
+            padding: 60px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .cta h2 {
+            font-family: 'Inter', -apple-system, sans-serif;
+            font-size: clamp(12px, 2vw, 18px);
+            color: var(--green);
+            margin-bottom: 16px;
+        }
+
+        .cta .code {
+            background: #050505;
+            border: 1px solid var(--green-dark);
+            padding: 14px 28px;
+            display: inline-block;
+            font-size: 16px;
+            color: var(--green);
+            margin: 16px 0;
+        }
+
+        .cta-links {
+            margin-top: 20px;
+        }
+
+        .cta-links a {
+            display: inline-block;
+            color: var(--green-dim);
+            text-decoration: none;
+            padding: 8px 20px;
+            border: 1px solid var(--green-dark);
+            margin: 4px;
+            font-size: 13px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cta-links a:hover {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: var(--green);
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 30px 0;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        footer a { color: var(--green-dim); text-decoration: none; }
+        footer a:hover { color: var(--green); }
+
+        @media (max-width: 900px) {
+            .comparison-table { font-size: 11px; }
+            th, td { padding: 8px 6px; }
+            .hero-statement { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="header-nav">
+            <a href="/">&larr; Elara Core</a>
+            <a href="/quickstart.html">START</a>
+            <a href="/tools.html">TOOLS</a>
+            <a href="/architecture.html">ARCH</a>
+            <a href="/vs.html">VS</a>
+            <a href="/compare.html">BEFORE/AFTER</a>
+            <a href="/search.html">&#128269;</a>
+        </div>
+        <h1>// SYSTEM PROMPTS VS. ARCHITECTURE</h1>
+        <p>Every AI coding tool ships as a text file. Here's what that looks like.</p>
+        <p style="color: var(--text-dim); font-size: 12px;">Updated February 2026 &mdash; Source: <a href="https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools" target="_blank" rel="noopener noreferrer" style="color: var(--green-dim);">x1xhlol/system-prompts-and-models-of-ai-tools</a> (115k stars)</p>
+    </div>
+
+    <!-- Hero Statement -->
+    <div class="hero-statement">
+        <h2>They're system prompts. <em>Elara is a brain.</em></h2>
+        <p>Claude Code, Cursor, Devin, Windsurf, GitHub Copilot &mdash; they're all text files that tell an LLM how to behave. When the session ends, everything is gone. Elara is 39K lines of actual architecture with 14 databases, cryptographic identity, and a learning loop that runs while you sleep.</p>
+    </div>
+
+    <!-- Scale Cards -->
+    <div class="competitors">
+        <div class="competitor-card">
+            <h3>Claude Code</h3>
+            <div class="lines">~1,150</div>
+            <p>lines of system prompt. TodoWrite for tasks. CLAUDE.md for memory. Session ends, state gone.</p>
+        </div>
+        <div class="competitor-card">
+            <h3>Cursor</h3>
+            <div class="lines">~770</div>
+            <p>lines of system prompt. Key-value memory store. GPT-4.1/5 backend. No cross-session learning.</p>
+        </div>
+        <div class="competitor-card">
+            <h3>Devin</h3>
+            <div class="lines">~400</div>
+            <p>lines of system prompt. &lt;think&gt; scratchpad (ephemeral). Browser + shell. No persistent state.</p>
+        </div>
+        <div class="competitor-card">
+            <h3>Windsurf</h3>
+            <div class="lines">~500</div>
+            <p>lines of system prompt. Key-value memory. GPT-4.1 backend. Plan tracking. No learning loop.</p>
+        </div>
+        <div class="competitor-card">
+            <h3>Copilot</h3>
+            <div class="lines">~200</div>
+            <p>lines of system prompt. User preferences only. VS Code integration. No session memory.</p>
+        </div>
+        <div class="competitor-card elara-card">
+            <h3>Elara Core</h3>
+            <div class="lines">39,034</div>
+            <p>lines of Python. 157 files. 46 MCP tools. 14 vector DBs. 2 SQLite stores. Post-quantum crypto. Overnight brain.</p>
+        </div>
+    </div>
+
+    <!-- The Raw Numbers -->
+    <div class="comparison-section">
+        <h2 class="section-header">The Raw Numbers</h2>
+        <div class="comparison-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Claude Code</th>
+                        <th>Cursor</th>
+                        <th>Devin</th>
+                        <th>Windsurf</th>
+                        <th>Copilot</th>
+                        <th>Elara</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="feature-label">What it is</td>
+                        <td class="no">System prompt</td>
+                        <td class="no">System prompt</td>
+                        <td class="no">System prompt</td>
+                        <td class="no">System prompt</td>
+                        <td class="no">System prompt</td>
+                        <td class="highlight">Architecture</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Codebase size</td>
+                        <td class="no">~1,150 lines</td>
+                        <td class="no">~770 lines</td>
+                        <td class="no">~400 lines</td>
+                        <td class="no">~500 lines</td>
+                        <td class="no">~200 lines</td>
+                        <td class="highlight">39,034 lines</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Source files</td>
+                        <td class="no">1</td>
+                        <td class="no">1</td>
+                        <td class="no">1</td>
+                        <td class="no">1</td>
+                        <td class="no">1</td>
+                        <td class="highlight">157</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Tools</td>
+                        <td class="no">~16</td>
+                        <td class="no">~13</td>
+                        <td class="no">~25</td>
+                        <td class="no">~30</td>
+                        <td class="no">~16</td>
+                        <td class="highlight">46</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Databases</td>
+                        <td class="no">0</td>
+                        <td class="no">0</td>
+                        <td class="no">0</td>
+                        <td class="no">0</td>
+                        <td class="no">0</td>
+                        <td class="highlight">14 ChromaDB + 2 SQLite</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Tests</td>
+                        <td class="no">N/A</td>
+                        <td class="no">N/A</td>
+                        <td class="no">N/A</td>
+                        <td class="no">N/A</td>
+                        <td class="no">N/A</td>
+                        <td class="highlight">240</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Feature Comparison -->
+    <div class="comparison-section">
+        <h2 class="section-header">Feature Comparison</h2>
+        <div class="comparison-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Capability</th>
+                        <th>Claude Code</th>
+                        <th>Cursor</th>
+                        <th>Devin</th>
+                        <th>Windsurf</th>
+                        <th>Copilot</th>
+                        <th>Elara</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="feature-label">Semantic memory</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> <span class="highlight">14 collections</span></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Conversation recall</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> <span class="highlight">2,440+ exchanges</span></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Session memory</td>
+                        <td class="partial">CLAUDE.md file</td>
+                        <td class="partial">Key-value</td>
+                        <td class="no">None</td>
+                        <td class="partial">Key-value</td>
+                        <td class="partial">Preferences</td>
+                        <td><span class="yes">&#10003;</span> Full cognitive state</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Mood / emotions</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> Valence, energy, openness</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Personality drift</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> Temperament adjusts</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Mistake prevention</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> <span class="highlight">Corrections + UDR</span></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Decision tracking</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> Outcomes with lessons</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Cognitive models</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> Beliefs + evidence</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Predictions</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> Deadlines + accuracy</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Reasoning trails</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="partial">&lt;think&gt; tag</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> Hypothesis chains</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Dream cycles</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> Weekly / monthly</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Overnight brain</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> <span class="highlight">15-phase analysis</span></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Knowledge graph</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> 2,513 nodes</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Crypto identity</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> <span class="highlight">Dilithium3 + SPHINCS+</span></td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">DAG ledger</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> Hash-linked records</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Peer network</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> mDNS mesh + witnesses</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Hardware tiers</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> IoT to GPU server</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Self-reflection</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> Blind spots, growth</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Goal tracking</td>
+                        <td class="partial">TodoWrite</td>
+                        <td class="partial">TodoWrite</td>
+                        <td class="partial">Plan mode</td>
+                        <td class="partial">Plan tool</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> Persistent + staleness</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-label">Hook injection</td>
+                        <td class="partial">Hooks (shell)</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td class="no">No</td>
+                        <td><span class="yes">&#10003;</span> <span class="highlight">Corrections + UDR + goals</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Code Comparison -->
+    <div class="comparison-section">
+        <h2 class="section-header">What They Look Like Inside</h2>
+        <div class="code-comparison">
+            <pre><span class="comment"># Claude Code (the entire system):</span>
+<span class="string">"You are an interactive CLI tool that helps users with software engineering tasks."</span>
+<span class="comment"># + 1,150 lines of instructions</span>
+<span class="comment"># + 16 tool schemas (Bash, Edit, Grep, Read, Write...)</span>
+<span class="comment"># Session ends → everything gone</span>
+
+<span class="comment"># Cursor (the entire system):</span>
+<span class="string">"You are an AI coding assistant, powered by GPT-4.1."</span>
+<span class="comment"># + 770 lines of instructions</span>
+<span class="comment"># + 13 tool schemas (codebase_search, edit_file, run_terminal_cmd...)</span>
+<span class="comment"># create_memory("user prefers tabs") → key-value store</span>
+
+<span class="comment"># Devin (the entire system):</span>
+<span class="string">"You are a software engineer using a real computer operating system."</span>
+<span class="comment"># + 400 lines of instructions</span>
+<span class="comment"># + 25 commands (shell, editor, browser, deploy...)</span>
+<span class="comment"># &lt;think&gt; scratchpad → invisible, ephemeral</span>
+
+<span class="comment"># ─────────────────────────────────────────────────────</span>
+
+<span class="comment"># Elara Core (the architecture):</span>
+<span class="keyword">elara-core/</span>
+<span class="keyword">├── core/</span>              <span class="comment"># Layer 1: Dilithium3 crypto, DAG, continuity chain</span>
+<span class="keyword">├── daemon/</span>            <span class="comment"># Layer 3: 40 files — mood, memory, reasoning, dreams</span>
+<span class="keyword">│   ├── overnight/</span>     <span class="comment"># 15-phase autonomous analysis (local LLM)</span>
+<span class="keyword">│   ├── awareness/</span>     <span class="comment"># Blind spots, pulse, reflection, observation</span>
+<span class="keyword">│   ├── udr.py</span>         <span class="comment"># Decision registry — never repeat failed actions</span>
+<span class="keyword">│   └── ...</span>            <span class="comment"># models, predictions, principles, outcomes, ...</span>
+<span class="keyword">├── memory/</span>            <span class="comment"># 14 ChromaDB collections + episodic + KG</span>
+<span class="keyword">├── network/</span>           <span class="comment"># Layer 2: mDNS, witness attestation, trust</span>
+<span class="keyword">├── elara_mcp/</span>         <span class="comment"># 46 MCP tools across 17 modules</span>
+<span class="keyword">├── hooks/</span>             <span class="comment"># Intention hook: corrections + UDR + goals</span>
+<span class="keyword">└── tests/</span>             <span class="comment"># 240 tests, all passing</span>
+<span class="comment">#</span>
+<span class="comment"># <span class="number">39,034</span> lines. <span class="number">157</span> files. Session ends → state persists.</span>
+<span class="comment"># Next session: boots from memory, loads decisions, surfaces observations.</span>
+<span class="comment"># Overnight: dreams, consolidates, adjusts temperament.</span></pre>
+        </div>
+    </div>
+
+    <!-- Why This Matters -->
+    <div class="why-section">
+        <h2>Why Architecture Beats Prompts</h2>
+        <div class="why-grid">
+            <div class="why-item">
+                <h3>Memory That Persists</h3>
+                <p>System prompts reset every session. Elara's 14 databases carry context across weeks and months. "What were we working on 3 weeks ago?" returns a real answer.</p>
+            </div>
+            <div class="why-item">
+                <h3>Learning From Mistakes</h3>
+                <p>No coding tool remembers what failed. Elara's correction system + UDR creates permanent verdicts. The hook injects warnings before you repeat errors. Zero LLM overhead.</p>
+            </div>
+            <div class="why-item">
+                <h3>Thinking While You Sleep</h3>
+                <p>The overnight brain runs 15 analysis phases through a local LLM. Builds cognitive models. Detects workflow patterns. Makes predictions. No other tool processes when idle.</p>
+            </div>
+            <div class="why-item">
+                <h3>Cryptographic Identity</h3>
+                <p>Every cognitive artifact is Dilithium3-signed into a hash-linked DAG. Continuity chain proves unbroken experience. No other tool can prove it was the same AI across sessions.</p>
+            </div>
+            <div class="why-item">
+                <h3>Distributed Trust</h3>
+                <p>Peers discover each other via mDNS, witness each other's records, build weighted trust scores with temporal decay. A network layer no coding tool has.</p>
+            </div>
+            <div class="why-item">
+                <h3>Runs Anywhere</h3>
+                <p>4 hardware tiers: from a $30 phone (VALIDATE) to a GPU cluster (SOVEREIGN). The tier system gates which modules load at runtime. Same codebase, different capabilities.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Honest -->
+    <div class="honest-section">
+        <h2>What They Do Better</h2>
+        <ul>
+            <li><strong>File editing and terminal access.</strong> Claude Code, Cursor, Devin, and Windsurf are excellent at writing and editing code. Elara doesn't do file editing &mdash; it's a cognitive layer that runs alongside these tools.</li>
+            <li><strong>Browser automation.</strong> Devin has full Playwright-controlled Chrome. Windsurf has browser preview. Elara has no browser integration.</li>
+            <li><strong>Deployment.</strong> Devin deploys to Fly.io. Windsurf deploys to Netlify. Elara doesn't deploy your code.</li>
+            <li><strong>Multi-model support.</strong> Cursor runs on GPT-4.1/5. Windsurf uses GPT-4.1. Copilot uses multiple models. Elara is MCP-only (works with any MCP client).</li>
+            <li><strong>Company backing.</strong> These tools have teams, funding, and millions of users. Elara is one developer.</li>
+        </ul>
+    </div>
+
+    <!-- Key Insight -->
+    <div class="hero-statement" style="margin-bottom: 0;">
+        <h2>Elara doesn't <em>replace</em> them. It <em>remembers</em> for them.</h2>
+        <p>Run Claude Code with Elara as an MCP server. Now your coding assistant has persistent memory, mood awareness, mistake prevention, overnight thinking, and cryptographic identity. The system prompt handles the session. Elara handles the continuity.</p>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+        <p><strong>Disclaimer:</strong> System prompt analysis based on publicly available data from <a href="https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools" target="_blank" rel="noopener noreferrer" style="color: var(--green-dim);">x1xhlol/system-prompts-and-models-of-ai-tools</a> (115k stars) as of February 2026. Features and capabilities may have changed. We're not affiliated with Anthropic, Anysphere, Cognition, Codeium, or GitHub.</p>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta">
+        <h2>Add a Brain to Your Coding Tool</h2>
+        <div class="code">pip install elara-core</div>
+        <div class="cta-links">
+            <a href="/quickstart.html">Quickstart</a>
+            <a href="/tools.html">46 Tools</a>
+            <a href="/compare.html">Before/After</a>
+            <a href="/vs.html">vs. Memory Tools</a>
+            <a href="https://github.com/navigatorbuilds/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://pypi.org/project/elara-core/" target="_blank" rel="noopener noreferrer">PyPI</a>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <div class="container">
+        <p><a href="/">Elara Core</a> &mdash; <a href="https://navigatorbuilds.com" rel="noopener noreferrer">Navigator Builds</a> &mdash; <a href="https://github.com/navigatorbuilds/elara-core" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </div>
+</footer>
+
+<script src="/cmd-palette.js"></script>
+</body>
+</html>
