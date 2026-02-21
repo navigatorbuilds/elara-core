@@ -122,6 +122,7 @@ class CacheKeys:
     CORRECTION_INDEX = "correction_index"
     LLM_AVAILABILITY = "llm_availability"
     DREAM_STATUS = "dream_status"
+    UDR_DECISIONS = "udr_decisions"
 
 
 # TTLs in seconds
@@ -135,6 +136,7 @@ CACHE_TTLS: Dict[str, float] = {
     CacheKeys.CORRECTION_INDEX: 120.0,
     CacheKeys.LLM_AVAILABILITY: 60.0,
     CacheKeys.DREAM_STATUS: 300.0,
+    CacheKeys.UDR_DECISIONS: 300.0,
 }
 
 # Map events → cache keys to invalidate
@@ -159,6 +161,7 @@ def _build_invalidation_map() -> Dict[str, List[str]]:
         Events.CORRECTION_ADDED: [CacheKeys.CORRECTION_INDEX],
         Events.LLM_UNAVAILABLE: [CacheKeys.LLM_AVAILABILITY],
         Events.DREAM_COMPLETED: [CacheKeys.DREAM_STATUS],
+        Events.DECISION_RECORDED: [CacheKeys.UDR_DECISIONS],
     }
 
 

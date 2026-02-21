@@ -243,6 +243,17 @@ def get_corrections(prompt: str) -> list:
         return []
 
 
+def get_decision_checks(prompt: str) -> list:
+    """Check UDR for rejected entities mentioned in this prompt.
+    Zero LLM calls — keyword scan against entity set. Fail-silent."""
+    try:
+        from daemon.udr import get_registry
+        reg = get_registry()
+        return reg.check_entities(prompt)
+    except Exception:
+        return []
+
+
 def get_workflows(prompt: str) -> list:
     """Find workflow patterns matching this prompt."""
     try:
@@ -337,6 +348,17 @@ def build_enrichment(prompt: str) -> str:
             fix = c.get("correction", "")[:60]
             lines.append(f"  {mistake} -> {fix}")
         sections.append("[SELF-CHECK]\n" + "\n".join(lines))
+
+    # 4b. Decision checks (UDR — rejected entities in prompt)
+    decision_hits = get_decision_checks(compound_query)
+    if decision_hits:
+        lines = []
+        for d in decision_hits[:2]:
+            lines.append(
+                f"  {d.get('domain','')}:{d.get('entity','')} "
+                f"[{d.get('verdict','')}] — {d.get('reason','')[:60]}"
+            )
+        sections.append("[DECISION-CHECK] Previously decided:\n" + "\n".join(lines))
 
     # 5. Matching workflow (also uses compound query)
     workflows = get_workflows(compound_query)

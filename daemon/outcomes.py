@@ -133,6 +133,25 @@ def check_outcome(
 
     _save_outcome(outcome)
     bus.emit(Events.OUTCOME_CHECKED, {"outcome_id": outcome_id, "assessment": assessment}, source="outcomes")
+
+    # Feed losses to UDR as failed decisions (fail-silent)
+    if assessment == "loss":
+        try:
+            from daemon.udr import get_registry
+            reg = get_registry()
+            domain, entity = reg._extract_from_outcome(outcome)
+            if domain and entity:
+                reg.record_decision(
+                    domain=domain,
+                    entity=entity,
+                    verdict="failed",
+                    reason=(lesson or actual)[:200],
+                    confidence=0.8,
+                    source="outcome",
+                )
+        except Exception:
+            pass  # UDR failure never breaks outcomes
+
     return outcome
 
 

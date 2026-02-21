@@ -212,6 +212,21 @@ def gather_all(days: int = 30) -> Dict[str, Any]:
     except Exception as e:
         logger.warning("  Dream reports failed: %s", e)
 
+    # --- UDR (Unified Decision Registry) ---
+    try:
+        from daemon.udr import get_registry
+        reg = get_registry()
+        udr_stats = reg.stats()
+        recent = reg.list_decisions(n=10)
+        context["udr_stats"] = udr_stats
+        context["udr_recent"] = recent
+        logger.info("  UDR: %d decisions, %d blocked entities",
+                     udr_stats["total_decisions"], udr_stats["entity_set_size"])
+    except Exception as e:
+        logger.warning("  UDR failed: %s", e)
+        context["udr_stats"] = {}
+        context["udr_recent"] = []
+
     # --- Temporal scales (daily/weekly/monthly aggregation) ---
     try:
         context["temporal"] = gather_temporal_scales(context)
@@ -532,6 +547,18 @@ def format_context_for_prompt(context: Dict[str, Any], max_chars: int = 6000) ->
                 )
         if lines:
             sections.append(("TEMPORAL OVERVIEW", "\n".join(lines)))
+
+    # UDR decisions
+    udr_recent = context.get("udr_recent", [])
+    udr_stats = context.get("udr_stats", {})
+    if udr_recent:
+        lines = [f"  Total: {udr_stats.get('total_decisions', 0)} decisions"]
+        for d in udr_recent[:8]:
+            lines.append(
+                f"  - {d.get('domain','')}:{d.get('entity','')} "
+                f"[{d.get('verdict','')}] {d.get('reason','')[:60]}"
+            )
+        sections.append(("DECISION REGISTRY (UDR)", "\n".join(lines)))
 
     # Dream summaries
     for dtype in ("weekly", "monthly"):

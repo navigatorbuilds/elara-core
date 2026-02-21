@@ -155,6 +155,10 @@ class Events:
     NETWORK_STARTED = "network_started"
     NETWORK_STOPPED = "network_stopped"
 
+    # --- Unified Decision Registry ---
+    DECISION_RECORDED = "decision_recorded"
+    DECISION_CHECKED = "decision_checked"
+
     # --- Tier System ---
     TIER_CHANGED = "tier_changed"
 

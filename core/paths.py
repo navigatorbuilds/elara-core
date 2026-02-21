@@ -371,6 +371,13 @@ class ElaraPaths:
         return self._root / "elara-knowledge-db"
 
     # ------------------------------------------------------------------
+    # Unified Decision Registry
+    # ------------------------------------------------------------------
+    @property
+    def udr_file(self) -> Path:
+        return self._root / "elara-udr.db"
+
+    # ------------------------------------------------------------------
     # Cognitive Continuity Chain
     # ------------------------------------------------------------------
     @property

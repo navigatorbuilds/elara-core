@@ -188,6 +188,23 @@ def add_correction(
         "correction_type": correction_type,
     }, source="corrections")
 
+    # Feed to UDR as permanent rejection (fail-silent)
+    try:
+        from daemon.udr import get_registry
+        reg = get_registry()
+        domain, entity = reg._extract_from_correction(entry)
+        if domain and entity:
+            reg.record_decision(
+                domain=domain,
+                entity=entity,
+                verdict="rejected",
+                reason=correction[:200],
+                confidence=0.9,
+                source="correction",
+            )
+    except Exception:
+        pass  # UDR failure never breaks corrections
+
     return entry
 
 

@@ -525,6 +525,21 @@ class Principle(ElaraModel):
     tags: List[str] = Field(default_factory=list)
 
 
+class UDRDecision(ElaraModel):
+    """Unified Decision Registry entry — a crystallized judgment."""
+    action_signature: str              # normalized "domain:entity" key
+    domain: str                        # upload, outreach, architecture, tool, etc.
+    entity: str                        # arxiv, esa, redis, etc.
+    verdict: str = "rejected"          # rejected, failed, approved, revisit
+    reason: str = ""                   # why this verdict was reached
+    confidence: float = 0.8            # 0-1, bumped +0.1 on upsert
+    source: str = "manual"             # manual, correction, outcome, backfill
+    created: str = ""
+    updated: str = ""
+    session: Optional[int] = None      # session number when recorded
+    tags: List[str] = Field(default_factory=list)
+
+
 class WorkflowStep(ElaraModel):
     """Single step in a workflow pattern."""
     action: str                          # imperative: "update README versions section"

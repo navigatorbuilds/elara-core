@@ -29,7 +29,7 @@ Profiles:
   --profile full  → 39 individual tool schemas (backward compatible)
   --profile lean  → 7 core schemas + 1 elara_do meta-tool (default, ~5% context)
 
-45 tools across 15 modules:
+46 tools across 16 modules:
 - memory:       elara_remember, elara_recall, elara_recall_conversation, elara_conversations (4)
 - mood:         elara_mood, elara_mood_adjust, elara_imprint, elara_mode, elara_status (5)
 - episodes:     elara_episode_start, elara_episode_note, elara_episode_end, elara_episode_query, elara_context (5)
@@ -44,6 +44,7 @@ Profiles:
 - llm:          elara_llm (1)
 - gmail:        elara_gmail (1)
 - maintenance:  elara_rebuild_indexes, elara_briefing, elara_snapshot, elara_memory_consolidation (4)
+- udr:          elara_udr (1)
 - network:      elara_network (1)
 """
 
@@ -88,6 +89,7 @@ _MODULE_IMPORTS = {
     "gmail":        "elara_mcp.tools.gmail",
     "knowledge":    "elara_mcp.tools.knowledge",
     "maintenance":  "elara_mcp.tools.maintenance",
+    "udr":          "elara_mcp.tools.udr",
     "network":      "elara_mcp.tools.network",
 }
 

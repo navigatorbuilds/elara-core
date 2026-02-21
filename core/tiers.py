@@ -54,10 +54,10 @@ _TIER_MODULES: dict[int, set[str]] = {
     1: {"memory", "episodes", "goals", "maintenance"},
     2: {"memory", "episodes", "goals", "maintenance",
         "mood", "awareness", "dreams", "cognitive", "cognition_3d",
-        "workflows", "knowledge", "business", "llm", "gmail"},
+        "workflows", "knowledge", "business", "llm", "gmail", "udr"},
     3: {"memory", "episodes", "goals", "maintenance",
         "mood", "awareness", "dreams", "cognitive", "cognition_3d",
-        "workflows", "knowledge", "business", "llm", "gmail",
+        "workflows", "knowledge", "business", "llm", "gmail", "udr",
         "network"},
 }
 
