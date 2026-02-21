@@ -73,8 +73,14 @@ def play_audio_windows(wav_path: str) -> bool:
         win_path = subprocess.run(
             ['wslpath', '-w', wav_path],
             capture_output=True,
-            text=True
+            text=True,
+            timeout=5
         ).stdout.strip()
+
+        # Sanitize win_path — reject anything with quotes or semicolons
+        if any(c in win_path for c in ("'", '"', ';', '&', '|', '`', '$')):
+            logger.error("Suspicious characters in path: %s", win_path)
+            return False
 
         # Use .NET SoundPlayer - simple and reliable
         ps_path = '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe'

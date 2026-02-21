@@ -26,6 +26,9 @@ logger = logging.getLogger("elara.knowledge.validate")
 # Sub-validators
 # ============================================================================
 
+MAX_DOC_IDS = 100  # Guard against SQL placeholder DoS
+
+
 def find_contradictions(store: KnowledgeStore, doc_ids: Optional[List[str]] = None) -> List[Dict]:
     """
     Find same semantic_id with conflicting definitions across documents.
@@ -38,6 +41,8 @@ def find_contradictions(store: KnowledgeStore, doc_ids: Optional[List[str]] = No
 
     # Get all definitions, optionally filtered by doc
     if doc_ids:
+        if len(doc_ids) > MAX_DOC_IDS:
+            raise ValueError(f"doc_ids limit exceeded: {len(doc_ids)} > {MAX_DOC_IDS}")
         placeholders = ",".join("?" * len(doc_ids))
         rows = db.execute(
             f"SELECT * FROM nodes WHERE type = 'definition' AND source_doc IN ({placeholders})",
@@ -111,6 +116,8 @@ def find_gaps(store: KnowledgeStore, doc_ids: Optional[List[str]] = None) -> Lis
 
     # Get all references
     if doc_ids:
+        if len(doc_ids) > MAX_DOC_IDS:
+            raise ValueError(f"doc_ids limit exceeded: {len(doc_ids)} > {MAX_DOC_IDS}")
         placeholders = ",".join("?" * len(doc_ids))
         refs = db.execute(
             f"SELECT * FROM nodes WHERE type = 'reference' AND source_doc IN ({placeholders})",
@@ -213,6 +220,8 @@ def find_stale_references(store: KnowledgeStore, doc_ids: Optional[List[str]] = 
     # Find version references that are stale within their own doc family
     version_re = re.compile(r"v(\d+\.\d+\.\d+)")
     if doc_ids:
+        if len(doc_ids) > MAX_DOC_IDS:
+            raise ValueError(f"doc_ids limit exceeded: {len(doc_ids)} > {MAX_DOC_IDS}")
         placeholders = ",".join("?" * len(doc_ids))
         refs = db.execute(
             f"SELECT * FROM nodes WHERE type = 'reference' AND source_doc IN ({placeholders})",
@@ -255,6 +264,8 @@ def find_metric_conflicts(store: KnowledgeStore, doc_ids: Optional[List[str]] = 
     db = store._db()
 
     if doc_ids:
+        if len(doc_ids) > MAX_DOC_IDS:
+            raise ValueError(f"doc_ids limit exceeded: {len(doc_ids)} > {MAX_DOC_IDS}")
         placeholders = ",".join("?" * len(doc_ids))
         metrics = db.execute(
             f"SELECT * FROM nodes WHERE type = 'metric' AND source_doc IN ({placeholders})",

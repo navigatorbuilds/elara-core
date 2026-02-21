@@ -65,9 +65,15 @@ def get_weather(city: str = "Herceg Novi") -> Optional[Dict[str, Any]]:
     Returns None if unable to fetch.
     """
     try:
+        # Sanitize city name — alphanumeric, spaces, hyphens only
+        import re as _re
+        safe_city = _re.sub(r"[^a-zA-Z0-9 \-]", "", city)[:50]
+        if not safe_city:
+            return None
+
         # Use wttr.in for simple weather
         result = subprocess.run(
-            ['curl', '-s', f'wttr.in/{city}?format=j1'],
+            ['curl', '-s', f'wttr.in/{safe_city}?format=j1'],
             capture_output=True,
             text=True,
             timeout=10

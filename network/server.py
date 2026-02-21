@@ -6,10 +6,16 @@
 
 import json
 import logging
+import re
 import time
 from typing import Optional
 
 logger = logging.getLogger("elara.network.server")
+
+# Max body size for POST endpoints (1 MB)
+MAX_BODY_SIZE = 1024 * 1024
+# Valid record_id: hex string, 32-128 chars
+RECORD_ID_RE = re.compile(r"^[0-9a-fA-F]{32,128}$")
 
 
 class NetworkServer:
@@ -99,9 +105,15 @@ class NetworkServer:
             return web.json_response({"error": "rate limited"}, status=429)
 
         try:
+            # Content-Type check
+            if request.content_type not in ("application/octet-stream", "application/x-elara-record"):
+                return web.json_response({"error": "unsupported content type"}, status=415)
+
             body = await request.read()
             if not body:
                 return web.json_response({"error": "empty body"}, status=400)
+            if len(body) > MAX_BODY_SIZE:
+                return web.json_response({"error": "body too large"}, status=413)
 
             # Decode wire bytes
             from elara_protocol.record import ValidationRecord
@@ -178,9 +190,14 @@ class NetworkServer:
             return web.json_response({"error": "rate limited"}, status=429)
 
         try:
+            if request.content_type not in ("application/octet-stream", "application/x-elara-record"):
+                return web.json_response({"error": "unsupported content type"}, status=415)
+
             body = await request.read()
             if not body:
                 return web.json_response({"error": "empty body"}, status=400)
+            if len(body) > MAX_BODY_SIZE:
+                return web.json_response({"error": "body too large"}, status=413)
 
             from elara_protocol.record import ValidationRecord
             record = ValidationRecord.from_bytes(body)
@@ -255,6 +272,8 @@ class NetworkServer:
         record_id = request.query.get("record_id", "")
         if not record_id:
             return web.json_response({"error": "record_id required"}, status=400)
+        if not RECORD_ID_RE.match(record_id):
+            return web.json_response({"error": "invalid record_id format"}, status=400)
 
         if not self._witness_manager:
             return web.json_response({"attestations": [], "count": 0})

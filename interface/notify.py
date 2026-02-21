@@ -29,9 +29,12 @@ def is_wsl() -> bool:
 def notify_wsl(title: str, message: str, duration: int = 5000) -> bool:
     """Send notification via Windows PowerShell (for WSL)."""
     try:
-        # Escape quotes in message
-        safe_title = title.replace("'", "''").replace('"', '`"')
-        safe_message = message.replace("'", "''").replace('"', '`"')
+        # Sanitize for PowerShell — strip dangerous chars, then escape quotes
+        import re as _re
+        safe_title = _re.sub(r"[;|&`$\{\}]", "", title)[:100]
+        safe_message = _re.sub(r"[;|&`$\{\}]", "", message)[:500]
+        safe_title = safe_title.replace("'", "''").replace('"', '""')
+        safe_message = safe_message.replace("'", "''").replace('"', '""')
 
         # Use simple MessageBox - reliable and visible
         ps_script = f"""

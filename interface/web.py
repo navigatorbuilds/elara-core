@@ -9,6 +9,7 @@ Secured with ELARA_SECRET env var — all API requests must authenticate.
 """
 
 import logging
+import secrets
 from flask import Flask, render_template, jsonify, request, send_from_directory
 from functools import wraps
 import os
@@ -45,7 +46,7 @@ def require_auth(f):
         if not provided:
             provided = request.args.get("secret", "")
 
-        if provided != ELARA_SECRET:
+        if not provided or not secrets.compare_digest(provided, ELARA_SECRET):
             return jsonify({"error": "unauthorized"}), 401
 
         return f(*args, **kwargs)
@@ -76,7 +77,7 @@ def dashboard():
         return "ELARA_SECRET not configured on server", 503
 
     provided = request.args.get("secret", "")
-    if provided != ELARA_SECRET:
+    if not provided or not secrets.compare_digest(provided, ELARA_SECRET):
         return "Unauthorized. Use ?secret=YOUR_SECRET", 401
 
     elara = get_elara()

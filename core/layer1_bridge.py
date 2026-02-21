@@ -19,6 +19,7 @@ import hashlib
 import json
 import logging
 import os
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Optional
@@ -129,6 +130,7 @@ class L1Bridge:
         # Hardening state
         self._metrics = BridgeMetrics()
         self._seen_artifact_ids: set = set()
+        self._dedup_lock = threading.Lock()
         self._dedup_max = 10_000
         self._rate_timestamps: list = []
         self._rate_limit = int(os.environ.get("ELARA_BRIDGE_RATE_LIMIT", "120"))
@@ -202,18 +204,19 @@ class L1Bridge:
         return True
 
     def _check_dedup(self, artifact_id: str) -> bool:
-        """Skip if same artifact_id already signed this session."""
+        """Skip if same artifact_id already signed this session. Thread-safe."""
         if not artifact_id:
             return True  # no ID to dedup on
-        if artifact_id in self._seen_artifact_ids:
-            self._metrics.skipped_dedup += 1
-            logger.debug("Dedup: skipping already-signed artifact %s", artifact_id[:12])
-            return False
-        # Evict oldest if at capacity
-        if len(self._seen_artifact_ids) >= self._dedup_max:
-            self._seen_artifact_ids.clear()
-        self._seen_artifact_ids.add(artifact_id)
-        return True
+        with self._dedup_lock:
+            if artifact_id in self._seen_artifact_ids:
+                self._metrics.skipped_dedup += 1
+                logger.debug("Dedup: skipping already-signed artifact %s", artifact_id[:12])
+                return False
+            # Evict oldest if at capacity
+            if len(self._seen_artifact_ids) >= self._dedup_max:
+                self._seen_artifact_ids.clear()
+            self._seen_artifact_ids.add(artifact_id)
+            return True
 
     def _check_rate_limit(self) -> bool:
         """Sliding window rate limit (default 120/min)."""
