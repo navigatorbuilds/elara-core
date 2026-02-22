@@ -48,7 +48,7 @@ Network Topology:
   └──────────────────────────────┘
 ```
 
-**46 tools. 17 modules. 39K+ lines of Python. 240 tests. Everything runs locally.** Cognitive outputs are dual-signed and stored in the cryptographic DAG. Pattern recognition feeds back into the validation chain.
+**46 tools. 17 modules. 39K+ lines of Python. 240 tests. v0.17.0. Everything runs locally.** Cognitive outputs are dual-signed and stored in the cryptographic DAG. Pattern recognition feeds back into the validation chain.
 
 ```
 You: "Morning."
@@ -274,6 +274,8 @@ The [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) is a pos
 ---
 
 ## What's New
+
+**v0.17.0 — Awareness Engine v2** — Complete rewrite of session boot injection. New sessions use chronological recall instead of semantic search, fixing the "broken record" problem. Dedicated boot path with last-session summary, recent work, and next concrete action. Carry-forward decay suppresses stale items after 14 sessions. Staleness filters for intentions and context. 46 tools across 17 modules. 240 tests.
 
 **v0.16.0 — Unified Decision Registry (UDR)** — SQLite-backed decision ledger that crystallizes permanent verdicts from corrections and outcomes. In-memory Python set for O(1) hook checks — zero LLM overhead. Auto-feeds from corrections (mistakes) and outcomes (losses). New `elara_udr` tool with 8 actions. Intention hook now injects `[DECISION-CHECK]` warnings before you repeat failed actions. 46 tools across 17 modules. 240 tests.
 

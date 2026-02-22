@@ -2,6 +2,30 @@
 
 All notable changes to Elara Core.
 
+## [0.17.0] — 2026-02-22
+
+### Added — Awareness Engine v2
+- **Boot/normal path split** — New sessions use chronological recall (recency-weighted) instead of semantic search, fixing garbage results from vague greetings like "hello"
+- **`build_boot_enrichment()`** — Dedicated boot path with `[BOOT]`, `[LAST-SESSION]`, `[RECENT-WORK]`, `[NEXT]` sections for session continuity
+- **`get_recent_exchanges()`** — Pure recency-based conversation retrieval (0.95 recency weight) for boot context
+- **`get_handoff_summary()`** — Rich last-session summary: session number, what was done, files changed, commits, mood, next plans
+- **`get_next_action()`** — Extracts first concrete action from handoff instead of showing abstract goals on boot
+- **Carry-forward decay** — Items carried for 14+ sessions are suppressed from automatic injection (still available via on-demand recall)
+- **Session boundary detection** — 5-minute gap threshold with automatic cache clearing and conversation ingest on new sessions
+- **Conversation recall expanded** — 8 results fetched (up from 3), 5 injected per prompt for richer same-day context
+- **Compound query improvement** — Rolling message buffer + current context anchoring for better semantic matches
+- **Staleness filters** — Intentions >24h and context >24h auto-suppressed from injection
+
+### Fixed
+- Semantic search on boot no longer returns irrelevant memories from vague prompts
+- Repeated goal/carry-forward injection ("broken record" problem) eliminated
+- Session caches now properly cleared on new session boundaries
+
+### Stats
+- 157 source files, ~39K lines Python, 240 tests, 46 MCP tools across 17 modules
+
+---
+
 ## [0.16.1] — 2026-02-22
 
 ### Added — Goal Decision Injection (YES System)
