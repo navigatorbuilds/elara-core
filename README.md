@@ -72,7 +72,7 @@ Elara: "3 work sessions. Auth module shipped. Goal #4 is stalling —
 | **Layer 1.5** — Rust DAM VM | Done | [elara-runtime](https://github.com/navigatorbuilds/elara-runtime) |
 | **Layer 2** — Network consensus | Active (node-by-default) | Included in this repo (`network/`) |
 | **Layer 3** — AI cognition | Done | This repo |
-| **Protocol specs** | v0.5.2 | [elara-protocol](https://github.com/navigatorbuilds/elara-protocol) |
+| **Protocol specs** | v0.5.3 | [elara-protocol](https://github.com/navigatorbuilds/elara-protocol) |
 | **US Provisional Patent** | Filed | Application No. 63/983,064 (Feb 14, 2026) |
 
 Every install is a node. When you run `elara serve`, your instance participates in the decentralized mesh — sharing anonymized validation records, not personal data. The install scripts handle everything in one line.
@@ -261,7 +261,7 @@ The [Elara Protocol](https://github.com/navigatorbuilds/elara-protocol) is a pos
 
 | Document | Where |
 |----------|-------|
-| **Elara Protocol Whitepaper v0.5.2** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
+| **Elara Protocol Whitepaper v0.5.3** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
 | **Elara Core Whitepaper v1.5.1** | [GitHub](https://github.com/navigatorbuilds/elara-protocol) |
 | **US Provisional Patent** | Application No. 63/983,064 (Feb 14, 2026) |
 
