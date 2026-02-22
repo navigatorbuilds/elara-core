@@ -378,10 +378,11 @@ def get_handoff_items() -> list:
 
 
 def get_handoff_summary() -> str:
-    """Build a compact last-session summary from the handoff.
+    """Build a detailed last-session summary from the handoff.
 
     Injected as [LAST-SESSION] on new sessions so the model knows
-    what just happened. Includes session number, mood, and top plans.
+    what just happened. Includes session summary, files changed,
+    commits, mood, and top plans.
     """
     try:
         from daemon.handoff import load_handoff
@@ -393,19 +394,38 @@ def get_handoff_summary() -> str:
         mood = handoff.get("mood_and_mode", "").strip()
         ts = handoff.get("timestamp", "")[:16]
 
+        lines = [f"Session {session_num} ({ts})"]
+
+        # What we actually did (the new mandatory field)
+        summary = handoff.get("session_summary", [])
+        if summary:
+            lines.append("Done: " + " | ".join(s[:80] for s in summary[:5]))
+
+        # Key files changed
+        files = handoff.get("files_changed", [])
+        if files:
+            lines.append("Files: " + ", ".join(f[:50] for f in files[:5]))
+
+        # Commits from the session
+        commits = handoff.get("commits", [])
+        if commits:
+            commit_strs = [
+                f"{c.get('hash', '?')[:7]} ({c.get('repo', '?')})"
+                for c in commits[:4]
+            ]
+            lines.append("Commits: " + ", ".join(commit_strs))
+
+        # Mood/energy context
+        if mood:
+            lines.append(mood[:120])
+
         # Top 3 next_plans (what was planned next)
         plans = handoff.get("next_plans", [])
         plan_texts = [p.get("text", "")[:70] for p in plans[:3] if p.get("text")]
-
-        parts = [f"Session {session_num}"]
-        if ts:
-            parts[0] += f" ({ts})"
-        if mood:
-            parts.append(mood[:120])
         if plan_texts:
-            parts.append("Next: " + " | ".join(plan_texts))
+            lines.append("Next: " + " | ".join(plan_texts))
 
-        return " — ".join(parts)
+        return " — ".join(lines)
     except Exception:
         return ""
 
