@@ -1891,7 +1891,7 @@ The code is available at: https://github.com/navigatorbuilds/elara-core
 **Previous Hash (v1.1.0):** `aca7b0ff4f798cc8d58076775ca42cff0dc7146ecb9d30b6acbb0ec988e9330d`
 **Previous Hash (v1.0.0):** `784e598daad19e23ad39657a8814af11a7b11e68016d2b623aed5fb870e1e690`
 **OpenTimestamps Proof:** `ELARA-CORE-WHITEPAPER.v1.5.1.md.ots`
-**Companion Document:** `ELARA-PROTOCOL-WHITEPAPER.v0.5.2.md` — the universal validation protocol that Elara Core implements at Layer 3
+**Companion Document:** `ELARA-PROTOCOL-WHITEPAPER.v0.5.3.md` — the universal validation protocol that Elara Core implements at Layer 3
 **Source Code:** https://github.com/navigatorbuilds/elara-core (v0.15.0, February 2026)
 
 ---
