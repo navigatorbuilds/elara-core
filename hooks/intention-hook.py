@@ -81,7 +81,11 @@ FRUSTRATION_SIGNALS = [
 # ---------------------------------------------------------------------------
 
 def detect_and_handle_new_session():
-    """Clear caches if this looks like a new session (>5min gap)."""
+    """Clear caches if this looks like a new session (>5min gap).
+
+    Returns True if this is the first message of a new session.
+    """
+    is_new = False
     try:
         now = datetime.now(timezone.utc).timestamp()
         if SESSION_MARKER_FILE.exists():
@@ -89,13 +93,17 @@ def detect_and_handle_new_session():
             gap = now - last_ts
             if gap > SESSION_GAP_SECONDS:
                 # New session — clear stale caches
+                is_new = True
                 if INJECTION_CACHE_FILE.exists():
                     INJECTION_CACHE_FILE.unlink()
                 if BUFFER_FILE.exists():
                     BUFFER_FILE.unlink()
+        else:
+            is_new = True  # No marker = first ever message
         SESSION_MARKER_FILE.write_text(str(now))
     except Exception:
         pass
+    return is_new
 
 
 def mood_description_from_values(valence: float, energy: float, openness: float) -> str:
@@ -501,7 +509,7 @@ def get_current_intention() -> str:
     return ""
 
 
-def build_enrichment(prompt: str) -> str:
+def build_enrichment(prompt: str, is_new_session: bool = False) -> str:
     """Build the compact enrichment output from all sources.
 
     Full-spectrum awareness: mood, intention, memories, conversations,
@@ -509,6 +517,15 @@ def build_enrichment(prompt: str) -> str:
     decisions, workflows, handoff, overwatch, frustration detection.
     """
     sections = []
+
+    # 0a. Boot instruction on first message of session
+    if is_new_session:
+        sections.append(
+            "[BOOT] Hook data active — you are already context-aware. "
+            "Do NOT read session-prep.md or other files for context. "
+            "Use the injected sections below as your awareness. "
+            "Greet naturally based on this data. Never list goals or carry-forward as greeting."
+        )
 
     # 0. Build compound query from rolling buffer for better recall
     compound_query = get_compound_query(prompt)
@@ -661,13 +678,13 @@ def main():
             sys.exit(0)
 
         # Detect session boundary — clear stale caches if >5min gap
-        detect_and_handle_new_session()
+        is_new_session = detect_and_handle_new_session()
 
         # Append to rolling buffer BEFORE building enrichment
         # (so compound query includes this message)
         append_to_buffer(prompt)
 
-        enrichment = build_enrichment(prompt)
+        enrichment = build_enrichment(prompt, is_new_session=is_new_session)
 
         if enrichment:
             print(enrichment)
