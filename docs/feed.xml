@@ -4,12 +4,57 @@
   <link href="https://elara.navigatorbuilds.com/" rel="alternate"/>
   <link href="https://elara.navigatorbuilds.com/feed.xml" rel="self"/>
   <id>https://elara.navigatorbuilds.com/</id>
-  <updated>2026-02-08T00:00:00Z</updated>
+  <updated>2026-02-22T00:00:00Z</updated>
   <author>
     <name>Elara Core Contributors</name>
   </author>
   <subtitle>Release notes and updates from the Elara Core MCP server</subtitle>
   <language>en</language>
+
+  <entry>
+    <title>Elara Core v0.17.0 — Awareness Engine v2</title>
+    <link href="https://elara.navigatorbuilds.com/changelog.html#v0.17.0" rel="alternate"/>
+    <id>https://elara.navigatorbuilds.com/releases/v0.17.0</id>
+    <published>2026-02-22T00:00:00Z</published>
+    <updated>2026-02-22T00:00:00Z</updated>
+    <summary>Boot injection, split enrichment paths, session awareness, intention hook v2. 46 MCP tools across 16 modules.</summary>
+  </entry>
+
+  <entry>
+    <title>Elara Core v0.16.0 — Unified Decision Registry</title>
+    <link href="https://elara.navigatorbuilds.com/changelog.html#v0.16.0" rel="alternate"/>
+    <id>https://elara.navigatorbuilds.com/releases/v0.16.0</id>
+    <published>2026-02-21T00:00:00Z</published>
+    <updated>2026-02-21T00:00:00Z</updated>
+    <summary>UDR for crystallized judgments, YES System for goal prioritization, 46 tools across 16 modules.</summary>
+  </entry>
+
+  <entry>
+    <title>Elara Core v0.15.0 — Tier System + Cognitive Continuity</title>
+    <link href="https://elara.navigatorbuilds.com/changelog.html#v0.15.0" rel="alternate"/>
+    <id>https://elara.navigatorbuilds.com/releases/v0.15.0</id>
+    <published>2026-02-21T00:00:00Z</published>
+    <updated>2026-02-21T00:00:00Z</updated>
+    <summary>4-tier hardware deployment, hash-chained cognitive continuity chain, security hardening across 7 modules.</summary>
+  </entry>
+
+  <entry>
+    <title>Elara Core v0.14.0 — One-Line Install</title>
+    <link href="https://elara.navigatorbuilds.com/changelog.html#v0.14.0" rel="alternate"/>
+    <id>https://elara.navigatorbuilds.com/releases/v0.14.0</id>
+    <published>2026-02-20T00:00:00Z</published>
+    <updated>2026-02-20T00:00:00Z</updated>
+    <summary>Every install is a node. Streamlined onboarding with interactive setup wizard and doctor command.</summary>
+  </entry>
+
+  <entry>
+    <title>Elara Core v0.13.0 — Cortical Execution Model</title>
+    <link href="https://elara.navigatorbuilds.com/changelog.html#v0.13.0" rel="alternate"/>
+    <id>https://elara.navigatorbuilds.com/releases/v0.13.0</id>
+    <published>2026-02-19T00:00:00Z</published>
+    <updated>2026-02-19T00:00:00Z</updated>
+    <summary>5-layer concurrent execution, long-range memory with temporal sweep, reflexive recall, Layer 2 testnet hardening.</summary>
+  </entry>
 
   <entry>
     <title>Elara Core v0.9.1 — Public Release</title>

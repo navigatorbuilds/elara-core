@@ -7,7 +7,11 @@ Elara Core
 A framework for giving Claude persistent presence, emotional state, and semantic memory.
 """
 
-__version__ = "0.1.0"
+try:
+    from importlib.metadata import version
+    __version__ = version("elara-core")
+except Exception:
+    __version__ = "0.17.0"
 
 try:
     from .core.elara import Elara, get_elara
